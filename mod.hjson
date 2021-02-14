@@ -1,0 +1,5 @@
+name:"mod tools"
+description:"beta2.0更新内容:\n1.添加语言和js脚本编辑.\n2.修复单位无法添加的bug.\n\n目前还没完善\n如有bug，请及时反馈给作者\n\n创建的是文件夹(在[orange]mods(I hope...)[]文件夹)."
+author:"I hope..."
+version:"beta2.2"
+minGameVersion:105
