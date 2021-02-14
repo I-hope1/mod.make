@@ -4,7 +4,6 @@ this.window = this;
 importPackage(Packages.arc.files);
 
 require('mod.test');
-//require('mod.effect');
 require('showcrashes');
 require('lastlog');
 require('mod.make');
