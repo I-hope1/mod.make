@@ -1,13 +1,19 @@
-this.elements = {};
-this.window = this;
 
 importPackage(Packages.arc.files);
 
-require('mod.test');
-require('showcrashes');
-require('lastlog');
-require('mod.make');
-require('单位生成');
+require('updateData');
 
-require('mod.frag');
-require('测试假人');
+var useable = require('testFi').useable;
+
+this.contArr = ['tester', 'makeMod', 'other'].map(str => {
+	// Log.info('Loaded ' + modName + ' \'s function ' + str);
+	/* 不让游戏崩溃 */
+	try {
+		var cont = require('content/' + str).cont;
+		return !cont.needFi || useable ? cont : null;
+	} catch (err) {
+		Log.err('' + err);
+	}
+	return null;
+});
+require('frag');

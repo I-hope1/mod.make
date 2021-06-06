@@ -1,4 +1,4 @@
-
+// 没用的
 let unit = new JavaAdapter(UnitType, {
 	dps:[],
 	update(u){
