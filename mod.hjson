@@ -1,5 +1,13 @@
-name:"mod tools"
-description:"beta2.0更新内容:\n1.添加语言和js脚本编辑.\n2.修复单位无法添加的bug.\n\n目前还没完善\n如有bug，请及时反馈给作者\n\n创建的是文件夹(在[orange]mods(I hope...)[]文件夹)."
-author:"I hope..."
-version:"beta2.2"
-minGameVersion:105
+name: "mod tools"
+description: '''
+beta2.3更新内容:
+1. 给单位生成添加更多功能.
+2. 修复在电脑上使用会崩溃的bug.
+目前还没完善
+如有bug，请及时反馈给作者
+创建的是文件夹(在[orange]mods(I hope...)[]文件夹).
+[red](一些设备不能完全适用)'''
+author: "I hope..."
+version: "beta2.3"
+minGameVersion: 110
+hidden: true
