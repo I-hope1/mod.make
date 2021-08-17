@@ -341,16 +341,12 @@ exports.cont = {
 										
 										p.button(cons(b => {
 											b.image(new TextureRegionDrawable(t.icon(Cicon.small))).size(28);
-											b.add(t.localizedName);
+											b.add('' + t.localizedName);
 										}), IntStyles[1], run(() => {
 											btn.setText(obj[k] = t.name.replace(modName + '-', ''));
 											hide.run();
 										})).size(220, 45);
-										try{
-											p.row();
-										}catch(e){
-											print(e)
-										}
+										p.row();
 									}
 								}, true)
 							)).size(150, 60).get();
