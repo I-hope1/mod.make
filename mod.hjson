@@ -1,5 +1,7 @@
 name: "mod tools"
 description: '''
+[orange]WARNING: []此mod仍在测试中
+-----------------------
 beta2.3更新内容:
 1. 给单位生成添加更多功能.
 2. 修复在电脑上使用会崩溃的bug.
@@ -9,7 +11,7 @@ beta2.3更新内容:
 
 创建的是文件夹(在[orange]mods(I hope...)[]文件夹).
 
-[red](一些设备不能完全适用)'''
+旧版本不支持某些功能'''
 author: "I hope..."
 version: "beta2.3"
 minGameVersion: 110

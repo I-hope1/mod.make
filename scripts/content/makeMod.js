@@ -254,7 +254,7 @@ exports.cont = {
 								if (Core.bundle.has(k + '.help')) t.add('// ' + Core.bundle.get(k + '.help')).padLeft(2);
 							})).fillX().left().get());
 						}
-						else { // remove为true是时执行
+						else { // remove为true时执行
 							delete obj[k];
 							ts.splice(i, 1)[0].remove();
 						}
@@ -337,11 +337,20 @@ exports.cont = {
 									let reg = RegExp(v, 'i');
 									for (let tech of techs) {
 										let t = tech.content;
-										if (reg.test(t.name) || reg.test(t.localizedName)) 
-											p.button(t.localizedName, Styles.cleart, run(() => {
-												btn.setText(obj[k] = t.name.replace(modName + '-', ''));
-												hide.run();
-											})).size(200, 45).row();
+										if (!reg.test(t.name) && !reg.test(t.localizedName)) continue;
+										
+										p.button(cons(b => {
+											b.image(new TextureRegionDrawable(t.icon(Cicon.small))).size(28);
+											b.add(t.localizedName);
+										}), IntStyles[1], run(() => {
+											btn.setText(obj[k] = t.name.replace(modName + '-', ''));
+											hide.run();
+										})).size(220, 45);
+										try{
+											p.row();
+										}catch(e){
+											print(e)
+										}
 									}
 								}, true)
 							)).size(150, 60).get();
@@ -646,7 +655,7 @@ exports.cont = {
 
 							body.button(cons(b => {
 								b.left()
-								b.image(find(mod, json.nameWithoutExtension())).size(32).padRight(6).left();
+								let image = b.image(find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
 								if (!Vars.mobile) image.addListener(new HandCursorListener());
 										
 								b.add(json.name()).top();
@@ -945,9 +954,16 @@ exports.cont = {
 						)).size(50).row();
 						right.button(Icon.upload, Styles.clearPartiali,run(() => {
 							let file = Vars.modDirectory;
+							function upload(){
+								try {
+									new ZipFi(mod.file).copyTo(file);
+								} catch(e) {
+									mod.file.copyTo(file);
+								}
+							}
 							if (file.child(mod.file.name()).exists())
-								Vars.ui.showConfirm('覆盖', '同名文件已存在\n是否要覆盖', run(() => mod.file.copyTo(file)));
-							else mod.file.copyTo(file);
+								Vars.ui.showConfirm('覆盖', '同名文件已存在\n是否要覆盖', run(upload));
+							else upload();
 						})).size(50);
 						right.button(Icon.link, Styles.clearPartiali, run(() => Core.app.openFolder(mod.file.absolutePath()))).size(50);
 					})).growX().right().padRight(-8).padTop(-8);
