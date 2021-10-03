@@ -44,9 +44,9 @@ Events.on(ClientLoadEvent, e => {
 				fun(p, 'beta2.2',
 					'更新内容:\n1.重置了json编辑.\n2.修复了一堆bug.\n3.优化mod，样式化了ui.',
 					true);
-				fun(p, 'beta2.21', '修复了bug');
+				fun(p, 'beta2.21', '更新内容：修复了bug');
 				fun(p, 'beta2.23', '更新内容：\n1.优化了代码.\n2.添加一些jso代码编辑程序，让你能更轻松的写json代码.\n3.优化代码编辑.\n4.修了一些bug.', true);
-				fun(p, 'beta2.24', '修复了bug');
+				fun(p, 'beta2.24', '更新内容：1. 优化ui.\n2. 修复bug.\n3. 完善select.');
 			})).fillX().fillY();
 			dialog.addCloseButton();
 			dialog.show();
