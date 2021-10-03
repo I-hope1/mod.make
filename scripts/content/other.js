@@ -3,7 +3,7 @@ var useable = require('testFi').useable;
 exports.cont = {
 	name:'more', show: false,
 
-	all: ['lastlog', '单位生成', 'showcrashes', 'select'].map(str => {
+	all: ['lastlog', 'unit_spawn', 'showcrashes', 'select'].map(str => {
 		try {
 			var cont = require('content/others/' + str).cont;
 			return !cont.needFi || useable ? cont : null;

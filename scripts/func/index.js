@@ -106,8 +106,8 @@ exports.doubleClick = function(table, runs) {
 			if (++this.clickTimes == 2) {
 				runs[0].run();
 			} else if (this.clickTimes == 1) Time.runTask(24, run(() => {
-			 	this.clickTimes = 0;
-			 	runs[1].run();
+				this.clickTimes = 0;
+				runs[1].run();
 			}));
 		}
 	}));
@@ -167,6 +167,8 @@ exports.showSelectTable = function(button, fun, searchable) {
 			let text;
 			t.add(text = new TextField).fillX();
 			text.changed(run(() => fun(p, hide, text.getText())));
+			/* 自动聚焦到搜索框 */
+			text.fireClick();
 		})).padRight(8).fillX().fill().top().row();
 	}
 
@@ -206,14 +208,14 @@ exports.showSelectImageTable = function(button, content, current, size, imageSiz
 
 
 /* 构建一个物品/液体堆 */
-exports.buildOneStack = function(t, type, stack, content, amount){
+exports.buildOneStack = function(t, type, stack, content, amount, change) {
 	let output = [];
 
 	t.add('$' + type);
 	
 	let field = t.field(content || (stack[0] instanceof UnlockableContent ? stack[0].name : stack[0]), cons(text => {})).get();
 	field.update(run(() => output[0] = field.getText()));
-	let btn = t.button('', Icon.pencilSmall, Styles.logict, run(() => {
+	let btn = t.button('', Icon.pencilSmall, Styles.clearPartialt, run(() => {
 		this.showSelectImageTable(btn, stack, output[0], 40, 32, cons(item => {
 			field.setText(item.name);
 		}), 6, true);
@@ -227,11 +229,12 @@ exports.buildOneStack = function(t, type, stack, content, amount){
 }
 
 /* 构建n个物品/液体堆 */
-exports.buildMultipleStack =  function(name, stack, v, t){
+exports.buildMultipleStack =  function (background, name, stack, v, t){
 	let lastI = -1;
 
-	let buttons = t.table().left().get();
-	t.row();
+	let _t = t.table(background instanceof Drawable ? background : Styles.none).get();
+	let buttons = _t.table().left().get();
+	_t.row();
 
 	var fun = (item, amount) => buttons.table(cons(t => {
 		let i = ++lastI;
@@ -244,7 +247,7 @@ exports.buildMultipleStack =  function(name, stack, v, t){
 		}));
 	})).left().row();
 
-	t.button('$add', run(() => fun('', 0))).row();
+	_t.button('$add', run(() => fun('', 0))).growX().row();
 
 	for (let i of v) {
 		fun(i[0], i[1]);
@@ -253,192 +256,3 @@ exports.buildMultipleStack =  function(name, stack, v, t){
 
 
 // const items = Vars.content.items().toArray(), liquids = Vars.content.liquids().toArray();
-
-/* 构建table */
-exports.buildContent = function(obj, arr) {
-	let [ts, t, i, k, v] = arr;
-	let type = obj.type;
-
-	switch (true) {
-		case(/color/i.test(k) && (v == null || v instanceof Color ||
-			/^#?([\da-f][\da-f][\da-f][\da-f][\da-f][\da-f]|[\da-f][\da-f][\da-f][\da-f][\da-f][\da-f][\da-f][\da-f])$/i
-			.test('' + v))):
-			let color = Color.valueOf(obj[k]);
-			let button = t.button(cons(b => {}), run(() => Vars.ui.picker.show(color, cons(c => {
-				image.color(color = c);
-				field.setText(color + '');
-			})))).get();
-
-			let image = button.image().size(30).color(color);
-			let field = button.add('' + color).get();
-
-			obj[k] = {
-				toString:() => '"' + color + '"'
-			}
-			break;
-		case(k == 'requirements'):
-			// 建造消耗
-			/* if (v instanceof String) {
-				try {
-					v = eval('(' + v + ')')
-				} catch (e) {
-					v = [];
-				}
-			} */
-			v = v || [];
-			v = v.map(i => typeof i == 'string' ? i.split('/') : [i.item, i.amount]);
-			t.add('[').row();
-
-			this.buildMultipleStack('item', Vars.content.items().toArray(), v, t);
-
-			obj[k] = {
-				toString:() => '[' + v.map(e => '"' + e[0] + '/' + e[1] + '"') + ']'
-			}
-
-			t.add(']');
-			break;
-
-		case(k == 'outputItem'):{
-			v = v == null || v instanceof ItemStack ? {item:'copper', amount:1} : v;
-			
-			t.row();
-			let stack;
-			t.table(cons(t => {
-				t.left();
-				stack = this.buildOneStack(t, 'item', Vars.content.items().toArray(), v.item, v.amount);
-			})).fillX().left();
-
-			obj[k] = {
-				toString:() => '{"item": "' + stack[0] + '", "amount": ' + stack[1] + '}'
-			}
-
-			break;
-		}
-		case(k == 'outputLiquid'):{
-			v = v == null || v instanceof LiquidStack ? {liquid:'water', amount:1} : v;
-			
-			t.row();
-			let stack;
-			t.table(cons(t => {
-				t.left();
-				stack = this.buildOneStack(t, 'liquid', Vars.content.liquids().toArray(), v.liquid, v.amount);
-			})).fillX().left();
-		
-			obj[k] = {
-				toString:() => '{"liquid": "' + stack[0] + '", "amount": ' + stack[1] + '}'
-			}
-		
-			break;
-		}
-
-		case(/^unit(Type)?$/.test(k)):{
-			v = '' + v || 'mono';
-
-			let field = t.field(v, cons(text => {})).get();
-			field.update(run(() => v = field.getText()));
-
-			let btn = t.button('', Icon.pencilSmall, Styles.logict, run(() => {
-				this.showSelectImageTable(btn, Vars.content.units().toArray(), v, 40, 32, cons(u => {
-					field.setText(v = u.name);
-				}), 6, true);
-			})).size(40).padLeft(-1).get();
-
-			obj[k] = {
-				toString:() => '"' + v + '"'
-			}
-			break;
-		}
-
-		/* case(k == 'ammoTypes'):{
-
-		} */
-
-		case(k == 'consumes'):
-			v = v == null || v instanceof Consumers ? {
-				items: {
-					items: []
-				},
-				liquid: {}
-			} : v;
-
-			t.row();
-			t.table(cons(t => {
-				t.left().add('$item');
-				t.add(': {').row();
-			})).left().row();
-
-			t.table(cons(t => {
-				let stack = v.items.items.map(i => typeof i == 'string' ? i.split('/') : [i.item, i.amount]);
-				this.buildMultipleStack('item', Vars.content.items().toArray(), stack, t);
-				t.update(() => {
-					v.items.items = stack.map(e => e[0] + '/' + e[1]);
-				})
-			})).left().row();
-
-			t.add('}').row();
-			
-			t.table(cons(t => {
-				t.left().add('$liquid');
-				t.add(': {').row();
-			})).left().row();
-
-			t.table(cons(t => {
-				t.left();
-				t.update(() => {
-					if (stack[0] != '') {
-						v.liquid.liquid = stack[0];
-						v.liquid.amount = stack[1];
-					}else v.liquid = {};
-				});
-
-				let stack = this.buildOneStack(t, 'liquid', Vars.content.liquids().toArray(), v.liquid.liquid || 'water', v.liquid.amount || 0);
-			})).fillX().left().row();
-
-			t.add('}').row();
-			obj[k] = {
-				toString:() => JSON.stringify(v)
-			};
-
-			break;
-		case(k == 'category'):
-			let category = obj[k] || 'distribution';
-			let all = Category.all;
-			let btn = t.button(category, Styles.cleart, run(() => {
-				this.showSelectTable(btn, (p, hide) => {
-					p.clearChildren();
-
-					for (let i = 0; i < all.length; i++) {
-						let cat = all[i];
-						p.button(cat, Styles.cleart, run(() => {
-							btn.setText(category = cat);
-							hide.run();
-						})).size(130, 50).disabled(category == cat).row();
-					}
-				}, false);
-			})).size(130, 45).get();
-			obj[k] = {
-				toString:() => '"' + category + '"'
-			}
-			break;
-		default:
-			/* t.add('"');
-			obj[k] = '"' + v + '"';
-			t.field('' + v, cons(text => obj[k] = '"' + text + '"'));
-			t.add('"'); */
-
-			v = typeof v == 'string' ? v : JSON.stringify(v);
-			obj[k] = {
-				toString() {
-					let str = ('' + v).replace(/^\s||\s$/g, '');
-					if ((str[0] == '[' && v[str.length - 1] == ']') || (str[0] == '{' && v[str.length - 1] == '}')) {
-						try {
-							v = eval('(' + str + ')');
-						} catch(e) {};
-					}
-					return JSON.stringify(v);
-				}
-			}
-			t.field(v, cons(text => v = text));
-	}
-}
-

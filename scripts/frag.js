@@ -1,5 +1,5 @@
 
-Time.run(1, run(() => {
+Events.on(ClientLoadEvent, e => {
 	/* 浮窗 */
 	const frag = extend(Table, {
 		cont: new Table,
@@ -7,18 +7,18 @@ Time.run(1, run(() => {
 		lasty: 0,
 	});
 	frag.image().color(Color.sky).margin(0).pad(0).padBottom(-4).fillX().height(40)
-	.get().addListener(extend(InputListener, {
-		touchDown(event, x, y, pointer, button) {
-			this.bx = x;
-			this.by = y;
-			return true;
-		},
-		touchDragged(event, x, y, pointer) {
-			let v = frag.localToStageCoordinates(Tmp.v1.set(x, y));
-			frag.lastx = -this.bx + v.x;
-			frag.lasty = -this.by + v.y;
-		}
-	}));
+		.get().addListener(extend(InputListener, {
+			touchDown(event, x, y, pointer, button) {
+				this.bx = x;
+				this.by = y;
+				return true;
+			},
+			touchDragged(event, x, y, pointer) {
+				let v = frag.localToStageCoordinates(Tmp.v1.set(x, y));
+				frag.lastx = -this.bx + v.x;
+				frag.lasty = -this.by + v.y;
+			}
+		}));
 	frag.row();
 	frag.table(Tex.button, cons(t => {
 		contArr.forEach(cont => {
@@ -36,7 +36,7 @@ Time.run(1, run(() => {
 	frag.left().bottom();
 	frag.lastx = frag.x;
 	frag.lasty = frag.y;
-	frag.update(run(() => {
+	frag.update(() => {
 		/* frag.color.a = +Vars.state.isMenu() ^ 1;
 		frag.touchable = Vars.state.isMenu() ? Touchable.disabled : Touchable.enabled; */
 		frag.setPosition(
@@ -44,6 +44,6 @@ Time.run(1, run(() => {
 			Mathf.clamp(0, frag.lasty, Core.graphics.getHeight() - frag.height),
 			Align.top
 		);
-	}));
+	});
 	Core.scene.add(frag);
-}));
+});

@@ -1,6 +1,8 @@
 
 const IntStyles = require('styles');
 const IntFunc = require('func/index');
+const buildContent = require('func/buildContent').method;
+
 // 语言
 const bundles = [
 	'bundle',
@@ -219,12 +221,15 @@ exports.cont = {
 						button.label(() => '$' + obj.type.toLowerCase()).center().grow().row();
 						button.image().color(Color.gray).fillX();
 						button.clicked(run(() => IntFunc.showSelectTable(button, (p, hide, v) => {
-							let arr = [];
+							let arr = ['none'];
 							for (let k in types) {
-								types[k].forEach(e => arr.push(e));
+								arr = arr.concat(types[k])
 							}
-							arr.push('none');
+
+							p.clearChildren()
+							let reg = RegExp('' + v, 'i')
 							for (let type of arr) {
+								if (!reg.test(type)) continue;
 								let t = type;
 								p.button(Core.bundle.get(t.toLowerCase(), t), Styles.cleart, run(() => {
 									obj.type = t;
@@ -241,18 +246,19 @@ exports.cont = {
 							k = name,
 							v = value;
 						if (!remove) {
-							ts.splice(i, 0, table.table(i % 3 == 0 ? Tex.whiteui.tint(0, 1, 1, .7) : i % 3 == 1 ? Tex.whiteui.tint(1, 1, 0, .7) : Tex.whiteui.tint(1, 0, 1, .7), cons(t => {
+							ts.splice(i, 0, table.table(
+								i % 3 == 0 ? Tex.whiteui.tint(0, 1, 1, .7) :
+								i % 3 == 1 ? Tex.whiteui.tint(1, 1, 0, .7) :
+								Tex.whiteui.tint(1, 0, 1, .7), cons(t => {
 								// 不行，不能定义变量
 								/* // 让函数拥有变量
 								eval(('' + IntFunc.buildContent).replace(/function\s*\(\)\s*\{([^]+)\}/, '$1')); */
 
-								t.left().add(Core.bundle.get('content.' + k, k) + ':').padLeft(2).padRight(2);
-
-								IntFunc.buildContent(obj, [ts, t, i, k ,v]);
+								buildContent(obj, [ts, t, i, k ,v]);
 
 								t.button('', Icon.trash, Styles.cleart, run(() => tablesChange(ts, t, i, true, k, v)));
 								if (Core.bundle.has(k + '.help')) t.add('// ' + Core.bundle.get(k + '.help')).padLeft(2);
-							})).fillX().left().get());
+							})).fillX().margin(3).marginLeft(6).marginRight(6).left().get());
 						}
 						else { // remove为true时执行
 							delete obj[k];
@@ -304,7 +310,7 @@ exports.cont = {
 								}
 								let reg = RegExp(v, 'i');
 								let arr = IntFunc.forIn(content, (k, obj) => typeof obj[k] != 'function' &&
-									!/^(id|self|unlocked|stats|bars|inlineDescription|delegee|details|minfo|cicon|cacheLayer|region|iconId)$/
+									!/^(id|self|unlocked|stats|bars|inlineDescription|delegee|details|minfo|cicon|cacheLayer|region|iconId|uiIcon|fullIcon)$/
 									.test(k) && (reg.test(k) || reg.test(Core.bundle.get('content.' + k))), (k, obj) => {
 									p.button(Core.bundle.get('content.' + k, k), Styles.cleart, run(() => {
 										tablesChange(
@@ -334,19 +340,42 @@ exports.cont = {
 										obj[k] = '';
 										btn.setText('$none');
 									}));
-									let reg = RegExp(v, 'i');
+
+									let cont = p.table().get();
+									let tableArr = [new Table, new Table, new Table, new Table, new Table, new Table];
+									
+									let reg = RegExp(v, 'i'), i = 0;
+
 									for (let tech of techs) {
 										let t = tech.content;
 										if (!reg.test(t.name) && !reg.test(t.localizedName)) continue;
-										
-										p.button(cons(b => {
-											b.image(new TextureRegionDrawable(t.icon(Cicon.small))).size(28);
-											b.add('' + t.localizedName);
-										}), IntStyles[1], run(() => {
-											btn.setText(obj[k] = t.name.replace(modName + '-', ''));
-											hide.run();
-										})).size(220, 45);
-										p.row();
+
+										let table = tableArr[
+											t instanceof Item ? 0 :
+											t instanceof Liquid ? 1 :
+											t instanceof Block ? 2 :
+											t instanceof UnitType ? 3 :
+											t instanceof SectorPreset ? 4 :
+											5
+										];
+										let button = table.button(Tex.whiteui, Styles.clearToggleTransi, 32, () => {
+											btn.setText(obj[k] = t.name);
+											hide.run()
+										}).size(40).get();
+										button.getStyle().imageUp = new TextureRegionDrawable(t.uiIcon);
+										button.update(() => button.setChecked(obj[k] == t.name));
+
+										if (table.children.size % (Vars.mobile ? 6 : 10) == 0) {
+											table.row();
+										}
+									}
+									for (let i = 0; i < tableArr.length; i++) {
+										let table = tableArr[i];
+										cont.add(table).growX().left().row();
+										if (table.children.size != 0 && i < tableArr.length - 2) {
+											cont.image(Tex.whiteui, Pal.accent)
+												.growX().height(3).pad(4).row();
+										}
 									}
 								}, true)
 							)).size(150, 60).get();
@@ -365,7 +394,7 @@ exports.cont = {
 						to: []
 					};
 					if (str.join('') == '') str.length = 0;
-					let cont = p.table(Tex.whiteui.tint(.5, .6, .1, .8)).get();
+					let cont = p.table(Tex.whiteui.tint(.5, .6, .1, .8)).padLeft(3).get();
 					let fun = (from, to) => {
 						let table = cont.table(Tex.button, cons(t => {
 							obj.from.push(t.add(new TextField(from)).width(200).get());
@@ -386,7 +415,7 @@ exports.cont = {
 						cont.row();
 					}
 					str.forEach(e => {
-						let arr = e.split(' = ');
+						let arr = e.split(/\s*=\s*/);
 						fun(arr[0], arr[1]);
 					});
 					p.row();
@@ -424,7 +453,7 @@ exports.cont = {
 					}));*/
 					//area.clicked(run(() => IntFunc.showTextArea(result.value)));
 			}
-		})).fillX().height(Core.graphics.getHeight() - 400).grow().row();
+		})).fillX().height(Core.graphics.getHeight() - (Vars.mobile ? 400 : 200)).grow().row();
 
 		dialog.buttons.button('$back', Icon.left, run(() => dialog.hide())).size(220, 70);
 

@@ -1,46 +1,4 @@
 
-function showSelectTable(button, fun, find){
-	if(typeof fun != 'function') return null;
-	let t = new Table, b = button;
-	let hitter = new Element;
-	let hide = run(() => {
-		hitter.remove();
-		t.actions(Actions.fadeOut(0.3, Interp.fade), Actions.remove());
-		Time.run(2, run(() => t.remove()));
-	});
-	hitter.fillParent = t.fillParent = true;
-	hitter.clicked(hide);
-	Core.scene.add(hitter);
-	Core.scene.add(t);
-	t.actions(Actions.alpha(0), Actions.fadeIn(0.3, Interp.fade));
-	t.update(run(() => {
-		if(b.parent == null || !b.isDescendantOf(Core.scene.root)){
-			return Core.app.post(run(() => {
-				hitter.remove();
-				t.remove();
-			}));
-		}
-		b.localToStageCoordinates(Tmp.v1.set(b.getWidth() / 2, b.getHeight() / 2));
-		t.setPosition(Tmp.v1.x, Tmp.v1.y, Align.center);
-		if(t.getWidth() > Core.scene.getWidth()) t.setWidth(Core.graphics.getWidth());
-		if(t.getHeight() > Core.scene.getHeight()) t.setHeight(Core.graphics.getHeight());
-		t.keepInStage();
-	}));
-	t.table(Tex.button, cons(t => {
-		if(find){
-			t.table(cons(t => {
-				t.image(Icon.zoom);
-				let text
-				t.add(text = new TextField).fillX();
-				text.changed(run(() => fun(p, hide, text.getText())));
-			})).padRight(8).fillX().fill().top().row();
-		}
-
-		let p = t.pane(cons(p => fun(p, hide, ''))).maxSize(Core.graphics.getWidth() * .7, Core.graphics.getHeight() * .8).get().getWidget();
-	}));
-	return t;
-}
-
 elements[Core.bundle.get('effectConstructor.localizedName', '特效制作')] = {
 	scripts:{
 		'addTable':table => table.table(Tex.whiteui, cons(t => {
