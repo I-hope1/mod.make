@@ -27,7 +27,7 @@ Events.on(ClientLoadEvent, e => {
 	t.add('来自mod(“' + modName + '[]”)作者的话:').row();
 	t.pane(cons(t => {
 		t.add(
-			'当前版本[gray](beta2.02)[]仍在测试.\n[gray]这意味着:\n[]- JSON成可能出错.\n- 很多内容没有做完.\n若发现bug请及时告诉作者[gray](Ihope...).\n\n[red]本mod未经允许禁止转载!!!\n[white]以下是更新日志'
+			'当前版本[gray](beta2.4)[]仍在测试.\n[gray]这意味着:\n[]- JSON成可能出错.\n- 很多内容没有做完.\n若发现bug请及时告诉作者[gray](Ihope...).\n\n[red]本mod未经允许禁止转载!!!\n[white]以下是更新日志'
 		).row()
 		t.image().fillX().color(Color.gray).row();
 		t.add('1. 修复了一堆bug.\n2. 优化了代码.').row();

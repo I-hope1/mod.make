@@ -20,7 +20,7 @@ Events.on(ClientLoadEvent, e => {
 			}
 		}));
 	frag.row();
-	frag.table(Tex.button, cons(t => {
+	frag.table(Tex.whiteui, cons(t => {
 		contArr.forEach(cont => {
 			if (cont == null) return;
 			if (cont.load instanceof Function) cont.load();
@@ -39,11 +39,13 @@ Events.on(ClientLoadEvent, e => {
 	frag.update(() => {
 		/* frag.color.a = +Vars.state.isMenu() ^ 1;
 		frag.touchable = Vars.state.isMenu() ? Touchable.disabled : Touchable.enabled; */
+
 		frag.setPosition(
-			Mathf.clamp(0, frag.lastx, Core.graphics.getWidth() - frag.width),
-			Mathf.clamp(0, frag.lasty, Core.graphics.getHeight() - frag.height),
-			Align.top
+			Mathf.clamp(frag.lastx, 0, Core.graphics.getWidth() - frag.getPrefWidth()),
+			Mathf.clamp(frag.lasty, 0, Core.graphics.getHeight() - frag.getPrefHeight())
 		);
+		// print([frag.x, frag.y])
+		// 1280,144  666,183
 	});
 	Core.scene.add(frag);
 });

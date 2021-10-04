@@ -1,3 +1,4 @@
+
 exports.cont = {
 	name: Core.bundle.get('unit_spawn', 'unit_spawn'), get disabled(){return Vars.state.isMenu()},
 	load(){

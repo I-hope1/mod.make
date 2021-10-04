@@ -14,8 +14,8 @@ exports.cont = {
 	functionsWidth: 200, functionsHeight: 45,
 
 	hide() {
-		this.functions.visible = false;
-		this.functions.touchable = Touchable.disabled;
+		this.pane.visible = false;
+		this.pane.touchable = Touchable.disabled;
 	},
 	loadSettings() {
 		let settings = this.settingsUi = new BaseDialog('$settings')
@@ -92,30 +92,47 @@ exports.cont = {
 					for (let x = v1.x; x < v2.x; x += Vars.tilesize) {
 						var tile = Vars.world.tileWorld(x, y);
 						if (_this.select.tile || _this.select.floor) _this.selection.tiles.push(tile);
-						if (_this.select.building && tile.build != null/*  && !_this.selection.includes(build) */) _this.selection.buildings.push(build);
+						if (_this.select.building && tile.build != null && !_this.selection.buildings.includes(tile.build)) _this.selection.buildings.push(tile.build);
 					}
 				}
 
-				functions.touchable = Touchable.enabled;
-				functions.visible = true;
-				functions.setPosition(mx, my, Align.top);
+				table.touchable = Touchable.enabled;
+				table.visible = true;
+				table.setPosition(
+					Mathf.clamp(mx, W, Core.graphics.getWidth()),
+					// 32是btn的高度
+					Mathf.clamp(my, (maxH + 32) / 2, Core.graphics.getHeight() - (maxH + 32) / 2),
+					Align.bottomRight
+				);
 				elem.hide();
 				_this.show = false;
 			}
 		}));
-
-		let functions = this.functions = new Table(Styles.black5);
+		
 		let W = this.functionsWidth, H = this.functionsHeight;
-		functions.right().defaults().width(W).right();
-		functions.table(cons(right => {
-			right.right()
-			right.button(Icon.settings, Styles.clearTransi, () => {
-				this.settingsUi.show();
-			}).size(32)
-			right.button(Icon.cancel, Styles.clearTransi, () => {
-				this.hide();
-			}).size(32)
-		})).growX().right().row();
+
+		let functions = new Table(Styles.black5)
+		functions.defaults().width(W)
+
+		let maxH = 400
+		let table = this.pane = new Table(Styles.black5, cons(t => {
+			t.table(cons(right => {
+				right.right().defaults().right()
+				right.button(Icon.settings, Styles.clearTransi, () => {
+					this.settingsUi.show();
+				}).size(32)
+				right.button(Icon.cancel, Styles.clearTransi, () => {
+					this.hide();
+				}).size(32)
+			})).fillX().right().row();
+			let paneStyle = new ScrollPane.ScrollPaneStyle()
+			paneStyle.background = Styles.none;
+
+			t.pane(paneStyle, functions).size(W, maxH).get().setSize(W, maxH)
+		}))
+		table.right().defaults().width(W).right();
+		table.update(() => Vars.state.isMenu() && this.hide())
+
 
 		let tiles = this.tables[0] = extend(Table, {
 			cont: null,
@@ -150,8 +167,8 @@ exports.cont = {
 		});
 		functions.add(floors).get();
 
-		Core.scene.root.addChildAt(0, functions);
-		functions.visible = false;
+		Core.scene.root.addChildAt(10, table);
+		table.visible = false;
 
 
 		/* tiles */
@@ -172,6 +189,9 @@ exports.cont = {
 		buildings.cont = new Table(cons(t => {
 			t.button('Infinite health', () => {
 				this.selection.buildings.forEach(b => b.health = Infinity);
+			}).height(H).growX().right().row();
+			t.button('Kill', () => {
+				this.selection.buildings.forEach(b => b.kill());
 			}).height(H).growX().right().row();
 		}))
 		if (this.select.building) buildings.setup()

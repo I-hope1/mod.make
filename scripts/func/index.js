@@ -124,7 +124,7 @@ exports.showSelectTable = function(button, fun, searchable) {
 			return Math.min(this.super$getPrefHeight(), Core.graphics.getHeight());
 		},
 		getPrefWidth(){
-			return Math.min(this.super$getPrefWidth(), Core.graphics.getWidth());
+			return Math.min(this.super$getPrefWidth(), Core.graphics.getWidth())
 		}
 	});
 	t.margin(4);
@@ -133,9 +133,8 @@ exports.showSelectTable = function(button, fun, searchable) {
 	let b = button;
 	let hitter = new Element;
 	let hide = run(() => {
-		hitter.remove();
-		t.actions(Actions.fadeOut(0.3, Interp.fade), Actions.remove());
-		t.remove();
+		hitter.remove()
+		t.actions(Actions.fadeOut(0.3, Interp.fade), Actions.remove())
 	});
 	hitter.fillParent = true;
 	hitter.clicked(hide);
