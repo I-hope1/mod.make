@@ -3,7 +3,7 @@ description: '''
 [orange]WARNING: []此mod仍在测试中，bug很多
 如果发现bug，可以反馈给作者
 []-----------------------
-beta2.4更新内容:
+2.4-beta更新内容:
 1. 优化ui.
 2. 修复bug.
 3. 完善select.
@@ -15,6 +15,6 @@ beta2.4更新内容:
 '''
 
 author: "I hope..."
-version: "beta2.4"
+version: "2.4-beta"
 minGameVersion: 110
 hidden: true
