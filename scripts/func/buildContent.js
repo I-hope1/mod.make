@@ -154,7 +154,7 @@ exports.method = function(obj, arr) {
 
 		t.table(cons(t => {
 			t.left();
-			t.check('$mod.enabled', liquidEnab, new Boolc({get:b => liquidEnab = b})).row();
+			t.check('$mod.enabled', liquidEnab, boolc(b => liquidEnab = b)).row();
 			t.update(() => {
 				if (!liquidEnab) return;
 				if (stack[0] != '') {

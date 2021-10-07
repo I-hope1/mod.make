@@ -1,10 +1,7 @@
 const IntFunc = require('func/index');
 
 exports.cont = {
-	name: Core.bundle.get('select', 'select'), show: false, get disabled() { return Vars.state.isMenu() }, selection: {
-		tiles: [],
-		buildings: []
-	},
+	name: Core.bundle.get('select', 'select'), show: false, get disabled() { return Vars.state.isMenu() },
 	tables: [],
 	select: {
 		tile: Core.settings.get(modName + '-select-tile', false),
@@ -21,27 +18,24 @@ exports.cont = {
 		let settings = this.settingsUi = new BaseDialog('$settings')
 		settings.cont.table(cons(t => {
 			t.add(this.name).row();
-			t.check('tile', this.select.tile, new Boolc({
-				get: b => {
+			t.check('tile', this.select.tile, boolc(b => {
 					if (b) this.tables[0].setup()
 					else this.tables[0].clearChildren()
 					Core.settings.put(modName + '-select-tile', b)
 				}
-			})).padLeft(6).row();
-			t.check('building', this.select.building, new Boolc({
-				get: b => {
+			)).marginLeft(6).row();
+			t.check('building', this.select.building, boolc(b => {
 					if (b) this.tables[1].setup()
 					else this.tables[1].clearChildren()
 					Core.settings.put(modName + '-select-building', b)
 				}
-			})).padLeft(6).row();
-			t.check('floor', this.select.floor, new Boolc({
-				get: b => {
+			)).marginLeft(6).row();
+			t.check('floor', this.select.floor, boolc(b => {
 					if (b) this.tables[2].setup()
 					else this.tables[2].clearChildren()
 					Core.settings.put(modName + '-select-floor', b)
 				}
-			})).padLeft(6);
+			)).marginLeft(6);
 		})).row()
 		settings.addCloseButton()
 	},
@@ -83,16 +77,16 @@ exports.cont = {
 				if (x1 > x2) [x1, x2] = [x2, x1];
 				if (y1 > y2) [y1, y2] = [y2, y1];
 
-				_this.selection.tiles.length
-					= _this.selection.buildings.length = 0;
+				tiles.arr.length
+					= buildings.arr.length = 0;
 
 				let v1 = Core.camera.unproject(x1, y1).cpy();
 				let v2 = Core.camera.unproject(x2, y2).cpy();
 				for (let y = v1.y; y < v2.y; y += Vars.tilesize) {
 					for (let x = v1.x; x < v2.x; x += Vars.tilesize) {
 						var tile = Vars.world.tileWorld(x, y);
-						if (_this.select.tile || _this.select.floor) _this.selection.tiles.push(tile);
-						if (_this.select.building && tile.build != null && !_this.selection.buildings.includes(tile.build)) _this.selection.buildings.push(tile.build);
+						if (_this.select.tile || _this.select.floor) tiles.arr.push(tile);
+						if (_this.select.building && tile.build != null && !buildings.arr.includes(tile.build)) buildings.arr.push(tile.build);
 					}
 				}
 
@@ -135,7 +129,7 @@ exports.cont = {
 
 
 		let tiles = this.tables[0] = extend(Table, {
-			cont: null,
+			cont: null, arr: [],
 			setup() {
 				this.add('tiles:').growX().left().row()
 				this.add(this.cont).width(W)
@@ -145,10 +139,10 @@ exports.cont = {
 		functions.row()
 
 		let buildings = this.tables[1] = extend(Table, {
-			cont: null,
+			cont: null, arr: [],
 			setup() {
 				/* 分隔 */
-				this.image().color(Color.gray).height(1).padTop(3).padBottom(3).fillX().row()
+				this.image().color(Color.gray).height(2).padTop(3).padBottom(3).fillX().row()
 				this.add('buildings:').growX().left().row()
 				this.add(this.cont).width(W)
 			}
@@ -157,10 +151,10 @@ exports.cont = {
 		functions.row()
 
 		let floors = this.tables[2] = extend(Table, {
-			cont: null,
+			cont: null, arr: tiles.arr,
 			setup() {
 				/* 分隔 */
-				this.image().color(Color.gray).height(1).padTop(3).padBottom(3).fillX().row()
+				this.image().color(Color.gray).height(2).padTop(3).padBottom(3).fillX().row()
 				this.add('floors:').growX().left().row()
 				this.add(this.cont).width(W)
 			}
@@ -173,14 +167,14 @@ exports.cont = {
 
 		/* tiles */
 		tiles.cont = new Table(cons(t => {
-			let setBtn = t.button('Set',
-				() => IntFunc.showSelectImageTable(setBtn, Vars.content.blocks().toArray(), null, 40, 32, cons(block =>
-					this.selection.tiles.forEach(t => t.setBlock(block, t.team()))
+			let btn1 = t.button('Set',
+				() => IntFunc.showSelectImageTable(btn1, Vars.content.blocks().toArray(), null, 40, 32, cons(block =>
+					tiles.arr.forEach(t => t.block() != block && t.setBlock(block, t.team()))
 				), 6, true)
-			).height(H).growX().right().get();
+			).height(H).growX().right().get()
 			t.row();
 			t.button('Clear', () => {
-				this.selection.tiles.forEach(t => t.setAir());
+				tiles.arr.forEach(t => t.setAir());
 			}).height(H).growX().right().row();
 		}))
 		if (this.select.tile) tiles.setup()
@@ -188,30 +182,30 @@ exports.cont = {
 		/* buildings */
 		buildings.cont = new Table(cons(t => {
 			t.button('Infinite health', () => {
-				this.selection.buildings.forEach(b => b.health = Infinity);
+				buildings.arr.forEach(b => b.health = Infinity);
 			}).height(H).growX().right().row();
 			t.button('Kill', () => {
-				this.selection.buildings.forEach(b => b.kill());
+				buildings.arr.forEach(b => b.kill());
 			}).height(H).growX().right().row();
 		}))
 		if (this.select.building) buildings.setup()
 		/* floors */
 		floors.cont = new Table(cons(t => {
-			let setBtn1 = t.button('Set Floor Reset Overlay',
-				() => IntFunc.showSelectImageTable(setBtn1, Vars.content.blocks().toArray().filter(block => block instanceof Floor), null, 40, 32, cons(floor =>
-					this.selection.tiles.forEach(t => t.setFloor(floor))
+			let btn1 = t.button('Set Floor Reset Overlay',
+				() => IntFunc.showSelectImageTable(btn1, Vars.content.blocks().toArray().filter(block => block instanceof Floor), null, 40, 32, cons(floor =>
+					tiles.arr.forEach(t => t.setFloor(floor))
 				), 6, true)
 			).height(H).growX().right().get();
 			t.row()
-			let setBtn2 = t.button('Set Floor Preserving Overlay',
-				() => IntFunc.showSelectImageTable(setBtn2, Vars.content.blocks().toArray().filter(block => block instanceof Floor && !(block instanceof OverlayFloor)), null, 40, 32, cons(floor =>
-					this.selection.tiles.forEach(t => t.setFloorUnder(floor))
+			let btn2 = t.button('Set Floor Preserving Overlay',
+				() => IntFunc.showSelectImageTable(btn2, Vars.content.blocks().toArray().filter(block => block instanceof Floor && !(block instanceof OverlayFloor)), null, 40, 32, cons(floor =>
+					tiles.arr.forEach(t => t.setFloorUnder(floor))
 				), 6, true)
 			).height(H).growX().right().get();
 			t.row()
-			let setBtn = t.button('Set Overlay',
-				() => IntFunc.showSelectImageTable(setBtn, Vars.content.blocks().toArray().filter(block => block instanceof OverlayFloor), null, 40, 32, cons(overlay =>
-					this.selection.tiles.forEach(t => t.setOverlay(overlay))
+			let btn3 = t.button('Set Overlay',
+				() => IntFunc.showSelectImageTable(btn3, Vars.content.blocks().toArray().filter(block => block instanceof OverlayFloor), null, 40, 32, cons(overlay =>
+					tiles.arr.forEach(t => t.setOverlay(overlay))
 				), 6, true)
 			).height(H).growX().right().get();
 			t.row()

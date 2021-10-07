@@ -19,9 +19,8 @@ exports.cont = {
 		}));
 
 		ui.buttons.button('清除所有单位', run(() => Groups.unit.clear())).size(160, 65);
-		ui.buttons.check('无单位上线', new Boolc({
-			get: b => Vars.state.rules.unitCap = Math.pow(2, 29) * b
-		})).size(160, 65).row();
+		ui.buttons.check('无单位上线', boolc(b => Vars.state.rules.unitCap = Math.pow(2, 29) * b
+		)).size(160, 65).row();
 
 		ui.buttons.button('$back', Icon.left, run(() => ui.hide())).size(160, 65);
 		var i = 0;

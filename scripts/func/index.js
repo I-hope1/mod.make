@@ -86,16 +86,16 @@ exports.HjsonParse = function(str) {
 }
 
 /* 选择文件 */
-exports.selectFile = function(open, purpose, ext, cons){
+exports.selectFile = function(open, purpose, ext, _cons){
 	purpose = /^\$|\@$/.test(purpose[0]) ? Core.bundle.get(purpose.substr(1), purpose) : purpose;
 
-	Vars.platform.showFileChooser(open, purpose + ' (.' + ext + ')', ext, new Cons({get:fi => {
+	Vars.platform.showFileChooser(open, purpose + ' (.' + ext + ')', ext, cons(fi => {
 		try {
-			cons.get(fi);
+			_cons.get(fi);
 		} catch (err) {
 			Log.err('thorw error when failed to select file: ', err);
 		}
-	}}));
+	}));
 }
 
 // 一个双击函数

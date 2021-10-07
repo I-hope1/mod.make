@@ -1,13 +1,8 @@
 
 const IntStyles = require('styles');
+const scripts = Vars.mods.scripts
 
-const forEach = (obj, str) => {
-	var jg = [];
-	for(var e in obj){
-		jg.push(obj[e]);
-	}
-	return str == null ? jg : jg.join(str);
-};
+this[modName + '_main'] = this
 const forIn = (obj, str) => {
 	var jg = [];
 	for(var e in obj){
@@ -15,7 +10,7 @@ const forIn = (obj, str) => {
 	}
 	return str == null ? jg : jg.join(str);
 };
-const testTable = table => {
+const testElement = table => {
 	let ui = new Dialog('');
 	ui.cont.pane(cons(p => p.add(table))).size(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) - 100).grow().row();
 	ui.cont.button('$back', Icon.left, run(() => ui.hide())).size(200, 60);
@@ -39,7 +34,7 @@ const testEffect = str => {
 var useable = require('testFi').useable;
 exports.cont = {
 	name: Core.bundle.get('test.name', 'test'),
-	log:'', message:'', 'while':false, strict:false,
+	log:'', message:'', 'while':false, wrap:false, // scope: false,
 	record: useable ? Vars.dataDirectory.child('mods(I hope...)').child('historical record') : null,
 	show(table, buttons){
 		let cont = new Table();
@@ -52,11 +47,15 @@ exports.cont = {
 			this.message = text.getText().replace(/\r/g, '\n');
 			this.evalMessage();
 			if (this.record) {
+				let arr = this.record.list();
+				arr.sort((a, b) => a.name() - b.name())
+				/* 限制30个 */
+				for (let i = 0; i < arr.length - 29; i++) {
+					arr[i].deleteDirectory();
+				}
 				let d = this.record.child(Time.millis());
 				d.child('message.txt').writeString(this.message);
 				d.child('log.txt').writeString(this.log);
-				let arr = this.record.list();
-				arr.splice(0, arr.slice(0, -30).length).forEach(f => f.deleteDirectory()); /* 限制30个 */
 			}
 		})).row();
 
@@ -67,7 +66,8 @@ exports.cont = {
 		table.pane(cons(p => {
 			p.button('', Icon.star, Styles.cleart, run(() => Vars.dataDirectory.child('mods(I hope...)').child('bookmarks').child(Vars.dataDirectory.child('mods(I hope...)').child('bookmarks').list().length + '-' + Time.millis() + '.txt').writeString(this.message)));
 			p.button(cons(b => b.label(() => this.while ? '$while' : '$default')), Styles.defaultb, run(() => this.while = !this.while)).size(100, 55);
-			p.button(cons(b => b.label(() => this.strict ? '严格' : '非严格')), Styles.defaultb, run(() => this.strict = !this.strict)).size(100, 55);
+			p.button(cons(b => b.label(() => this.wrap ? '严格' : '非严格')), Styles.defaultb, run(() => this.wrap = !this.wrap)).size(100, 55);
+			// p.button(cons(b => b.label(() => this.scope ? 'new scope' : 'default')), Styles.defaultb, run(() => this.scope = !this.scope)).size(100, 55);
 
 			if (useable) {
 				p.button('$hitoricalRecord', run(() => {
@@ -75,8 +75,9 @@ exports.cont = {
 					dialog.cont.pane(cons(p => {
 						let list = this.record.list();
 						let _this = this;
-						list.slice().reverse() /* 按从新到旧排序 */ .forEach((e, j) => {
-							let i = j, f = e;
+						/* 按从新到旧排序 */
+						list.sort((a, b) => b.name() - a.name()).forEach((f, i) => {
+							let f = list[i];
 							p.table(Tex.button, cons(t => {
 								t.left().button(cons(b => {
 									b.pane(cons(c => c.add(f.child('message.txt').readString()).left())).fillY().fillX().left();
@@ -116,8 +117,7 @@ exports.cont = {
 					dialog.cont.pane(cons(p => {
 						let list = mark.list();
 						let _this = this;
-						list.forEach((e, j) => {
-							let i = j, f = e;
+						list.forEach((f, i) => {
 							p.table(Tex.button, cons(t => {
 								t.left().button(cons(b => {
 									b.pane(cons(c => c.add(f.readString()))).left().fillY().fillX().left();
@@ -165,7 +165,7 @@ exports.cont = {
 				t.row();
 				t.button("@schematic.copy.import", Icon.download, style, run(() => {
 					dialog.hide();
-					text.setText(Core.app.getClipboardText());
+					text.setText(Core.app.getClipboardTe.xt());
 				})).marginLeft(12);
 
 				t.row();
@@ -198,8 +198,9 @@ exports.cont = {
 		}));
 	},
 	evalMessage(){
-		let def = 'function forIn(obj, str){var jg = [];for(var e in obj){jg.push(e + ": " + obj[e])};return str == null ? jg : jg.join(str);};' + this.message;
-		this.log = Vars.mods.scripts.runConsole(this.strict ? '(function(){"use strict";' + def + '\n})();' : def);
+		let def = this.message
+		def = this.wrap ? '(function(){"use strict";' + def + '\n})();' : def
+		this.log = Vars.mods.scripts.runConsole(def);
 		// try{
 			// let print = text => log(this.name, text);
 			// this.log = '' + eval(this.message);
@@ -214,6 +215,9 @@ exports.cont = {
 			// let str2 = arr.join('-').replace(/\:/g, '~');
 			// this.log = '[red][' + Core.bundle.get(e.name, e.name) + '][gray]: [white]' + (!Core.bundle.has(str2) ? str : arr2.length ? Core.bundle.format(str2, eval('' + arr2)) : Core.bundle.get(str2)) + '[#ccccff](#' + e.lineNumber + ')[]';
 		// }
+	},
+	load() {
+		scripts.runConsole(('const forIn = ' + forIn).replace(/\n/g, '') + (';const testElement = ' + testElement).replace(/\n/g, ''));
 	},
 	read(stream, revision){
 		this.super$read(stream, revision);

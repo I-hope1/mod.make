@@ -57,9 +57,8 @@ Events.on(ClientLoadEvent, e => {
 	t.row();
 	t.table(cons(_t => {
 		_t.button('$ok', run(() => t.hide())).size(120, 50);
-		_t.check(Core.bundle.get('not_show_again', 'not show again'), new Boolc({
-			get: b => Core.settings.put(modName + '-not_show_again', b)
-		}));
+		_t.check(Core.bundle.get('not_show_again', 'not show again'), boolc(b => Core.settings.put(modName + '-not_show_again', b)
+		));
 	}));
 	t.show();
 });

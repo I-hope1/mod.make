@@ -4,6 +4,7 @@ exports.cont = {
 	name:'more', show: false,
 
 	all: ['lastlog', 'unit_spawn', 'showcrashes', 'select'].map(str => {
+		if (!Core.settings.get(modName + '-load-' + str, true)) return
 		try {
 			var cont = require('content/others/' + str).cont;
 			return !cont.needFi || useable ? cont : null;
@@ -18,7 +19,7 @@ exports.cont = {
 		this.all.forEach(cont => {
 			if (cont == null) return;
 			cont.load();
-			t.button(cont.name, run(() => cont.click && cont.click())).size(120, 40).disabled(new Boolf({get:() => !!cont.disabled})).row();
+			t.button(cont.name, run(() => cont.click && cont.click())).size(120, 40).disabled(boolf(() => !!cont.disabled)).row();
 		})
 	},
 	buildConfiguration(table){

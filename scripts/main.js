@@ -1,12 +1,14 @@
 
 importPackage(Packages.arc.files);
 
+this.boolc = method => new Boolc({get: method})
 require('updateData');
 
 var useable = require('testFi').useable;
 
-this.contArr = ['tester', 'makeMod', 'other'].map(str => {
+this.contArr = ['tester', 'makeMod', 'settings', 'other'].map(str => {
 	// Log.info('Loaded ' + modName + ' \'s function ' + str);
+	if (!Core.settings.get(modName + '-load-' + str, true)) return
 	/* 不让游戏崩溃 */
 	try {
 		var cont = require('content/' + str).cont;
