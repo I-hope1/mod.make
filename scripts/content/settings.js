@@ -1,6 +1,6 @@
 
 exports.cont = {
-	name: 'settings',
+	name: 'settings', tables: {},
 	load() {
 		let ui = this.ui = new BaseDialog('$settings')
 		let arr = ['tester', 'makeMod', 'other'], arr2 = ['lastlog', 'unit_spawn', 'showcrashes', 'select']
@@ -20,7 +20,13 @@ exports.cont = {
 					.disabled(boolf(() => !Core.settings.get(modName + '-load-other', true))).row()
 				})
 			})).growX().left().padLeft(10)
-		})).growX().left().padLeft(16)
+		})).growX().left().padLeft(16).row()
+
+		let tables = this.tables;
+		for (let k in tables) {
+			cont.add(k).growX().left().row();
+			cont.add(tables[k]).growX().left().padLeft(16).row()
+		}
 		this.ui.addCloseButton()
 	},
 	buildConfiguration(){

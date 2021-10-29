@@ -1,6 +1,6 @@
 
 exports.cont = {
-	name: Core.bundle.get('unit_spawn', 'unit_spawn'), get disabled(){return Vars.state.isMenu()},
+	name: 'unit_spawn', get disabled(){return Vars.state.isMenu()},
 	load(){
 		let ui = this.ui = new BaseDialog(this.name);
 		this.unit = null; // 默认单位为null

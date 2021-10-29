@@ -2,10 +2,10 @@
 importPackage(Packages.arc.files);
 
 this.boolc = method => new Boolc({get: method})
-require('updateData');
+
+require('ui/updateData')
 
 var useable = require('testFi').useable;
-
 this.contArr = ['tester', 'makeMod', 'settings', 'other'].map(str => {
 	// Log.info('Loaded ' + modName + ' \'s function ' + str);
 	if (!Core.settings.get(modName + '-load-' + str, true)) return
@@ -18,4 +18,6 @@ this.contArr = ['tester', 'makeMod', 'settings', 'other'].map(str => {
 	}
 	return null;
 });
-require('frag');
+// this.bc = require('func/buildContent')
+
+require('ui/frag')

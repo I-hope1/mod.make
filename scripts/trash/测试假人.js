@@ -28,4 +28,4 @@ let unit = new JavaAdapter(UnitType, {
 	}
 }, '测试假人');
 unit.localizedName = '测试假人';
-unit.constructor = prov(() => new JavaAdapter(Unit, {}));
+unit.constructor = prov(() => new JavaAdapter(UnitEntity, {}));

@@ -39,7 +39,7 @@ elements[Core.bundle.get('effectConstructor.localizedName', '特效制作')] = {
 				table.row();
 				table.button(cons(b => {
 					b.label(() => '$' + this.__type);
-				}), IntStyles[1], run(() => {
+				}), IntStyles.clearb, run(() => {
 					showSelectTable(table, (p, hide) => {
 						for(let i in arr){
 							let value = arr[i];

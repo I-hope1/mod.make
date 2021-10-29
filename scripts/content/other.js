@@ -18,7 +18,9 @@ exports.cont = {
 		let t = this.ui = new Table;
 		this.all.forEach(cont => {
 			if (cont == null) return;
-			cont.load();
+			if (cont.load instanceof Function) cont.load();
+			cont.name = Core.bundle.get(cont.name, cont.name)
+
 			t.button(cont.name, run(() => cont.click && cont.click())).size(120, 40).disabled(boolf(() => !!cont.disabled)).row();
 		})
 	},

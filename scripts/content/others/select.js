@@ -1,7 +1,8 @@
 const IntFunc = require('func/index');
+const SettingsTables = require('content/settings').cont.tables;
 
 exports.cont = {
-	name: Core.bundle.get('select', 'select'), show: false, get disabled() { return Vars.state.isMenu() },
+	name: 'select', show: false, get disabled() { return Vars.state.isMenu() },
 	tables: [],
 	select: {
 		tile: Core.settings.get(modName + '-select-tile', false),
@@ -17,25 +18,26 @@ exports.cont = {
 	loadSettings() {
 		let settings = this.settingsUi = new BaseDialog('$settings')
 		settings.cont.table(cons(t => {
-			t.add(this.name).row();
+			SettingsTables[this.name] = t;
+			t.left().defaults().left()
 			t.check('tile', this.select.tile, boolc(b => {
 					if (b) this.tables[0].setup()
 					else this.tables[0].clearChildren()
 					Core.settings.put(modName + '-select-tile', b)
 				}
-			)).marginLeft(6).row();
+			)).row();
 			t.check('building', this.select.building, boolc(b => {
 					if (b) this.tables[1].setup()
 					else this.tables[1].clearChildren()
 					Core.settings.put(modName + '-select-building', b)
 				}
-			)).marginLeft(6).row();
+			)).row();
 			t.check('floor', this.select.floor, boolc(b => {
 					if (b) this.tables[2].setup()
 					else this.tables[2].clearChildren()
 					Core.settings.put(modName + '-select-floor', b)
 				}
-			)).marginLeft(6);
+			));
 		})).row()
 		settings.addCloseButton()
 	},
@@ -84,9 +86,11 @@ exports.cont = {
 				let v2 = Core.camera.unproject(x2, y2).cpy();
 				for (let y = v1.y; y < v2.y; y += Vars.tilesize) {
 					for (let x = v1.x; x < v2.x; x += Vars.tilesize) {
-						var tile = Vars.world.tileWorld(x, y);
-						if (_this.select.tile || _this.select.floor) tiles.arr.push(tile);
-						if (_this.select.building && tile.build != null && !buildings.arr.includes(tile.build)) buildings.arr.push(tile.build);
+						let tile = Vars.world.tileWorld(x, y);
+						if (tile != null) {
+							if (_this.select.tile || _this.select.floor) tiles.arr.push(tile);
+							if (_this.select.building && tile.build != null && !buildings.arr.includes(tile.build)) buildings.arr.push(tile.build);
+						}
 					}
 				}
 

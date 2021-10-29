@@ -1,5 +1,5 @@
 
-Events.on(ClientLoadEvent, e => {
+Events.on(ClientLoadEvent, () => {
 	/* 浮窗 */
 	const frag = extend(Table, {
 		cont: new Table,
@@ -21,9 +21,11 @@ Events.on(ClientLoadEvent, e => {
 		}));
 	frag.row();
 	frag.table(Tex.whiteui, cons(t => {
+		let arr = [];
 		contArr.forEach(cont => {
 			if (cont == null) return;
-			if (cont.load instanceof Function) cont.load();
+			if (cont.load instanceof Function) arr[cont.name == 'settings' ? 'push' : 'unshift'](cont);
+			cont.name = Core.bundle.get(cont.name, cont.name)
 
 			cont.btn = t.button(cont.name, Styles.cleart, run(() => {
 				frag.cont.clearChildren();
@@ -31,6 +33,7 @@ Events.on(ClientLoadEvent, e => {
 			})).size(120, 40).get();
 			t.row();
 		})
+		arr.forEach(c => c.load());
 	})).row();
 	frag.table(Styles.black3, cons(t => t.add(frag.cont))).fillX();
 	frag.left().bottom();

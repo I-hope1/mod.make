@@ -1,5 +1,5 @@
 
-const IntStyles = require('styles');
+const IntStyles = require('ui/styles');
 
 exports.cont = {
 	name: 'crashes', needFi: true,
@@ -20,10 +20,10 @@ exports.cont = {
 				p.button(cons(b => {
 					b.add(this.all[i].nameWithoutExtension());
 					b.update(run(() => b.setDisabled(this.select instanceof Packages.arc.files.Fi && this.select.nameWithoutExtension() == b.children.get(0).getText())));
-				}), IntStyles[1].cont, run(() => this.select = fi)).height(45).row();
+				}), IntStyles.clearb, run(() => this.select = fi)).height(45).row();
 			}
 		})).pad(40).fillX().maxHeight(Core.graphics.getHeight() * 0.6).row();
-		this.ui.cont.pane(cons(p => p.label(() => this.select ? this.select.readString() : ''))).fillX().height(Core.graphics.getHeight() * .2).style(IntStyles[0].cont);
+		this.ui.cont.pane(cons(p => p.label(() => this.select ? this.select.readString() : ''))).fillX().height(Core.graphics.getHeight() * .2).style(IntStyles.nonePane);
 
 		this.ui.show();
 	}

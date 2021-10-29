@@ -1,7 +1,6 @@
 
-const IntStyles = require('styles');
 var meta = Vars.mods.locateMod(modName).meta
-Events.on(ClientLoadEvent, e => {
+Events.on(ClientLoadEvent, () => {
 	// 更新日志弹窗
 	if (Core.settings.get(modName + '-不再显示', false)) return;
 	// 更新日志函数
@@ -34,14 +33,14 @@ Events.on(ClientLoadEvent, e => {
 		t.table(cons(t => {
 			t.defaults().left()
 			t.add('若发现bug可以到')
-			t.add('github').color(Color.gray).get().clicked(() => Core.app.openURI('https://github.com/I-hope1/mod.make/issues'));
+			t.add('github', ).color(Color.gray).get().clicked(() => Core.app.openURI('https://github.com/I-hope1/mod.make/issues'));
 			t.add('报告.')
 		})).row()
 		t.add(
 			'\n[red]本mod未经允许禁止转载!!!\n[white]以下是更新日志'
 		).row()
 		t.image().fillX().color(Color.gray).padTop(2).padBottom(2).row();
-		t.add('1. 修复了一堆bug.\n2. 优化了代码.').row();
+		t.add('1. 修复了一堆bug.\n2. 优化了代码.').padBottom(2).row();
 		t.button('历史更新内容', run(() => {
 			let dialog = new BaseDialog('历史更新日志');
 			dialog.cont.pane(cons(p => {
@@ -58,7 +57,7 @@ Events.on(ClientLoadEvent, e => {
 				fun(p, '2.21-beta', '更新内容：修复了bug');
 				fun(p, '2.23-beta', '更新内容：\n1.优化了代码.\n2.添加一些jso代码编辑程序，让你能更轻松的写json代码.\n3.优化代码编辑.\n4.修了一些bug.', true);
 				fun(p, '2.24-beta', '更新内容：\n1. 优化ui.\n2. 修复bug.');
-				fun(p, '2.4-beta', '更新内容:\n1. 优化ui.\n2. 修复bug.\n3. 完善select.')
+				fun(p, '2.4-beta', '更新内容:\n1. 优化ui.\n2. 修复bug.\n3. 完善select.\n4. 优化代码.\n5. 完善makeMod.\n更多详情可以在Github查看.');
 			})).fillX().fillY();
 			dialog.addCloseButton();
 			dialog.show();
@@ -71,5 +70,7 @@ Events.on(ClientLoadEvent, e => {
 		_t.check(Core.bundle.get('not_show_again', 'not show again'), boolc(b => Core.settings.put(modName + '-not_show_again', b)
 		));
 	}));
+
+	t.closeOnBack();
 	t.show();
 });

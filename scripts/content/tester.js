@@ -1,15 +1,11 @@
 
-const IntStyles = require('styles');
+const IntStyles = require('ui/styles');
+const IntFunc = require('func/index')
 const scripts = Vars.mods.scripts
 
 this[modName + '_main'] = this
-const forIn = (obj, str) => {
-	var jg = [];
-	for(var e in obj){
-		jg.push(e + ': ' + obj[e]);
-	}
-	return str == null ? jg : jg.join(str);
-};
+
+const forIn = IntFunc.forIn;
 const testElement = table => {
 	let ui = new Dialog('');
 	ui.cont.pane(cons(p => p.add(table))).size(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) - 100).grow().row();
@@ -18,10 +14,10 @@ const testElement = table => {
 };
 const testEffect = str => {
 	let dialog = testTable(extend(Table, {
-		draw(){
-			try{
+		draw() {
+			try {
 				eval(str);
-			}catch(e){
+			} catch (e) {
 				Vars.ui.showErrorMessage(e);
 				this.remove();
 				dialog.hide();
@@ -34,9 +30,9 @@ const testEffect = str => {
 var useable = require('testFi').useable;
 exports.cont = {
 	name: Core.bundle.get('test.name', 'test'),
-	log:'', message:'', 'while':false, wrap:false, // scope: false,
+	log: '', message: '', 'while': false, wrap: false, // scope: false,
 	record: useable ? Vars.dataDirectory.child('mods(I hope...)').child('historical record') : null,
-	show(table, buttons){
+	show(table, buttons) {
 		let cont = new Table();
 		let w = Core.graphics.getWidth() > Core.graphics.getHeight() ? 540 : 440, h = Core.graphics.getHeight() * .4;
 
@@ -79,31 +75,30 @@ exports.cont = {
 						list.sort((a, b) => b.name() - a.name()).forEach((f, i) => {
 							let f = list[i];
 							p.table(Tex.button, cons(t => {
-								t.left().button(cons(b => {
+								let btn = t.left().button(cons(b => {
 									b.pane(cons(c => c.add(f.child('message.txt').readString()).left())).fillY().fillX().left();
-								}), IntStyles[1].cont, run(() => {})).height(70).minWidth(400).growX().fillX().left().get().addListener(extend(ClickListener, {
-									clicked(event, x, y){
-										if(this.visualPressedTime - this.lastTapTime > 700){
-											let ui = new Dialog('');
-											ui.cont.pane(cons(p => {
-												p.add(i.child('message.txt').readString()).row();
-												p.image().height(3).fillX().row();
-												p.add(f.child('log.txt').readString());
-											})).size(400).row();
-											ui.cont.button(Icon.trash, run(() => {
-												ui.hide();
-												f.delete();
-											})).row();
-											ui.cont.button('$ok', run(() => ui.hide())).fillX().height(60);
-											ui.show();
-										}else{
-											_this.message = f.child('message.txt').readString();
-											_this.log = f.child('log.txt').readString();
-											_this.setup();
-											dialog.hide();
-										}
+								}), IntStyles.clearb, run(() => { })).height(70).minWidth(400).growX().fillX().left().get()
+								IntFunc.longPress(btn, 600, longPress => {
+									if (longPress) {
+										let ui = new Dialog('');
+										ui.cont.pane(cons(p => {
+											p.add(i.child('message.txt').readString()).row();
+											p.image().height(3).fillX().row();
+											p.add(f.child('log.txt').readString());
+										})).size(400).row();
+										ui.cont.button(Icon.trash, run(() => {
+											ui.hide();
+											f.delete();
+										})).row();
+										ui.cont.button('$ok', run(() => ui.hide())).fillX().height(60);
+										ui.show();
+									} else {
+										_this.message = f.child('message.txt').readString();
+										_this.log = f.child('log.txt').readString();
+										_this.setup();
+										dialog.hide();
 									}
-								}));
+								});
 								t.button('', Icon.trash, Styles.cleart, run(() => f.deleteDirectory() && p.children.get(i).remove())).fill().right();
 							})).width(w).row();
 						});
@@ -119,28 +114,27 @@ exports.cont = {
 						let _this = this;
 						list.forEach((f, i) => {
 							p.table(Tex.button, cons(t => {
-								t.left().button(cons(b => {
+								let btn = t.left().button(cons(b => {
 									b.pane(cons(c => c.add(f.readString()))).left().fillY().fillX().left();
-								}), IntStyles[1].cont, run(() => {})).height(70).minWidth(400).growX().left().fillX().get().addListener(extend(ClickListener, {
-									clicked(event, x, y){
-										if(this.visualPressedTime - this.lastTapTime > 700){
-											let ui = new Dialog('');
-											ui.cont.pane(cons(p => {
-												p.add(f.readString()).row();
-											})).size(400).row();
-											ui.cont.button(Icon.trash, run(() => {
-												ui.hide();
-												f.delete();
-											})).row();
-											ui.cont.button('$ok', run(() => ui.hide())).fillX().height(60);
-											ui.show();
-										}else{
-											_this.message = f.readString();
-											_this.setup();
-											dialog.hide();
-										}
+								}), IntStyles.clearb, run(() => { })).height(70).minWidth(400).growX().left().fillX().get();
+								IntFunc.longPress(btn, 600, longPress => {
+									if (longPress) {
+										let ui = new Dialog('');
+										ui.cont.pane(cons(p => {
+											p.add(f.readString()).row();
+										})).size(400).row();
+										ui.cont.button(Icon.trash, run(() => {
+											ui.hide();
+											f.delete();
+										})).row();
+										ui.cont.button('$ok', run(() => ui.hide())).fillX().height(60);
+										ui.show();
+									} else {
+										_this.message = f.readString();
+										_this.setup();
+										dialog.hide();
 									}
-								}));
+								});
 								t.button('', Icon.trash, Styles.cleart, run(() => f.delete() && p.children.get(i).remove())).fill().right();
 							})).width(w).row();
 						});
@@ -165,7 +159,7 @@ exports.cont = {
 				t.row();
 				t.button("@schematic.copy.import", Icon.download, style, run(() => {
 					dialog.hide();
-					text.setText(Core.app.getClipboardTe.xt());
+					text.setText(Core.app.getClipboardText());
 				})).marginLeft(12);
 
 				t.row();
@@ -182,51 +176,53 @@ exports.cont = {
 			dialog.show();
 		})).size(210, 64);
 	},
-	setup(){
+	setup() {
 		this.ui.cont.clear();
 		this.ui.buttons.clear();
 
 		this.ui.cont.pane(cons(p => this.show(p, this.ui.buttons))).fillX().fillY();
 	},
-	buildConfiguration(table){
-		this.ui = new BaseDialog(this.name);
+	buildConfiguration(table) {
 		this.setup();
 		this.ui.show();
 
 		table.update(run(() => {
-			if(this.while && this.message != '') this.evalMessage();
+			if (this.while && this.message != '') this.evalMessage();
 		}));
 	},
-	evalMessage(){
+	evalMessage() {
 		let def = this.message
 		def = this.wrap ? '(function(){"use strict";' + def + '\n})();' : def
-		this.log = Vars.mods.scripts.runConsole(def);
+		this.log = scripts.runConsole(def);
 		// try{
-			// let print = text => log(this.name, text);
-			// this.log = '' + eval(this.message);
+		// let print = text => log(this.name, text);
+		// this.log = '' + eval(this.message);
 		// }catch(e){
-			// let str = e.message.replace(/\([^]*/g, '');
-			// let arr = str.split(' '), arr2 = [];
-			// for(let i in arr){
-				// try{
-					// if(/number|string/i.test(typeof eval(arr[i]))) arr2.push(arr.splice(i, 1));
-				// }catch(e){continue;};
-			// }
-			// let str2 = arr.join('-').replace(/\:/g, '~');
-			// this.log = '[red][' + Core.bundle.get(e.name, e.name) + '][gray]: [white]' + (!Core.bundle.has(str2) ? str : arr2.length ? Core.bundle.format(str2, eval('' + arr2)) : Core.bundle.get(str2)) + '[#ccccff](#' + e.lineNumber + ')[]';
+		// let str = e.message.replace(/\([^]*/g, '');
+		// let arr = str.split(' '), arr2 = [];
+		// for(let i in arr){
+		// try{
+		// if(/number|string/i.test(typeof eval(arr[i]))) arr2.push(arr.splice(i, 1));
+		// }catch(e){continue;};
+		// }
+		// let str2 = arr.join('-').replace(/\:/g, '~');
+		// this.log = '[red][' + Core.bundle.get(e.name, e.name) + '][gray]: [white]' + (!Core.bundle.has(str2) ? str : arr2.length ? Core.bundle.format(str2, eval('' + arr2)) : Core.bundle.get(str2)) + '[#ccccff](#' + e.lineNumber + ')[]';
 		// }
 	},
 	load() {
+		this.ui = new BaseDialog(this.name);
+		this.ui.addCloseListener();
+		
 		scripts.runConsole(('const forIn = ' + forIn).replace(/\n/g, '') + (';const testElement = ' + testElement).replace(/\n/g, ''));
 	},
-	read(stream, revision){
+	read(stream, revision) {
 		this.super$read(stream, revision);
 
 		this.message = stream.str();
 		this.log = stream.str();
 		this.while = !!stream.b();
 	},
-	write(stream){
+	write(stream) {
 		this.super$write(stream);
 
 		stream.str('' + this.message);
