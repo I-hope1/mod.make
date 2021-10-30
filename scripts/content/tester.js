@@ -1,5 +1,5 @@
 
-const IntStyles = require('ui/styles');
+const IntStyles = require('scene/styles');
 const IntFunc = require('func/index')
 const scripts = Vars.mods.scripts
 

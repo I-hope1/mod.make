@@ -1,8 +1,8 @@
 const IntFunc = require('func/index');
-const IntStyles = require('ui/styles');
-const Fields = require('ui/Fields');
-const scripts = require('ui/scripts');
-const addBtn = require('ui/addFieldBtn');
+const IntStyles = require('scene/styles');
+const Fields = require('scene/ui/components/Fields');
+const scripts = require('scene/ui/scripts');
+const addBtn = require('scene/ui/components/addFieldBtn');
 
 const Classes = Packages.mindustry.mod.ClassMap.classes;
 

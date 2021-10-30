@@ -1,8 +1,8 @@
 
-const IntStyles = require('ui/styles')
+const IntStyles = require('scene/styles')
 const IntFunc = require('func/index')
-const ModEditor = require('ui/dialogs/ModEditor')
-const ModMetaEditor = require('ui/dialogs/ModMetaEditor')
+const ModEditor = require('scene/ui/dialogs/ModEditor')
+const ModMetaEditor = require('scene/ui/dialogs/ModMetaEditor')
 
 function newMod(file) {
 	let meta = IntFunc.HjsonParse(

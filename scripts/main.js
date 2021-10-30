@@ -3,7 +3,7 @@ importPackage(Packages.arc.files);
 
 this.boolc = method => new Boolc({get: method})
 
-require('ui/updateData')
+require('scene/ui/updateData')
 
 var useable = require('testFi').useable;
 this.contArr = ['tester', 'makeMod', 'settings', 'other'].map(str => {
@@ -20,4 +20,4 @@ this.contArr = ['tester', 'makeMod', 'settings', 'other'].map(str => {
 });
 // this.bc = require('func/buildContent')
 
-require('ui/frag')
+require('scene/ui/frag')

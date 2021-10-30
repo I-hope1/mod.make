@@ -1,7 +1,7 @@
-const IntStyles = require('ui/styles');
+const IntStyles = require('scene/styles');
 const IntFunc = require('func/index');
-const JsonDialog = require('ui/dialogs/JsonDialog');
-const Editor = require('ui/dialogs/Editor');
+const JsonDialog = require('scene/ui/dialogs/JsonDialog');
+const Editor = require('scene/ui/dialogs/Editor');
 
 // 语言
 const bundles = [
@@ -110,9 +110,7 @@ exports.constructor = function(mod){
 		Table(Styles.none, cons(t => {
 			t.center();
 			t.defaults().padTop(10).left();
-			let color = Color.valueOf('#ccccff');
 			let content = mod.file.child('content');
-			let files = content.findAll().toArray();
 			let cont = new Table();
 			cont.defaults().padTop(10).left();
 
@@ -123,13 +121,16 @@ exports.constructor = function(mod){
 				body.top().left();
 				body.defaults().padTop(2).top().left();
 				cont.pane(cons(p => p.add(body).left().grow().get().left())).fillX().minWidth(450).row();
-				let files = filter instanceof RegExp ? content.findAll().toArray().map(e => filter.test(e) ? e : null) :
-					filter instanceof Cons ? content.findAll().toArray().map(e => filter.get(e)) :
-						filter == '' ? content.findAll().toArray() : content.child('' + filter).findAll().toArray();
-
-				for (let i = 0, len = files.length; i < len; i++) {
-					let json = files[i];
-					if (json != null && !/^h?json$/.test(json.extension())) continue;
+				let reg = /^\/.+?\/$/;
+				content.findAll().each(boolf(c => {
+					try {
+						return reg.test(filter) ? RegExp(filter).test(c.path()) :
+						/^name:\w*/.test(filter) ? RegExp(filter.replace(/^name:/).test(c.nameWithoutExtension())) :
+						/^type:\w*/.test(filter) ? RegExp(filter.replace(/^type:/).test(c.path().replace(/.+\/content\/(\w+s).+/, '$1'))) :
+						filter == '';
+					} catch (e) { return false }
+				}), cons(json => {
+					if (json != null && !/^h?json$/.test(json.extension())) return;
 
 					body.button(cons(b => {
 						b.left()
@@ -153,7 +154,7 @@ exports.constructor = function(mod){
 							}
 						});
 					}), Styles.defaultb, run(() => { })).fillX().minWidth(400).pad(2).padLeft(4).left().row();
-				}
+				}))
 			}
 			setup();
 

@@ -1,7 +1,7 @@
 
 const IntFunc = require('func/index');
-const add = require('ui/addFieldBtn');
-const Fields = require('ui/Fields');
+const add = require('scene/ui/components/addFieldBtn');
+const Fields = require('scene/ui/components/Fields');
 const Classes = exports.classes = Packages.mindustry.mod.ClassMap.classes;
 
 const lang = Packages.java.lang

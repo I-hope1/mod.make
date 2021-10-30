@@ -1,4 +1,4 @@
-const Editor = require('ui/dialogs/Editor')
+const Editor = require('scene/ui/dialogs/Editor')
 
 let dialog, label, p
 exports.load = function(){

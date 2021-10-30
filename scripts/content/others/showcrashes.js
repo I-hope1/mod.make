@@ -1,5 +1,5 @@
 
-const IntStyles = require('ui/styles');
+const IntStyles = require('scene/styles');
 
 exports.cont = {
 	name: 'crashes', needFi: true,

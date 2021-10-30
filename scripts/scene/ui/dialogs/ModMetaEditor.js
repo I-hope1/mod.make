@@ -1,6 +1,6 @@
 
 const IntFunc = require('func/index')
-const IntModsDialog = require('ui/dialogs/ModsDialog')
+const IntModsDialog = require('scene/ui/dialogs/ModsDialog')
 const modsDirectory = Vars.dataDirectory.child('mods(I hope...)').child('mods');
 
 const write = mod => {

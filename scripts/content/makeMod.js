@@ -1,7 +1,7 @@
 
 const buildContent = require('func/buildContent');
-const Editor = require('ui/dialogs/Editor');
-const IntModsDialog = require('ui/dialogs/ModsDialog')
+const Editor = require('scene/ui/dialogs/Editor');
+const IntModsDialog = require('scene/ui/dialogs/ModsDialog')
 
 // const Contents = Vars.content.blocks().toArray().concat(Vars.content.liquids().toArray()).concat(Vars.content.items());
 
