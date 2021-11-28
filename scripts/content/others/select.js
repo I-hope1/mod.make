@@ -200,7 +200,7 @@ exports.cont = {
 				IntFunc.showSelectImageTableWithIcons(btn1, arr, icons, null, 40, 32, cons(team =>
 					buildings.arr.forEach(b => b.changeTeam(team))
 				), 3, false)
-			}).height(H).growX().right()
+			}).height(H).growX().right().get()
 			t.row()
 			t.button('Kill', () => {
 				buildings.arr.forEach(b => b.kill());
