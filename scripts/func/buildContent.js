@@ -1,7 +1,10 @@
 
 const IntFunc = require('func/index');
+const types = require('scene/ui/dialogs/Editor').types
 const add = require('scene/ui/components/addFieldBtn');
+const typeSelection = require('scene/ui/components/typeSelection');
 const Fields = require('scene/ui/components/Fields');
+const IntObject = require('func/constructor').Object;
 const Classes = exports.classes = Packages.mindustry.mod.ClassMap.classes;
 
 const lang = Packages.java.lang
@@ -30,7 +33,12 @@ exports.filterClass = ObjectMap.of(
 		return prov(() => '"' + color + '"')
 	},
 	BulletType, (table, value) => {
-		let map = fObject(table, Classes.get(value.type) || Classes.get('BulletType'), value)
+		table = table.table().get()
+		let typeName = value.remove('type') || 'BulletType'
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, { bullet: types.bullet });
+		table.add(selection.table).padBottom(4).row()
+		let cont = table.table().name('cont').get()
+		let map = fObject(cont, prov(() => selection.type), value, Seq([BulletType]))
 		return map
 	},
 	/* AmmoType, (table, value) => {},
@@ -38,12 +46,14 @@ exports.filterClass = ObjectMap.of(
 	Ability, (table, value) => {},
 	Weapon, (table, value) => {}, */
 	ItemStack, (table, value) => {
-		let [item, amount] = typeof value == 'string' ?
-			value.split('/') : [value.item, value.amount],
-			items = Vars.content.items().toArray()
+		let [item, amount] =
+			typeof value == 'string' ? value.split('/') :
+			value instanceof IntObject ? [value.get('item'), value.get('amount')] : [Items.copper, 0];
+
+		let items = Vars.content.items().toArray()
 
 		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Item.'
-		if (isNaN(amount)) throw 'Unable to convert \'' + amount + '\' to Number';
+		if (isNaN(amount)) throw TypeError('\'' + amount + '\' isn\'t a number')
 		let output = IntFunc.buildOneStack(table, 'item', items, item, amount)
 		return prov(() => '{item:' + output[0].get() + ', amount:' + output[1].get() + '}');
 	},
@@ -54,7 +64,7 @@ exports.filterClass = ObjectMap.of(
 			items = Vars.content.liquids().toArray()
 
 		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Liquid.'
-		if (isNaN(amount)) throw 'Unable to convert ' + amount + ' to Number';
+		if (isNaN(amount)) throw TypeError('\'' + amount + '\' isn\'t a number')
 		let output = IntFunc.buildOneStack(table, 'liquid', items, item, amount)
 		return prov(() => '{liquid:' + output[0].get() + ', amount:' + output[1].get() + '}');
 	},
@@ -116,7 +126,7 @@ exports.make = function (type) {
 }
 exports.parse = (new JsonReader).parse
 
-function fObject(t, type, value) {
+function fObject(t, type, value, typeBlackList) {
 	let table = new Table, children = new Table,
 		fields = new Fields.constructor(value, type, children);
 	value = fields.map
@@ -129,27 +139,31 @@ function fObject(t, type, value) {
 			if (add.filter(type.getField(k)))  */fields.add(null, k)/* ;
 		} catch(e) { continue } */
 	})
-	table.add(add.constructor(value, fields, prov(() => type))).fillX().growX()
-	return prov(() => '{\n' + value + '\n}')
+	table.add(add.constructor(value, fields, type)).fillX().growX()
+	return prov(() => {
+		if (!typeBlackList.contains(type.get())) value.put('type', type.get().getSimpleName())
+		return value
+	})
 }
 
-function addItem(type, fields, array, i, value) {
+function addItem(type, fields, i, value) {
 	let t = new Table;
-	exports.build(type, array, [t, i, value || array[i], fields, i], true)
+	exports.build(type, fields, t, i, value, true)
 	fields.add(t, i)
 }
 function fArray(t, vType, v) {
 	let table = new Table, children = new Table,
-		cType = vType,
-		fields = new Fields.constructor(v, vType, children)
+		fields = new Fields.constructor(v, prov(() => vType), children)
 	children.center().defaults().center().minWidth(100)
 	table.add(children).row()
 	t.add(table)
-	for (let i = 0; i < v.length; i++) {
-		addItem(cType, fields, v, i)
+	v = fields.map
+	let len = v.length
+	for (var j = 0; j < len; j++) {
+		addItem(vType, fields, j, v[j])
 	}
 	table.button('$add', () => {
-		addItem(cType, fields, v, v.length, exports.make(cType))
+		addItem(vType, fields, v.length, {})
 	}).fillX()
 	return prov(() => v)
 }
@@ -162,15 +176,15 @@ exports.getGenericType = function (field) {
 
 const lstr = lang.String
 /* 构建table */
-exports.build = function (type, map, arr, isArray) {
+exports.build = function (type, fields, t, k, v, isArray) {
 	function fail() {
 		let field = new TextField('' + v)
 		t.add(field);
 		return prov(() => field.getText().replace(/\s*/, '') != '' ? field.getText() : '""')
 	}
-	let [t, k, v, fields, i] = arr;
+	let map = fields.map
 
-	if (!isArray) t.left().add(Core.bundle.get('content.' + k, k) + ':').fillX().left().padLeft(2).padRight(6);
+	if (!isArray) t.add(Core.bundle.get('content.' + k, k) + ':').fillX().left().padLeft(2).padRight(6);
 
 	let output = (() => {
 
@@ -179,32 +193,35 @@ exports.build = function (type, map, arr, isArray) {
 		try {
 			let field = isArray ? null : type.getField(k)
 			let vType = isArray ? type : field.type
-			if (vType == null || vType.isPrimitive() || vType == lstr) return;
+			if (vType == null || vType.isPrimitive() || vType == lstr) return
 
 			if ((vType.isArray() || vType == Seq) && v instanceof Array) {
 				return fArray(t, vType == Seq ? this.getGenericType(vType)[0] : vType.getComponentType(), v)
 			}
-			else if (false/* vType instanceof ObjectMap */) {
+			// Log.info(k)
+			if (false/* vType instanceof ObjectMap */) {
 				let classes = this.getGenericType(field)
 				return
 			}
-			else if (this.filterClass.containsKey(vType)) {
+			if (this.filterClass.containsKey(vType)) {
 				return this.filterClass.get(vType)(t, v, type)
 			}
+			if (vType + '' == 'boolean') {
+				let label = new Label('' + v)
+				t.button(cons(t => t.add(label)), IntStyles.clearb, () => label.setText(v = !v)).size(130, 45)
+				return prov(() => v)
+			}
 		} catch (e) {
-			if (k != 'type') return
+			Log.err(e)
+			if (this.filterKey.containsKey(k)) {
+				return this.filterKey.get(k)(t, v, type)
+			}
+			return
 		}
 
 		if (this.filterKey.containsKey(k)) {
 			return this.filterKey.get(k)(t, v, type)
 		}
-
-		else if (v instanceof Boolean) {
-			let label = new Label('' + v)
-			t.button(cons(t => t.add(label)), IntStyles.clearb, () => label.setText(v = !v)).size(130, 45)
-			return prov(() => v)
-		}
-
 
 		/* else if (k == 'ammoTypes') {
 			v = v.toArray()
@@ -300,7 +317,7 @@ exports.build = function (type, map, arr, isArray) {
 				p.button('ok', hide).fillX()
 			}, false)).padLeft(2);
 		}
-		right.button('', Icon.trash, Styles.cleart, run(() => fields.remove(i, k)));
+		right.button('', Icon.trash, Styles.cleart, run(() => fields.remove(t, k)));
 	})).right().growX().right();
 }
 

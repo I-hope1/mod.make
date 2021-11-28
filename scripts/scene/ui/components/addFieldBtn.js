@@ -9,7 +9,7 @@ exports.filter = function(field){
 	while (type.isArray()) {
 		type = type.getComponentType()
 	}
-	if (type.isPrimitive() || type == str) return true;
+	if (type.isPrimitive() || type == lstr) return true;
 	// 使用throw跳出循环
 	try {
 		buildContent.filterClass.each(new Cons2({get:(k, v) => {
@@ -22,7 +22,7 @@ exports.filter = function(field){
 	return false
 }
 
-let str = Packages.java.lang.String
+let lstr = Packages.java.lang.String
 exports.constructor = function(obj, Fields, prov){
 	let btn = new TextButton('$add');
 	btn.add(new Image(Icon.add))

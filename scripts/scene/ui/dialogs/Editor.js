@@ -1,8 +1,8 @@
 const IntFunc = require('func/index');
-const IntStyles = require('scene/styles');
 const Fields = require('scene/ui/components/Fields');
 const scripts = require('scene/ui/scripts');
 const addBtn = require('scene/ui/components/addFieldBtn');
+const typeSelection = require('scene/ui/components/typeSelection');
 
 const Classes = Packages.mindustry.mod.ClassMap.classes;
 
@@ -28,14 +28,16 @@ exports.load = function () {
 	for (let i = 0; i < this.contentTypes.length; i += 2) {
 		this.types[this.contentTypes[i + 1]] = []
 	}
-	Classes.each(new Cons2({get:(k, type) => {
-		for (let i = 0; i < this.contentTypes.length; i += 2) {
-			if (this.contentTypes[i].isAssignableFrom(type)) {
-				this.types[this.contentTypes[i + 1]].push(type);
-				break;
+	Classes.each(new Cons2({
+		get: (k, type) => {
+			for (let i = 0; i < this.contentTypes.length; i += 2) {
+				if (this.contentTypes[i].isAssignableFrom(type)) {
+					this.types[this.contentTypes[i + 1]].push(type);
+					break;
+				}
 			}
 		}
-	}}));
+	}));
 
 
 	const Editor = exports.ui = new BaseDialog(Core.bundle.get('code-editor', 'code editor'))
@@ -99,56 +101,33 @@ exports.build = function () {
 		let obj = result.value = IntFunc.HjsonParse(file.readString())
 
 		let parentname = file.parent().name();
-		let type = parentname.slice(0, -1);
+		let typeName = parentname.slice(0, -1);
 		if (obj.get('type') != null && parentname == 'blocks') {
-			result.type = obj.get('type')
+			typeName = obj.get('type')
 			obj.remove('type')
 		}
-		else if (types[type] != null && types[type][0] != null) {
-			result.type = types[type][0].getSimpleName()
-		} else result.type = 'none'
-		result.Class = Classes.get(result.type)
+		else if (types[typeName] != null && types[typeName][0] != null) {
+			typeName = types[typeName][0].getSimpleName()
+		} else typeName = 'none'
 
 		// type接口
-		pane.table(Tex.clear, cons(t => {
-			t.add('$type').padRight(2);
-			let button = new Button(IntStyles.clearb);
-			t.add(button).size(190, 40);
-			button.label(() => Core.bundle.get(result.type.toLowerCase(), result.type)).center().grow().row();
-			button.image().color(Color.gray).fillX();
-			button.clicked(run(() => IntFunc.showSelectTable(button, (p, hide, v) => {
-				p.clearChildren()
-				let reg = RegExp('' + v, 'i')
-				for (let k in types) {
-					p.add(k, Pal.accent).growX().left().row()
-					p.image().color(Pal.accent).fillX().row()
-
-					types[k].forEach(t => {
-						if (v != '' && !reg.test(t.getSimpleName())) return;
-						p.button(Core.bundle.get(t.getSimpleName().toLowerCase(), t.getSimpleName()), Styles.cleart, run(() => {
-							fields.type = result.Class = t
-							result.type = t.getSimpleName();
-							hide.run();
-						})).pad(5).size(200, 65).disabled(result.Class == t).row();
-					})
-				}
-
-				p.add('other', Pal.accent).growX().left().row()
-				p.image().color(Pal.accent).fillX().row()
-				p.button(Core.bundle.get('none', 'none'), Styles.cleart, run(() => {
-					result.type = 'none';
-					hide.run();
-				})).pad(5).size(200, 65).disabled(result.type == 'none').row()
-			}, true)));
-		})).fillX().row();
+		let _types = {};
+		for (let k in types) {
+			if (k == 'bullet') continue
+			_types[k] = types[k];
+		}
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, _types, true);
+		pane.add(selection.table).padBottom(4).row()
+		Object.defineProperty(result, 'type', { get: () => selection.type })
+		Object.defineProperty(result, 'typeName', { get: () => selection.typeName })
 
 		let table = new Table(Tex.whiteui.tint(.4, .4, .4, .9))
-		let fields = new Fields.constructor(result.value, result.Class, table)
+		let fields = new Fields.constructor(obj, prov(() => selection.type), table)
 		pane.table(Tex.button, cons(t => {
 			t.add(table).fillX().pad(4).row();
 
 			// 添加接口
-			t.add(addBtn.constructor(result.value, fields, prov(() => Classes.get(result.type)))).fillX().growX()
+			t.add(addBtn.constructor(result.value, fields, prov(() => Classes.get(selection.typeName)))).fillX().growX()
 			t.row();
 			t.table(cons(t => {
 				/* if (result.type instanceof UnitType) {
@@ -222,9 +201,9 @@ exports.build = function () {
 		})).fillX().row();
 		obj.each((k, v) => {
 			if (k == 'research') return;
-			try {
-				fields.add(null, k);
-			} catch(e) { return }
+			// try {
+			fields.add(null, k);
+			// } catch(e) { return; }
 		})
 	}
 
@@ -233,7 +212,6 @@ exports.build = function () {
 		let str = file.readString().split('\n');
 		let arr = result.value = [];
 		if (str.join('') == '') str.length = 0;
-		Log.info(str.join('\n'))
 		let cont = pane.table(Styles.none).padLeft(3).get();
 		let fun = (from, to) => {
 			let table = cont.table(Tex.button, cons(t => {
@@ -323,23 +301,23 @@ exports.parse = function () {
 	let file = this.file
 	let ext = file.extension()
 	if (ext == 'json' || ext == 'hjson') {
-		let arr = [], obj = result.value;
-		let toClass = IntFunc.toClass, type = result.type, Class = result.Class
-		if (result.type != null){
-			let str = type
-			if (toClass(Item).isAssignableFrom(Class)) str = 'Item'
-			if (toClass(Liquid).isAssignableFrom(Class)) str = 'Liquid'
+		let obj = result.value;
+		let toClass = IntFunc.toClass, typeName = result.typeName, type = result.type
+		if (type != null) {
+			if (toClass(UnitType).isAssignableFrom(type) ||
+				toClass(Item).isAssignableFrom(type) ||
+				toClass(Liquid).isAssignableFrom(type)) return
 
-			arr.push('type: ' + str)
+			if (!obj.has('type')) obj.put('type', typeName)
 		}
 
-		file.writeString(arr.join('\n') + '\n' + obj);
+		file.writeString(obj + '');
 		let dir = this.mod.file.child('content').child(
-			type != 'none' ?
-				(IntFunc.toClass(Block).isAssignableFrom(Class)  ? 'block' :
-				IntFunc.toClass(UnitType).isAssignableFrom(Class) ? 'unit' :
-				IntFunc.toClass(Liquid).isAssignableFrom(Class) ? 'liquid' :Class.getContentType()) + 's'
-				: 'blocks'
+			type != null ?
+				(IntFunc.toClass(Block).isAssignableFrom(type) ? 'block' :
+				IntFunc.toClass(UnitType).isAssignableFrom(type) ? 'unit' :
+				IntFunc.toClass(Liquid).isAssignableFrom(type) ? 'liquid' : type.getContentType()) + 's'
+			: 'blocks'
 		);
 		this.file = dir.child(file.name());
 		file.moveTo(this.file)
@@ -352,7 +330,6 @@ exports.parse = function () {
 	}
 	else if (ext == 'properties') {
 		let arr = result.value;
-		Log.info(file)
 		file.writeString(arr.join('\n'));
 	}
 	else {

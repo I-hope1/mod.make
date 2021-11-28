@@ -12,10 +12,12 @@ exports.cont = {
 				t.check(str, Core.settings.get(modName + '-load-' + str, true), boolc(b => Core.settings.put(modName + '-load-' + str, b)
 				)).row()
 			})
+			t.check(Core.bundle.get('dummy', 'dummy'), Core.settings.get(modName + '-load-dummy', false), boolc(b => Core.settings.put(modName + '-load-dummy', b)
+			)).row()
 			t.table(cons(t => {
 				t.left().defaults().left()
 				arr2.forEach(str => {
-					t.check(str, Core.settings.get(modName + '-load-' + str, true), boolc(b => Core.settings.put(modName + '-load-' + str, b)
+					t.check(str, Core.settings.get(modName + '-load-' + str, false), boolc(b => Core.settings.put(modName + '-load-' + str, b)
 					))
 					.disabled(boolf(() => !Core.settings.get(modName + '-load-other', true))).row()
 				})

@@ -20,4 +20,5 @@ this.contArr = ['tester', 'makeMod', 'settings', 'other'].map(str => {
 });
 // this.bc = require('func/buildContent')
 
+if (Core.settings.get(modName + '-load-dummy', false)) require('content/dummy')
 require('scene/ui/frag')

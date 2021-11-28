@@ -12,32 +12,31 @@ exports.cont = {
 	functionsWidth: 200, functionsHeight: 45,
 
 	hide() {
+		this.frag.hide()
+		this.show = false
 		this.pane.visible = false;
 		this.pane.touchable = Touchable.disabled;
 	},
 	loadSettings() {
-		let settings = this.settingsUi = new BaseDialog('$settings')
+		let settings = this.settingsDialog = new BaseDialog('$settings')
 		settings.cont.table(cons(t => {
 			SettingsTables[this.name] = t;
 			t.left().defaults().left()
 			t.check('tile', this.select.tile, boolc(b => {
-					if (b) this.tables[0].setup()
-					else this.tables[0].clearChildren()
-					Core.settings.put(modName + '-select-tile', b)
-				}
-			)).row();
+				if (b) this.tables[0].setup()
+				else this.tables[0].clearChildren()
+				Core.settings.put(modName + '-select-tile', b)
+			})).row();
 			t.check('building', this.select.building, boolc(b => {
-					if (b) this.tables[1].setup()
-					else this.tables[1].clearChildren()
-					Core.settings.put(modName + '-select-building', b)
-				}
-			)).row();
+				if (b) this.tables[1].setup()
+				else this.tables[1].clearChildren()
+				Core.settings.put(modName + '-select-building', b)
+			})).row();
 			t.check('floor', this.select.floor, boolc(b => {
-					if (b) this.tables[2].setup()
-					else this.tables[2].clearChildren()
-					Core.settings.put(modName + '-select-floor', b)
-				}
-			));
+				if (b) this.tables[2].setup()
+				else this.tables[2].clearChildren()
+				Core.settings.put(modName + '-select-floor', b)
+			}));
 		})).row()
 		settings.addCloseButton()
 	},
@@ -58,15 +57,19 @@ exports.cont = {
 
 		Core.scene.addListener(extend(InputListener, {
 			keyDown(event, keycode) {
-				if (keycode.value == 'Mouse Right') {
-					this.hide()
+				if (keycode.value == 'Escape') {
+					_this.hide()
 				}
 			},
 			touchDown(event, x, y, pointer, button) {
+				if (button + '' != 'Mouse Left') {
+					_this.hide()
+					return this.move = false
+				}
 				x1 = x2 = x;
 				y1 = y2 = y;
-				this.move = false;
-				Time.run(2, () => this.move = true);
+				this.move = true;
+				/* Time.run(2, () => this.move = true); */
 				return _this.show;
 			},
 			touchDragged(event, x, y, pointer) {
@@ -78,6 +81,7 @@ exports.cont = {
 				let [mx, my] = [x2, y2];
 				if (x1 > x2) [x1, x2] = [x2, x1];
 				if (y1 > y2) [y1, y2] = [y2, y1];
+				if (x2 - x1 < Vars.tilesize || y2 - y1 < Vars.tilesize) return _this.hide()
 
 				tiles.arr.length
 					= buildings.arr.length = 0;
@@ -117,7 +121,7 @@ exports.cont = {
 			t.table(cons(right => {
 				right.right().defaults().right()
 				right.button(Icon.settings, Styles.clearTransi, () => {
-					this.settingsUi.show();
+					this.settingsDialog.show();
 				}).size(32)
 				right.button(Icon.cancel, Styles.clearTransi, () => {
 					this.hide();
@@ -188,6 +192,16 @@ exports.cont = {
 			t.button('Infinite health', () => {
 				buildings.arr.forEach(b => b.health = Infinity);
 			}).height(H).growX().right().row();
+			let btn1 = t.button('Team', () => {
+				let arr = Team.baseTeams, icons = []
+				for (let i = 0; i < arr.length; i++) {
+					icons.push(Tex.whiteui.tint(arr[i].color));
+				}
+				IntFunc.showSelectImageTableWithIcons(btn1, arr, icons, null, 40, 32, cons(team =>
+					buildings.arr.forEach(b => b.changeTeam(team))
+				), 3, false)
+			}).height(H).growX().right()
+			t.row()
 			t.button('Kill', () => {
 				buildings.arr.forEach(b => b.kill());
 			}).height(H).growX().right().row();

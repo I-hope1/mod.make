@@ -253,7 +253,7 @@ exports.showSelectListTable = function(button, list, current, width, height, con
 }
 
 /* 顾名思义 */
-exports.showSelectImageTable = function (button, content, current, size, imageSize, cons, cols, searchable) {
+exports.showSelectImageTableWithIcons = function (button, content, icons, current, size, imageSize, cons, cols, searchable) {
 	return this.showSelectTable(button, (p, hide, v) => {
 		p.left();
 		p.clearChildren();
@@ -264,9 +264,9 @@ exports.showSelectImageTable = function (button, content, current, size, imageSi
 			let cont = content[i];
 			if (typeof current == 'string' && current == cont.name) current = cont;
 			// 过滤不满足条件的
-			if (!(reg.test(cont.name) || reg.test(cont.localizedName))) continue;
+			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) continue;
 
-			p.button(new TextureRegionDrawable(cont.icon(Cicon.small)), Styles.cleari, imageSize, run(() => {
+			p.button(icons[i], Styles.cleari, imageSize, run(() => {
 				cons.get(current = cont);
 				hide.run();
 			})).size(size).checked(boolf(() => cont == current))
@@ -274,6 +274,14 @@ exports.showSelectImageTable = function (button, content, current, size, imageSi
 			if (++c % cols == 0) p.row();
 		}
 	}, searchable);
+}
+
+exports.showSelectImageTable = function (button, content, current, size, imageSize, cons, cols, searchable) {
+	let icons = []
+	for (let i = 0; i < content.length; i++) {
+		icons.push(new TextureRegionDrawable(content[i].icon(Cicon.small)))
+	}
+	return this.showSelectImageTableWithIcons(button, content, icons, current, size, imageSize, cons, cols, searchable)
 }
 
 exports.selectionWithField = function(table, items, current, size, imageSize, func, cols, searchable){

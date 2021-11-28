@@ -159,10 +159,11 @@ exports.constructor = function () {
 				right.button(Icon.upload, Styles.clearPartiali, run(() => {
 					let file = Vars.modDirectory;
 					function upload() {
+						file.child(mod.file.name()).deleteDirectory()
 						mod.file.copyTo(file);
 					}
 					if (file.child(mod.file.name()).exists())
-						Vars.ui.showConfirm('覆盖', '同名文件已存在\n是否要覆盖', run(upload));
+						Vars.ui.showConfirm('替换', '同名文件已存在\n是否要替换', run(upload));
 					else upload();
 				})).size(50);
 				right.button(Icon.link, Styles.clearPartiali, run(() => Core.app.openFolder(mod.file.absolutePath()))).size(50);

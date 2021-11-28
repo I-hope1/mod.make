@@ -28,7 +28,7 @@ Events.on(ClientLoadEvent, () => {
 	t.table(cons(t => {
 		t.defaults().left()
 		t.add(
-			'当前版本[gray](' + meta.version + ')[]仍在测试.\n[gray]这意味着:\n[]- JSON成可能出错.\n- 很多内容没有做完.'
+			'当前版本[gray](' + meta.version + ')[]仍在测试.\n[gray]这意味着:\n[]- JSON可能出错.\n- 很多内容没有做完.'
 		).row()
 		t.table(cons(t => {
 			t.defaults().left()

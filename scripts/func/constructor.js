@@ -1,14 +1,17 @@
 
 function array(arr) {
-	Array.apply(this)
-	arr instanceof Array && arr.forEach(item => this.push(item))
-	this.put = (i, v) => this.splice(i, 0, v)
+	let arr = this
+	Array.apply(this, arr instanceof Array ? arr : [])
+	this.put = (i, v) => i >= arr.length ? arr.push(v) : arr[i] = v
 	this.get = i => this[i]
 	this.remove = i => this.splice(i, 1)
 	Object.defineProperty(this, 'toString', {
 		value: function () {
 			let str = []
-			this.forEach(item => str.push(item instanceof Prov ? item.get() : item))
+			for (let i = 0; i < this.length; i++) {
+				let item = this[i]
+				str.push(item instanceof Prov ? item.get() : item)
+			}
 			return '[ ' + str.join(', ') + ' ]'
 		}
 	})
@@ -27,7 +30,6 @@ function object(obj) {
 	this.remove = k => map.remove(k)
 	this.get = k => map.get(k)
 	this.has = k => map.containsKey(k)
-	let tmp
 	this.getDefault = (k, def) => map.get(k, prov(() => def))
 	this.put = (k, v) => map.put(k, v)
 	this.each = function(method){
@@ -41,7 +43,7 @@ function object(obj) {
 		value: function () {
 			let str = []
 			this.each((k, v) => str.push(k + ': ' + (v instanceof Prov ? v.get() : v)))
-			return str.join('\n')
+			return '{\n' + str.join('\n') + '\n}'
 		}
 	})
 }
