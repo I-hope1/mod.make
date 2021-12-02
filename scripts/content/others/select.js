@@ -1,5 +1,5 @@
 const IntFunc = require('func/index');
-const SettingsTables = require('content/settings').cont.tables;
+const IntSettings = require('content/settings').cont;
 
 exports.cont = {
 	name: 'select', show: false, get disabled() { return Vars.state.isMenu() },
@@ -18,27 +18,24 @@ exports.cont = {
 		this.pane.touchable = Touchable.disabled;
 	},
 	loadSettings() {
-		let settings = this.settingsDialog = new BaseDialog('$settings')
-		settings.cont.table(cons(t => {
-			SettingsTables[this.name] = t;
-			t.left().defaults().left()
-			t.check('tile', this.select.tile, boolc(b => {
-				if (b) this.tables[0].setup()
-				else this.tables[0].clearChildren()
-				Core.settings.put(modName + '-select-tile', b)
-			})).row();
-			t.check('building', this.select.building, boolc(b => {
-				if (b) this.tables[1].setup()
-				else this.tables[1].clearChildren()
-				Core.settings.put(modName + '-select-building', b)
-			})).row();
-			t.check('floor', this.select.floor, boolc(b => {
-				if (b) this.tables[2].setup()
-				else this.tables[2].clearChildren()
-				Core.settings.put(modName + '-select-floor', b)
-			}));
-		})).row()
-		settings.addCloseButton()
+		let t = new Table;
+		t.left().defaults().left()
+		t.check('tile', this.select.tile, boolc(b => {
+			if (b) this.tables[0].setup()
+			else this.tables[0].clearChildren()
+			Core.settings.put(modName + '-select-tile', b)
+		})).row();
+		t.check('building', this.select.building, boolc(b => {
+			if (b) this.tables[1].setup()
+			else this.tables[1].clearChildren()
+			Core.settings.put(modName + '-select-building', b)
+		})).row();
+		t.check('floor', this.select.floor, boolc(b => {
+			if (b) this.tables[2].setup()
+			else this.tables[2].clearChildren()
+			Core.settings.put(modName + '-select-floor', b)
+		}));
+		IntSettings.add(this.name, t)
 	},
 	load() {
 		this.loadSettings()
@@ -120,9 +117,6 @@ exports.cont = {
 		let table = this.pane = new Table(Styles.black5, cons(t => {
 			t.table(cons(right => {
 				right.right().defaults().right()
-				right.button(Icon.settings, Styles.clearTransi, () => {
-					this.settingsDialog.show();
-				}).size(32)
 				right.button(Icon.cancel, Styles.clearTransi, () => {
 					this.hide();
 				}).size(32)

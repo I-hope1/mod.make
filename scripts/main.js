@@ -6,7 +6,7 @@ this.boolc = method => new Boolc({get: method})
 require('scene/ui/updateData')
 
 var useable = require('testFi').useable;
-this.contArr = ['tester', 'makeMod', 'settings', 'other'].map(str => {
+this.contArr = ['settings', 'tester', 'makeMod', 'other'].map(str => {
 	// Log.info('Loaded ' + modName + ' \'s function ' + str);
 	if (!Core.settings.get(modName + '-load-' + str, true)) return
 	/* 不让游戏崩溃 */
