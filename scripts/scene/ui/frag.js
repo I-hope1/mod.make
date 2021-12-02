@@ -21,10 +21,9 @@ Events.on(ClientLoadEvent, () => {
 		}));
 	frag.row();
 	frag.table(Tex.whiteui, cons(t => {
-		let arr = [];
 		contArr.forEach(cont => {
 			if (cont == null) return;
-			if (cont.load instanceof Function) arr[cont.name == 'settings' ? 'push' : 'unshift'](cont);
+			if (cont.load instanceof Function) cont.load();
 			cont.name = Core.bundle.get(cont.name, cont.name)
 
 			cont.btn = t.button(cont.name, Styles.cleart, run(() => {
@@ -33,7 +32,6 @@ Events.on(ClientLoadEvent, () => {
 			})).size(120, 40).get();
 			t.row();
 		})
-		arr.forEach(c => c.load());
 	})).row();
 	frag.table(Styles.black3, cons(t => t.add(frag.cont))).fillX();
 	frag.left().bottom();

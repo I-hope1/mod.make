@@ -123,7 +123,7 @@ exports.find = function (mod, name) {
 	let error = Core.atlas.find('error');
 	let all = mod.spritesAll();
 	return all.length != 0 && (() => {
-		for (var f of all) {
+		for (let f of all) {
 			if (f.name() == name + '.png') return new TextureRegion(new Texture(f));
 		}
 	})() || error;
@@ -161,6 +161,7 @@ exports.doubleClick = function (elem, runs) {
 
 	return elem;
 };
+// 长按事件
 exports.longPress = function (elem, duration, func) {
 	elem.addListener(extend(ClickListener, {
 		clicked(a, b, c) {
@@ -172,7 +173,15 @@ exports.longPress = function (elem, duration, func) {
 }
 
 
-/* 顾名思义 */
+/**
+ * 弹出一个小窗，自己设置内容
+ * @param button 用于定位弹窗的位置
+ * @param fun
+ * * @param p 是Table，你可以添加元素
+ * * @param hide 是一个函数，调用就会关闭弹窗
+ * * @param text 如果 @param 为 true ，则启用。用于返回用户在搜索框输入的文本
+ * @param searchable 可选，启用后会添加一个搜索框
+ */
 exports.showSelectTable = function (button, fun, searchable) {
 	if (typeof fun != 'function') return null;
 	let t = extend(Table, {
@@ -252,7 +261,18 @@ exports.showSelectListTable = function(button, list, current, width, height, con
 	}, searchable);
 }
 
-/* 顾名思义 */
+/**
+ * 弹出一个可以选择内容的窗口（类似物品液体源的选择）
+ * （需要提供图标）
+ * @param content 用于展示可选的内容
+ * @param icons 可选内容的图标
+ * @param curret 选中的内容，null就没有选中任何
+ * @param size 每个内容的元素大小
+ * @param imageSize 每个内容的图标大小
+ * @param cons 选中内容就会调用
+ * * @param cont 提供选中的内容
+ * @param cols 一行的元素数量
+ */
 exports.showSelectImageTableWithIcons = function (button, content, icons, current, size, imageSize, cons, cols, searchable) {
 	return this.showSelectTable(button, (p, hide, v) => {
 		p.left();
@@ -276,6 +296,7 @@ exports.showSelectImageTableWithIcons = function (button, content, icons, curren
 	}, searchable);
 }
 
+// 弹出一个可以选择内容的窗口（无需你提供图标）
 exports.showSelectImageTable = function (button, content, current, size, imageSize, cons, cols, searchable) {
 	let icons = []
 	for (let i = 0; i < content.length; i++) {
