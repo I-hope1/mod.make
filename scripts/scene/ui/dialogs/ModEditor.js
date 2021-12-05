@@ -259,6 +259,8 @@ exports.constructor = function(mod){
 		})),
 		/* scripts */
 		Table(Tex.whiteui.tint(.7, .7, 1, .8), cons(t => {
+			t.add('未完成')
+			return
 			let scripts = mod.file.child('scripts');
 			let main = scripts.child('main.js');
 			main.exists() || main.writeString('');

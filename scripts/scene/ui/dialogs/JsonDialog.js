@@ -31,6 +31,7 @@ exports.load = function(){
 	let listener = extend(VisibilityListener, {
 		hidden:() => {
 			this.file = Editor.file
+			dialog.title.setText(this.file.nameWithoutExtension())
 			label.setText(this.getText())
 			Editor.ui.removeListener(listener)
 			return false;

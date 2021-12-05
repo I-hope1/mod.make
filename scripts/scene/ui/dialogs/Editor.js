@@ -58,9 +58,10 @@ exports.load = function () {
 		/* } catch (e) {
 			Vars.ui.showErrorMessage(e);
 		} */
-		if (fileNameTable.size) {
+		if (fileNameTable.children.size > 0) {
 			let toFile = this.file.parent().child(fileName.getText() + '.' + this.file.extension());
 			this.file.moveTo(toFile);
+			this.file = toFile;
 		}
 		Editor.hide();
 	})).size(220, 70);
@@ -177,7 +178,8 @@ exports.build = function () {
 								5
 							];
 							let button = table.button(Tex.whiteui, Styles.clearToggleTransi, 32, () => {
-								btn.setText(obj.put(k, t.name));
+								obj.put(k, t.name)
+								btn.setText(t.localizedName);
 								hide.run()
 							}).size(40).get();
 							button.getStyle().imageUp = new TextureRegionDrawable(t.uiIcon);
@@ -306,9 +308,9 @@ exports.parse = function () {
 		if (type != null) {
 			if (toClass(UnitType).isAssignableFrom(type) ||
 				toClass(Item).isAssignableFrom(type) ||
-				toClass(Liquid).isAssignableFrom(type)) return
+				toClass(Liquid).isAssignableFrom(type)) {}
 
-			if (!obj.has('type')) obj.put('type', typeName)
+			else if (!obj.has('type')) obj.put('type', typeName)
 		}
 
 		file.writeString(obj + '');
@@ -316,6 +318,7 @@ exports.parse = function () {
 			type != null ?
 				(IntFunc.toClass(Block).isAssignableFrom(type) ? 'block' :
 				IntFunc.toClass(UnitType).isAssignableFrom(type) ? 'unit' :
+				IntFunc.toClass(Item).isAssignableFrom(type) ? 'Item' :
 				IntFunc.toClass(Liquid).isAssignableFrom(type) ? 'liquid' : type.getContentType()) + 's'
 			: 'blocks'
 		);

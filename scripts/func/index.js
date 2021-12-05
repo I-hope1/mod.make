@@ -266,7 +266,7 @@ exports.showSelectListTable = function(button, list, current, width, height, con
  * （需要提供图标）
  * @param content 用于展示可选的内容
  * @param icons 可选内容的图标
- * @param curret 选中的内容，null就没有选中任何
+ * @param current 选中的内容，null就没有选中任何
  * @param size 每个内容的元素大小
  * @param imageSize 每个内容的图标大小
  * @param cons 选中内容就会调用

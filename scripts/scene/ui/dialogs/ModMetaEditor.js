@@ -51,7 +51,7 @@ exports.load = function(){
 	cont.add(Fields.minGameVersion = new TextField).valid(extend(TextField.TextFieldValidator, {valid(text){
 		let num = +text
 		let valid
-		ok.setDisabled(valid = isNaN(num) || num < 105 || num > Version.build);
+		ok.setDisabled(valid = isNaN(num) || (num < 105) || (num > Version.build))
 		return !valid
 	}})).row()
 
@@ -71,7 +71,8 @@ exports.load = function(){
 
 exports.constructor = function(f){
 	file = f;
-	isNull = f.exists() || file.writeString('')
+	isNull = !f.exists()
+	if (isNull) file.writeString('')
 	obj = IntFunc.HjsonParse(file.readString());
 	ui.title.setText(isNull ? '$mod.create' : '$edit');
 

@@ -61,7 +61,7 @@ exports.load = function (name) {
 				}, 'zip', 'jar');
 			})).margin(12).row();
 			t.button('$mod.add', Icon.add, bstyle, run(() => {
-				ModMetaEditor.constructor(dataDirectory.child('tmp').child('mod.hjson'));
+				ModMetaEditor.constructor(modsDirectory.child('tmp').child('mod.hjson'));
 			})).margin(12)
 		}));
 		dialog.addCloseButton();
