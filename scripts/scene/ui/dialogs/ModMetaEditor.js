@@ -13,6 +13,7 @@ const write = mod => {
 		str.push(item + ': ' + (text.replace(/\s+/, '') == '' ? '""' : text))
 	}
 	mod.child(isNull ? 'mod.json' : 'mod.' + file.extension()).writeString(str.join('\n'));
+	modsDirectory.child('tmp').deleteDirectory()
 	IntModsDialog.constructor()
 	ui.hide();
 }
@@ -43,7 +44,7 @@ exports.load = function(){
 	cont.add('$mod.fileName');
 	cont.add(Fields.fileName = new TextField).valid(extend(TextField.TextFieldValidator, {valid(text){
 		let valid
-		ok.setDisabled(valid = text.replace(/\s/g, '') == '');
+		ok.setDisabled(valid = (text.replace(/\s/g, '') == '') || (text == 'tmp'));
 		return !valid
 	}})).row()
 

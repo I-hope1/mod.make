@@ -115,6 +115,7 @@ exports.constructor = function () {
 	}
 
 	this.mods.forEach(file => {
+		if (file.name() == 'tmp') return;
 		let mod = newMod(file);
 		if (mod == null) return;
 
