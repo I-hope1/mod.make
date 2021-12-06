@@ -1,10 +1,11 @@
 
 const buildContent = require('func/buildContent');
 const IntFunc = require('func/index');
+const IntCons = require('func/constructor');
 const Modifier = Packages.java.lang.reflect.Modifier;
 
 exports.filter = function(field){
-	if (!Modifier.isPublic(field.getModifiers()) || field.getName() == 'id') return false;
+	if (!Modifier.isPublic(field.getModifiers()) || field.getName() == 'id' || /icon/i.test(field.getName())) return false;
 	let type = field.type, name = field.getName()
 	while (type.isArray()) {
 		type = type.getComponentType()
@@ -47,11 +48,11 @@ exports.constructor = function(obj, Fields, prov){
 				if (reg != null && !reg.test(name)) continue
 				table.button(name, Styles.cleart, run(() => {
 					let type = field.type
-					Fields.add(null, name,
-						type.isArray() ? [] :
-						/^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
-						type.getSimpleName() == 'boolean' ? false :
-						type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */{}
+					Fields.add(null, name//,
+						// type.isArray() ? new IntCons.Array() :
+						// /^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
+						// type.getSimpleName() == 'boolean' ? false :
+						// type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */new IntCons.Object()
 					);
 
 					hide.run();

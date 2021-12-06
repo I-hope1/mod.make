@@ -34,6 +34,7 @@ exports.filterClass = ObjectMap.of(
 	},
 	BulletType, (table, value) => {
 		table = table.table().get()
+		value = value || new IntObject();
 		let typeName = value.remove('type') || 'BulletType'
 		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, { bullet: types.bullet });
 		table.add(selection.table).padBottom(4).row()
@@ -193,23 +194,23 @@ exports.build = function (type, fields, t, k, v, isArray) {
 		try {
 			let field = isArray ? null : type.getField(k)
 			let vType = isArray ? type : field.type
-			if (vType == null || vType.isPrimitive() || vType == lstr) return
+			if (vType == null || vType == lstr) {
+				return
+			}
+			if (vType.isPrimitive() && vType + '' == 'boolean'){
+				let btn = t.button('' + v, Styles.cleart, () => btn.setText('' + (v = !v))).size(130, 45).get()
+				return prov(() => v)
+			}
 
 			if ((vType.isArray() || vType == Seq) && v instanceof Array) {
 				return fArray(t, vType == Seq ? this.getGenericType(vType)[0] : vType.getComponentType(), v)
 			}
-			// Log.info(k)
 			if (false/* vType instanceof ObjectMap */) {
 				let classes = this.getGenericType(field)
 				return
 			}
 			if (this.filterClass.containsKey(vType)) {
 				return this.filterClass.get(vType)(t, v, type)
-			}
-			if (vType + '' == 'boolean') {
-				let label = new Label('' + v)
-				t.button(cons(t => t.add(label)), IntStyles.clearb, () => label.setText(v = !v)).size(130, 45)
-				return prov(() => v)
 			}
 		} catch (e) {
 			Log.err(e)
