@@ -17,7 +17,7 @@ exports.filterClass = ObjectMap.of(
 		let color
 		try {
 			color = Color.valueOf(value);
-		} catch (e) { return null; }
+		} catch (e) { color = new Color; }
 		let button = new Button;
 
 		let image = button.image().size(30).color(color);
@@ -128,7 +128,7 @@ exports.make = function (type) {
 exports.parse = (new JsonReader).parse
 
 function fObject(t, type, value, typeBlackList) {
-	let table = new Table, children = new Table,
+	let table = new Table(Tex.button), children = new Table,
 		fields = new Fields.constructor(value, type, children);
 	value = fields.map
 	children.center().defaults().center().minWidth(100)

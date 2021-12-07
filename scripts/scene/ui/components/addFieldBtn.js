@@ -48,11 +48,11 @@ exports.constructor = function(obj, Fields, prov){
 				if (reg != null && !reg.test(name)) continue
 				table.button(name, Styles.cleart, run(() => {
 					let type = field.type
-					Fields.add(null, name//,
-						// type.isArray() ? new IntCons.Array() :
-						// /^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
-						// type.getSimpleName() == 'boolean' ? false :
-						// type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */new IntCons.Object()
+					Fields.add(null, name,
+						type.isArray() ? new IntCons.Array() :
+						/^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
+						type.getSimpleName() == 'boolean' ? false :
+						type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */new IntCons.Object()
 					);
 
 					hide.run();
