@@ -44,8 +44,14 @@ exports.filterClass = ObjectMap.of(
 	},
 	/* AmmoType, (table, value) => {},
 	DrawBlock, (table, value) => {},
-	Ability, (table, value) => {},
-	Weapon, (table, value) => {}, */
+	Ability, (table, value) => {}, */
+	Weapon, (table, value) => {
+		table = table.table().get()
+		value = value || new IntObject()
+		let cont = table.table().name('cont').get()
+		let map = fObject(cont, prov(() => Weapon), value, Seq([Weapon]))
+		return map
+	},
 	ItemStack, (table, value) => {
 		let [item, amount] =
 			typeof value == 'string' ? value.split('/') :
@@ -55,7 +61,7 @@ exports.filterClass = ObjectMap.of(
 
 		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Item.'
 		if (isNaN(amount)) throw TypeError('\'' + amount + '\' isn\'t a number')
-		let output = IntFunc.buildOneStack(table, 'item', items, item, amount)
+		let output = buildOneStack(table, 'item', items, item, amount)
 		return prov(() => '{item:' + output[0].get() + ', amount:' + output[1].get() + '}');
 	},
 	// like ItemStack
@@ -66,7 +72,7 @@ exports.filterClass = ObjectMap.of(
 
 		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Liquid.'
 		if (isNaN(amount)) throw TypeError('\'' + amount + '\' isn\'t a number')
-		let output = IntFunc.buildOneStack(table, 'liquid', items, item, amount)
+		let output = buildOneStack(table, 'liquid', items, item, amount)
 		return prov(() => '{liquid:' + output[0].get() + ', amount:' + output[1].get() + '}');
 	},
 	UnitType, (table, value) => {
@@ -109,7 +115,10 @@ exports.filterKey = ObjectMap.of(
 		}
 
 		return prov(() => val)
-	}
+	},
+	/* 'consumes', (table, value, type) => {
+		
+	} */
 )
 
 exports.load = function () {
@@ -169,10 +178,27 @@ function fArray(t, vType, v) {
 	return prov(() => v)
 }
 
+let cont = Packages.mindustry.ctype.UnlockableContent
+function buildOneStack(t, type, stack, content, amount) {
+	let output = [];
+
+	t.add('$' + type);
+
+	content = content || stack[0]
+	let field = t.field(content instanceof cont ? content.name : '' + content, cons(text => { })).get();
+	output[0] = IntFunc.selectionWithField(t, stack, content, 42, 32, cons(item => item.name), 6, true)
+
+	t.add('$amount');
+	let atf = t.field('' + (amount | 0), cons(t => { })).get();
+	output[1] = prov(() => atf.getText() | 0);
+
+	return output;
+}
+
 exports.getGenericType = function (field) {
 	return ('class ' + field.getGenericType())
-		.replace(field.type, '').replace(/<(.+?)>/, '$1')
-		.split(/\,\s+/).map(str => Classes.get(str))
+		.replace(field.type, '').replace(/\<(.+?)\>/, '$1')
+		.split(/\,\s*/).map(str => Seq([Seq]).get(0).forName(str))
 }
 
 const lstr = lang.String
@@ -203,7 +229,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 			}
 
 			if ((vType.isArray() || vType == Seq) && v instanceof Array) {
-				return fArray(t, vType == Seq ? this.getGenericType(vType)[0] : vType.getComponentType(), v)
+				return fArray(t, vType == Seq ? this.getGenericType(field)[0] : vType.getComponentType(), v)
 			}
 			if (false/* vType instanceof ObjectMap */) {
 				let classes = this.getGenericType(field)
@@ -240,7 +266,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 					return JSON.stringify(v)
 				}
 			})
-		} */
+		}
 
 		else if (k == 'consumes') {
 			v = v == null || v instanceof Consumers ? {
@@ -303,7 +329,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 				}
 				return JSON.stringify(v)
 			})
-		}
+		} */
 
 	})();
 	if (output == null) output = fail()

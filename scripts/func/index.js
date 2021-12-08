@@ -308,62 +308,11 @@ exports.showSelectImageTable = function (button, content, current, size, imageSi
 exports.selectionWithField = function(table, items, current, size, imageSize, func, cols, searchable){
 	let field = new TextField(current);
 	table.add(field).fillX()
-	let btn = table.button('', Icon.pencilSmall, Styles.logict, run(() => {
-		IntFunc.showSelectImageTable(btn, items, current, size, imageSize, cons(item => field.setText(func.get(item))), cols, searchable);
+	let btn = table.button(Icon.pencilSmall, Styles.logici, run(() => {
+		this.showSelectImageTable(btn, items, current, size, imageSize, cons(item => field.setText(func.get(item))), cols, searchable);
 	})).size(40).padLeft(-1).get();
 
 	return prov(() => field.getText())
-}
-
-let cont = Packages.mindustry.ctype.UnlockableContent
-/* 构建一个物品/液体堆 */
-exports.buildOneStack = function (t, type, stack, content, amount) {
-	let output = [];
-
-	t.add('$' + type);
-
-	content = content || stack[0]
-	let field = t.field(content instanceof cont ? content.name : '' + content, cons(text => { })).get();
-	output[0] = prov(() => field.getText());
-	let btn = t.button(Icon.pencilSmall, Styles.logici, run(() => {
-		this.showSelectImageTable(btn, stack, output[0].get(), 40, 32, cons(item => {
-			field.setText(item.name);
-		}), 6, true);
-	})).size(40).padLeft(-1).get();
-
-	t.add('$amount');
-	let atf = t.field('' + (amount | 0), cons(t => { })).get();
-	output[1] = prov(() => atf.getText() | 0);
-
-	return output;
-}
-
-/* 构建n个物品/液体堆 */
-exports.buildMultipleStack = function (background, name, stack, v, t) {
-	let lastI = -1, output = [];
-
-	let _t = t.table(background instanceof Drawable ? background : Styles.none).get();
-	let buttons = _t.table().left().get();
-	_t.row();
-
-	var fun = (item, amount) => buttons.table(cons(t => {
-		let i = ++lastI;
-
-		output[i] = this.buildOneStack(t, name, stack, item, amount);
-
-		t.button('', Icon.trash, Styles.cleart, run(() => {
-			t.remove();
-			output.splice(i, 1);
-		}));
-	})).left().row();
-
-	_t.button('$add', run(() => fun('', 0))).growX().row();
-
-	for (let i of v) {
-		fun(i[0], i[1]);
-	}
-
-	return output;
 }
 
 

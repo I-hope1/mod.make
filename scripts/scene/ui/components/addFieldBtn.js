@@ -5,10 +5,10 @@ const IntCons = require('func/constructor');
 const Modifier = Packages.java.lang.reflect.Modifier;
 
 exports.filter = function(field){
-	if (!Modifier.isPublic(field.getModifiers()) || field.getName() == 'id' || /icon/i.test(field.getName())) return false;
+	if (!Modifier.isPublic(field.getModifiers()) || field.getName() == 'id' || /i|Icon/.test(field.getName())) return false;
 	let type = field.type, name = field.getName()
-	while (type.isArray()) {
-		type = type.getComponentType()
+	while (type.isArray() || type == Seq) {
+		type = type == Seq ? buildContent.getGenericType(field)[0] : type.getComponentType()
 	}
 	if (type.isPrimitive() || type == lstr) return true;
 	// 使用throw跳出循环
@@ -49,7 +49,7 @@ exports.constructor = function(obj, Fields, prov){
 				table.button(name, Styles.cleart, run(() => {
 					let type = field.type
 					Fields.add(null, name,
-						type.isArray() ? new IntCons.Array() :
+						type.isArray() || type == Seq ? new IntCons.Array() :
 						/^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
 						type.getSimpleName() == 'boolean' ? false :
 						type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */new IntCons.Object()
