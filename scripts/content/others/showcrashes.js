@@ -19,8 +19,8 @@ exports.cont = {
 				let fi = this.all[i];
 				p.button(cons(b => {
 					b.add(this.all[i].nameWithoutExtension());
-					b.update(run(() => b.setDisabled(this.select instanceof Packages.arc.files.Fi && this.select.nameWithoutExtension() == b.children.get(0).getText())));
-				}), IntStyles.clearb, run(() => this.select = fi)).height(45).row();
+					b.update(() => b.setDisabled(this.select instanceof Packages.arc.files.Fi && this.select.nameWithoutExtension() == b.children.get(0).getText()));
+				}), IntStyles.clearb, () => this.select = fi).height(45).row();
 			}
 		})).pad(40).fillX().maxHeight(Core.graphics.getHeight() * 0.6).row();
 		this.ui.cont.pane(cons(p => p.label(() => this.select ? this.select.readString() : ''))).fillX().height(Core.graphics.getHeight() * .2).style(IntStyles.nonePane);

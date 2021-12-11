@@ -18,19 +18,19 @@ exports.cont = {
 			team = t.table(cons(t => t.add('team'))).get().add(new TextField).get();
 		}));
 
-		ui.buttons.button('清除所有单位', run(() => Groups.unit.clear())).size(160, 65);
+		ui.buttons.button('清除所有单位', () => Groups.unit.clear()).size(160, 65);
 		ui.buttons.check('无单位上线', boolc(b => Vars.state.rules.unitCap = Math.pow(2, 29) * b
 		)).size(160, 65).row();
 
-		ui.buttons.button('$back', Icon.left, run(() => ui.hide())).size(160, 65);
+		ui.buttons.button('$back', Icon.left, () => ui.hide()).size(160, 65);
 		var i = 0;
-		ui.buttons.button('$ok', Icon.ok, run(() => {
+		ui.buttons.button('$ok', Icon.ok, () => {
 			if (this.unit == null || (amount.getText() | 0) <= 0 || (team.getText() | 0) < 0 || (team.getText() | 0) >= 255) return;
 			for (var i = 0, len = amount.getText() | 0; i < len; i++) {
 				this.unit.spawn(Team.get(team.getText() | 0), Vars.player.x, Vars.player.y);
 			}
 			ui.hide()
-		})).size(160, 65);
+		}).size(160, 65);
 		
 	},
 	click(table){

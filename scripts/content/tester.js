@@ -9,7 +9,7 @@ const forIn = IntFunc.forIn;
 const testElement = table => {
 	let ui = new Dialog('');
 	ui.cont.pane(cons(p => p.add(table))).size(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) - 100).grow().row();
-	ui.cont.button('$back', Icon.left, run(() => ui.hide())).size(200, 60);
+	ui.cont.button('$back', Icon.left, () => ui.hide()).size(200, 60);
 	return ui.show();
 };
 const testEffect = str => {
@@ -39,7 +39,7 @@ exports.cont = {
 		const text = cont.add(new TextArea(this.message)).size(w, 390).get();
 		cont.row();
 
-		cont.button('$ok', run(() => {
+		cont.button('$ok', () => {
 			this.message = text.getText().replace(/\r/g, '\n');
 			this.evalMessage();
 			if (this.record) {
@@ -53,20 +53,20 @@ exports.cont = {
 				d.child('message.txt').writeString(this.message);
 				d.child('log.txt').writeString(this.log);
 			}
-		})).row();
+		}).row();
 
 		cont.table(Tex.button, cons(t => t.pane(cons(p => p.label(() => this.log))).size(w, 390)));
 
 		table.add(cont).row();
 
 		table.pane(cons(p => {
-			p.button('', Icon.star, Styles.cleart, run(() => Vars.dataDirectory.child('mods(I hope...)').child('bookmarks').child(Vars.dataDirectory.child('mods(I hope...)').child('bookmarks').list().length + '-' + Time.millis() + '.txt').writeString(this.message)));
-			p.button(cons(b => b.label(() => this.while ? '$while' : '$default')), Styles.defaultb, run(() => this.while = !this.while)).size(100, 55);
-			p.button(cons(b => b.label(() => this.wrap ? '严格' : '非严格')), Styles.defaultb, run(() => this.wrap = !this.wrap)).size(100, 55);
+			p.button('', Icon.star, Styles.cleart, () => Vars.dataDirectory.child('mods(I hope...)').child('bookmarks').child(Vars.dataDirectory.child('mods(I hope...)').child('bookmarks').list().length + '-' + Time.millis() + '.txt').writeString(this.message));
+			p.button(cons(b => b.label(() => this.while ? '$while' : '$default')), Styles.defaultb, () => this.while = !this.while).size(100, 55);
+			p.button(cons(b => b.label(() => this.wrap ? '严格' : '非严格')), Styles.defaultb, () => this.wrap = !this.wrap).size(100, 55);
 			// p.button(cons(b => b.label(() => this.scope ? 'new scope' : 'default')), Styles.defaultb, run(() => this.scope = !this.scope)).size(100, 55);
 
 			if (useable) {
-				p.button('$hitoricalRecord', run(() => {
+				p.button('$hitoricalRecord', () => {
 					let dialog = new BaseDialog('$hitoricalRecord');
 					dialog.cont.pane(cons(p => {
 						let list = this.record.list();
@@ -77,7 +77,7 @@ exports.cont = {
 							p.table(Tex.button, cons(t => {
 								let btn = t.left().button(cons(b => {
 									b.pane(cons(c => c.add(f.child('message.txt').readString()).left())).fillY().fillX().left();
-								}), IntStyles.clearb, run(() => { })).height(70).minWidth(400).growX().fillX().left().get()
+								}), IntStyles.clearb, () => { }).height(70).minWidth(400).growX().fillX().left().get()
 								IntFunc.longPress(btn, 600, longPress => {
 									if (longPress) {
 										let ui = new Dialog('');
@@ -86,11 +86,11 @@ exports.cont = {
 											p.image().height(3).fillX().row();
 											p.add(f.child('log.txt').readString());
 										})).size(400).row();
-										ui.cont.button(Icon.trash, run(() => {
+										ui.cont.button(Icon.trash, () => {
 											ui.hide();
 											f.delete();
-										})).row();
-										ui.cont.button('$ok', run(() => ui.hide())).fillX().height(60);
+										}).row();
+										ui.cont.button('$ok', () => ui.hide()).fillX().height(60);
 										ui.show();
 									} else {
 										_this.message = f.child('message.txt').readString();
@@ -99,14 +99,14 @@ exports.cont = {
 										dialog.hide();
 									}
 								});
-								t.button('', Icon.trash, Styles.cleart, run(() => f.deleteDirectory() && p.children.get(i).remove())).fill().right();
+								t.button('', Icon.trash, Styles.cleart, () => f.deleteDirectory() && p.children.get(i).remove()).fill().right();
 							})).width(w).row();
 						});
 					})).fillX().fillY();
 					dialog.addCloseButton();
 					dialog.show();
-				})).size(100, 55);
-				p.button('$bookmark', run(() => {
+				}).size(100, 55);
+				p.button('$bookmark', () => {
 					let mark = Vars.dataDirectory.child('mods(I hope...)').child('bookmarks');
 					let dialog = new BaseDialog('$bookmark');
 					dialog.cont.pane(cons(p => {
@@ -116,18 +116,18 @@ exports.cont = {
 							p.table(Tex.button, cons(t => {
 								let btn = t.left().button(cons(b => {
 									b.pane(cons(c => c.add(f.readString()))).left().fillY().fillX().left();
-								}), IntStyles.clearb, run(() => { })).height(70).minWidth(400).growX().left().fillX().get();
+								}), IntStyles.clearb, () => { }).height(70).minWidth(400).growX().left().fillX().get();
 								IntFunc.longPress(btn, 600, longPress => {
 									if (longPress) {
 										let ui = new Dialog('');
 										ui.cont.pane(cons(p => {
 											p.add(f.readString()).row();
 										})).size(400).row();
-										ui.cont.button(Icon.trash, run(() => {
+										ui.cont.button(Icon.trash, () => {
 											ui.hide();
 											f.delete();
-										})).row();
-										ui.cont.button('$ok', run(() => ui.hide())).fillX().height(60);
+										}).row();
+										ui.cont.button('$ok', () => ui.hide()).fillX().height(60);
 										ui.show();
 									} else {
 										_this.message = f.readString();
@@ -135,17 +135,17 @@ exports.cont = {
 										dialog.hide();
 									}
 								});
-								t.button('', Icon.trash, Styles.cleart, run(() => f.delete() && p.children.get(i).remove())).fill().right();
+								t.button('', Icon.trash, Styles.cleart, () => f.delete() && p.children.get(i).remove()).fill().right();
 							})).width(w).row();
 						});
 					})).fillX().fillY();
 					dialog.addCloseButton();
 					dialog.show();
-				})).size(100, 55);
+				}).size(100, 55);
 			}
 		})).height(60).fillX();
 
-		buttons.button('$back', Icon.left, run(() => this.ui.hide())).size(210, 64);
+		buttons.button('$back', Icon.left, () => this.ui.hide()).size(210, 64);
 
 
 		let dialog = new BaseDialog('$edit');
@@ -157,24 +157,24 @@ exports.cont = {
 				t.defaults().size(280, 60).left();
 
 				t.row();
-				t.button("@schematic.copy.import", Icon.download, style, run(() => {
+				t.button("@schematic.copy.import", Icon.download, style, () => {
 					dialog.hide();
 					text.setText(Core.app.getClipboardText());
-				})).marginLeft(12);
+				}).marginLeft(12);
 
 				t.row();
-				t.button("@schematic.copy", Icon.copy, style, run(() => {
+				t.button("@schematic.copy", Icon.copy, style, () => {
 					dialog.hide();
 					Core.app.setClipboardText(text.getText().replace(/\r/g, '\n'));
-				})).marginLeft(12);
+				}).marginLeft(12);
 			}));
 		}));
 
 		dialog.addCloseButton();
 
-		buttons.button('$edit', Icon.edit, run(() => {
+		buttons.button('$edit', Icon.edit, () => {
 			dialog.show();
-		})).size(210, 64);
+		}).size(210, 64);
 	},
 	setup() {
 		this.ui.cont.clear();
@@ -186,9 +186,9 @@ exports.cont = {
 		this.setup();
 		this.ui.show();
 
-		table.update(run(() => {
+		table.update(() => {
 			if (this.while && this.message != '') this.evalMessage();
-		}));
+		});
 	},
 	evalMessage() {
 		let def = this.message

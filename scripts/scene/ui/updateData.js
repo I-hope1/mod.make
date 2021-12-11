@@ -41,7 +41,7 @@ Events.on(ClientLoadEvent, () => {
 		).row()
 		t.image().fillX().color(Color.gray).padTop(2).padBottom(2).row();
 		t.add('1. 修复了一堆bug.\n2. 优化了代码.').padBottom(2).row();
-		t.button('历史更新内容', run(() => {
+		t.button('历史更新内容', () => {
 			let dialog = new BaseDialog('历史更新日志');
 			dialog.cont.pane(cons(p => {
 				fun(p, '1.0-beta', '此版本为最初版本，只能编辑“mod.json”.', true)
@@ -61,12 +61,12 @@ Events.on(ClientLoadEvent, () => {
 			})).fillX().fillY();
 			dialog.addCloseButton();
 			dialog.show();
-		})).fillX().row();
+		}).fillX().row();
 	})).minHeight(200)
 		.maxHeight(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) * .75).padLeft(20)
 	t.row();
 	t.table(cons(_t => {
-		_t.button('$ok', run(() => t.hide())).size(120, 50);
+		_t.button('$ok', () => t.hide()).size(120, 50);
 		_t.check(Core.bundle.get('not_show_again', 'not show again'), boolc(b => Core.settings.put(modName + '-not_show_again', b)
 		));
 	}));

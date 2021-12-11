@@ -3,8 +3,8 @@ function array(arr) {
 	let arr = this
 	Array.apply(this, arr instanceof Array ? arr : [])
 	this.put = (i, v) => i >= arr.length ? arr.push(v) : arr[i] = v
-	this.get = i => this[i]
-	this.remove = i => this.splice(i, 1)
+	this.get = i => arr[i]
+	this.remove = i => arr.splice(i, 1)
 	Object.defineProperty(this, 'toString', {
 		value: function () {
 			let str = []
@@ -25,15 +25,17 @@ exports.Array = array
 
 
 function object(obj) {
-	Object.apply(this)
 	let map = new ObjectMap
 	this.remove = k => map.remove(k)
 	this.get = k => map.get(k)
 	this.has = k => map.containsKey(k)
-	this.getDefault = (k, def) => map.get(k, prov(() => def))
+	this.getDefault = (k, def) => map.get(k, def)
 	this.put = (k, v) => map.put(k, v)
 	this.each = function(method){
-		map.each(new Cons2({get: method}))
+		let keys = map.keys().toSeq()
+		keys.each(cons(k => {
+			method(k, map.get(k))
+		}))
 	}
 	Object.defineProperty(this, 'size', { get: () => map.size })
 	for (var k in obj) {
@@ -42,7 +44,7 @@ function object(obj) {
 	Object.defineProperty(this, 'toString', {
 		value: function () {
 			let str = []
-			this.each((k, v) => str.push(k + ': ' + (v instanceof Prov ? v.get() : v)))
+			this.each((k, v) => str.push((k instanceof Prov ? k.get() : k) + ': ' + (v instanceof Prov ? v.get() : v)))
 			return '{\n' + str.join('\n') + '\n}'
 		}
 	})

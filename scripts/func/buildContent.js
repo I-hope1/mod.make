@@ -5,9 +5,16 @@ const add = require('scene/ui/components/addFieldBtn');
 const typeSelection = require('scene/ui/components/typeSelection');
 const Fields = require('scene/ui/components/Fields');
 const IntObject = require('func/constructor').Object;
+const IntArray = require('func/constructor').Array;
 const Classes = exports.classes = Packages.mindustry.mod.ClassMap.classes;
 
 const lang = Packages.java.lang
+
+exports.defaultClass = ObjectMap.of(
+	UnitType, 'mono',
+	Item, 'copper',
+	Liquid, 'water'
+)
 
 exports.filterClass = ObjectMap.of(
 	/* Effect, (table, value) => {},
@@ -67,31 +74,59 @@ exports.filterClass = ObjectMap.of(
 	// like ItemStack
 	LiquidStack, (table, value) => {
 		let [item, amount] = typeof value == 'string' ?
-			value.split('/') : [value.liquid, value.amount],
+			value.split('/') : [value.get('liquid'), value.get('amount')],
 			items = Vars.content.liquids().toArray()
 
 		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Liquid.'
-		if (isNaN(amount)) throw TypeError('\'' + amount + '\' isn\'t a number')
+		if (isNaN(amount)) amount = 0// throw TypeError('\'' + amount + '\' isn\'t a number')
 		let output = buildOneStack(table, 'liquid', items, item, amount)
 		return prov(() => '{liquid:' + output[0].get() + ', amount:' + output[1].get() + '}');
 	},
 	UnitType, (table, value) => {
-		value = '' + value || 'mono';
-		let prov = IntFunc.selectionWidhField(table, Vars.content.units().toArray(), value, 40, 32, func(i => text = i.name), 6, true)
+		value = '' + value || exports.defaultClass.get(UnitType);
+		let prov = IntFunc.selectionWithField(table, Vars.content.units().toArray(), value, 42, 32, 6, true)
 
 		return prov
 	},
 	Item, (table, value) => {
-		value = '' + value || 'copper';
-		let prov = IntFunc.selectionWidhField(table, Vars.content.items().toArray(), value, 40, 32, func(i => text = i.name), 6, true)
+		value = '' + value || exports.defaultClass.get(Item);
+		let prov = IntFunc.selectionWithField(table, Vars.content.items().toArray(), value, 42, 32, 6, true)
 
 		return prov
 	},
 	Liquid, (table, value) => {
-		value = '' + value || 'water';
-		let prov = IntFunc.selectionWidhField(table, Vars.content.liquids().toArray(), value, 40, 32, func(i => text = i.name), 6, true)
+		value = '' + value || exports.defaultClass.get(Liquid);
+		let prov = IntFunc.selectionWithField(table, Vars.content.liquids().toArray(), value, 42, 32, 6, true)
 
 		return prov
+	},
+	ObjectMap, (table, value, classes) => {
+		let map = new IntObject()
+		let cont = new Table(Tex.button)
+		let children = new Table()
+		cont.add(children).fillX().row()
+		table.add(cont).fillX()
+		let i = 0
+		function add(k, v) {
+			children.add(Fields.colorfulTable(i++, cons(t => {
+				map.put(
+					exports.filterClass.get(classes[0])(t, k),
+					exports.filterClass.get(BulletType)(t, v)
+				)
+				t.table(cons(right => {
+					right.button('', Icon.trash, Styles.cleart, () => {
+						map.remove(k)
+						if (t != null) t.remove()
+					});
+				})).right().growX().right();
+			}))).row()
+		}
+		value = value || new IntObject()
+		value.each(add)
+
+		cont.button('$add', Icon.add, () => add(exports.defaultClass.get(classes[0]), new IntObject())).fillX()
+
+		return prov(() => map)
 	}
 )
 
@@ -100,25 +135,56 @@ exports.filterKey = ObjectMap.of(
 	'category', (table, value) => {
 		if (!category.includes('' + value)) return null;
 		let val = value || 'distribution';
-		let btn = table.button(val, Styles.cleart, run(() => {
+		let btn = table.button(val, Styles.cleart, () => {
 			IntFunc.showSelectListTable(btn, category, val, 130, 50, cons(cat => btn.setText(val = cat)), false);
-		})).size(130, 45).get();
+		}).size(130, 45).get();
 		return prov(() => val)
 	},
 	'type', (table, value, type) => {
 		let val;
 		if (type == UnitType) {
 			val = value || 'none';
-			let btn = table.button(val, Styles.cleart, run(() => {
+			let btn = table.button(val, Styles.cleart, () => {
 				IntFunc.showSelectListTable(btn, unitType, val, 130, 50, cons(type => btn.setText(val = type)), false);
-			})).size(130, 45).get();
+			}).size(130, 45).get();
 		}
 
 		return prov(() => val)
 	},
-	/* 'consumes', (table, value, type) => {
+	'consumes', (table, value) => {
+		value = value || new IntObject()
+		let cont = table.table(Tex.button).get()
+		let tables = {item: new Table, liquid: new Table}
+		let enable = {item:true, liquid:true}
+		let itemsetup = b => {
+			if (enable.item = b) {
+				items.add(tables.item)
+			} else tables.item.remove()
+		}
+		let items = new Table()
+		itemsetup(value.get('items') != null)
+		cont.check('items', enable.item, boolc(b => itemsetup(b))).row()
+		cont.add(items).row()
+		value.put('items', fArray(tables.item, IntFunc.toClass(ItemStack), value.getDefault('items', [])));
+		cont.row()
+
+		let liquidsetup = b => {
+			if (enable.liquid = b) {
+				liquids.add(tables.liquid)
+			} else tables.liquid.remove()
+		}
+		let liquids = new Table()
+		liquidsetup(value.get('liquid') != null)
+		cont.check('liquid', enable.liquid, boolc(b => liquidsetup(b))).row()
+		cont.add(liquids).row()
+		value.put('liquid', exports.filterClass.get(LiquidStack)(tables.liquid, value.getDefault('liquid', 'water/0')))
 		
-	} */
+		return prov(() => {
+			if (!enable.item) value.remove('items')
+			if (!enable.liquid) value.remove('liquid')
+			return value + ''
+		})
+	}
 )
 
 exports.load = function () {
@@ -127,7 +193,7 @@ exports.load = function () {
 
 exports.make = function (type) {
 	try {
-		let cons = type.getDeclaredConstructor();
+		let cons = Seq([type]).get(0).getDeclaredConstructor();
 		cons.setAccessible(true);
 		return cons.newInstance();
 	} catch (e) {
@@ -163,9 +229,9 @@ function addItem(type, fields, i, value) {
 }
 function fArray(t, vType, v) {
 	let table = new Table, children = new Table,
-		fields = new Fields.constructor(v, prov(() => vType), children)
+		fields = new Fields.constructor(v || new IntArray(), prov(() => vType), children)
 	children.center().defaults().center().minWidth(100)
-	table.add(children).row()
+	table.add(children).name('cont').row()
 	t.add(table)
 	v = fields.map
 	let len = v.length
@@ -173,7 +239,7 @@ function fArray(t, vType, v) {
 		addItem(vType, fields, j, v[j])
 	}
 	table.button('$add', () => {
-		addItem(vType, fields, v.length, {})
+		addItem(vType, fields, v.length, exports.make(vType))
 	}).fillX()
 	return prov(() => v)
 }
@@ -185,8 +251,7 @@ function buildOneStack(t, type, stack, content, amount) {
 	t.add('$' + type);
 
 	content = content || stack[0]
-	let field = t.field(content instanceof cont ? content.name : '' + content, cons(text => { })).get();
-	output[0] = IntFunc.selectionWithField(t, stack, content, 42, 32, cons(item => item.name), 6, true)
+	output[0] = IntFunc.selectionWithField(t, stack, content instanceof cont ? content.name : '' + content, 42, 32, 6, true)
 
 	t.add('$amount');
 	let atf = t.field('' + (amount | 0), cons(t => { })).get();
@@ -223,32 +288,35 @@ exports.build = function (type, fields, t, k, v, isArray) {
 			if (vType == null || vType == lstr) {
 				return
 			}
-			if (vType.isPrimitive() && vType + '' == 'boolean'){
-				let btn = t.button('' + v, Styles.cleart, () => btn.setText('' + (v = !v))).size(130, 45).get()
-				return prov(() => v)
-			}
-
-			if ((vType.isArray() || vType == Seq) && v instanceof Array) {
-				return fArray(t, vType == Seq ? this.getGenericType(field)[0] : vType.getComponentType(), v)
-			}
-			if (false/* vType instanceof ObjectMap */) {
-				let classes = this.getGenericType(field)
+			if (vType.isPrimitive()) {
+				if (vType + '' == 'boolean'){
+					let btn = t.button('' + v, Styles.cleart, () => btn.setText('' + (v = !v))).size(130, 45).get()
+					return prov(() => v)
+				}
 				return
 			}
+
+			if ((vType.isArray() || vType == Seq) && v instanceof IntArray) {
+				return fArray(t, vType == Seq ? this.getGenericType(field)[0] : vType.getComponentType(), v)
+			}
+			if (IntFunc.toClass(ObjectMap).isAssignableFrom(vType)) {
+				let classes = this.getGenericType(field)
+				return this.filterClass.get(vType)(t, v, classes)
+			}
 			if (this.filterClass.containsKey(vType)) {
-				return this.filterClass.get(vType)(t, v, type)
+				return this.filterClass.get(vType)(t, v)
 			}
 		} catch (e) {
+			Log.info(type)
 			Log.err(e)
-			if (this.filterKey.containsKey(k)) {
-				return this.filterKey.get(k)(t, v, type)
-			}
-			return
 		}
+		finally {
 
-		if (this.filterKey.containsKey(k)) {
-			return this.filterKey.get(k)(t, v, type)
+			if (this.filterKey.containsKey(k)) {
+				return this.filterKey.get(k)(t, v)
+			}
 		}
+		return
 
 		/* else if (k == 'ammoTypes') {
 			v = v.toArray()
@@ -266,69 +334,6 @@ exports.build = function (type, fields, t, k, v, isArray) {
 					return JSON.stringify(v)
 				}
 			})
-		}
-
-		else if (k == 'consumes') {
-			v = v == null || v instanceof Consumers ? {
-				items: {
-					items: []
-				},
-				liquid: {}
-			} : v;
-
-			let liquidEnab = true;
-			if (v.liquid == null) {
-				v.liquid = {}
-				liquidEnab = false;
-			}
-
-			t.row();
-			t.table(cons(t => {
-				t.left().add(Core.bundle.get('item') + ': {').row();
-			})).left().row();
-
-			let stack = v.items.items.map(i => typeof i == 'string' ? i.split('/') : [i.item, i.amount]);
-			let output = IntFunc.buildMultipleStack(Styles.black5, 'item', Vars.content.items().toArray(), stack, t);
-
-			t.add('}').fillX().left().row();
-
-			t.table(cons(t => {
-				t.left().add(Core.bundle.get('liquid') + ': {').row();
-			})).left().row();
-
-			let liquidStack;
-			t.table(cons(t => {
-				t.left();
-				t.check('$mod.enabled', liquidEnab, boolc(b => liquidEnab = b)).row();
-				t.update(() => {
-					if (!liquidEnab) return;
-					if (stack[0] != '') {
-						v.liquid.liquid = stack[0];
-						v.liquid.amount = stack[1];
-					} else v.liquid = {};
-				});
-
-				t.table(
-					cons(t => liquidStack = IntFunc.buildOneStack(t, 'liquid',
-						Vars.content.liquids().toArray(), v.liquid.liquid || 'water', v.liquid.amount || 0))
-				).visible(boolp(() => liquidEnab));
-			})).fillX().left().row();
-
-			t.add('}').fillX().left().row();
-			return prov(() => {
-				t.clear();
-				t.remove();
-				v.items.items = output.map(e => e[0] + '/' + e[1]);
-				if (!liquidEnab) {
-					delete v.liquid;
-				} else if (liquidStack[0].get() != null && liquidStack[1].get() != 0) {
-					v.liquid = {
-						liquid: liquidStack[0].get(),
-						amount: liquidStack[1].get()
-					}
-				}
-				return JSON.stringify(v)
-			})
 		} */
 
 	})();
@@ -344,7 +349,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 				p.button('ok', hide).fillX()
 			}, false)).padLeft(2);
 		}
-		right.button('', Icon.trash, Styles.cleart, run(() => fields.remove(t, k)));
+		right.button('', Icon.trash, Styles.cleart, () => fields.remove(t, k));
 	})).right().growX().right();
 }
 

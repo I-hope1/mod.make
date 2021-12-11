@@ -10,8 +10,8 @@ function build(){
 		t.margin(6);
 		t.add('$' + main.type).style(Styles.outlineLabel).color(Color.white).padRight(8);
 		t.image().height(1).growX().color(Color.gray);
-		t.button(Icon.copy, Styles.logici, run(() => t.parent.add(main.build()))).padRight(6);
-		t.button(Icon.cancel, Styles.logici, run(() => main.remove()));
+		t.button(Icon.copy, Styles.logici, () => t.parent.add(main.build())).padRight(6);
+		t.button(Icon.cancel, Styles.logici, () => main.remove());
 		t.row();
 		t.table(Styles.black, cons(t => {
 			t.left();
@@ -38,10 +38,10 @@ exports.defined = function () {
 		table.add(' = ');
 		table.add('$value');
 		let _value = table.add(new TextField(this.value)).get();
-		table.update(run(() => {
+		table.update(() => {
 			this.name = _name.getText();
 			this.value = _value.getText();
-		}));
+		});
 	};
 	this.remove = function () {
 		if (this.table != null) this.table.remove();

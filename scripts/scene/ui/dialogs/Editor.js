@@ -181,7 +181,7 @@ exports.build = function () {
 								obj.put(k, t.name)
 								btn.setText(t.localizedName);
 								hide.run()
-							}).size(40).get();
+							}).size(42).get();
 							button.getStyle().imageUp = new TextureRegionDrawable(t.uiIcon);
 							button.update(() => button.setChecked(obj.get(k) == t.name));
 
@@ -316,10 +316,10 @@ exports.parse = function () {
 		file.writeString(obj + '');
 		let dir = this.mod.file.child('content').child(
 			type != null ?
-				(IntFunc.toClass(Block).isAssignableFrom(type) ? 'block' :
-				IntFunc.toClass(UnitType).isAssignableFrom(type) ? 'unit' :
-				IntFunc.toClass(Item).isAssignableFrom(type) ? 'Item' :
-				IntFunc.toClass(Liquid).isAssignableFrom(type) ? 'liquid' : type.getContentType()) + 's'
+				(toClass(Block).isAssignableFrom(type) ? 'block' :
+				toClass(UnitType).isAssignableFrom(type) ? 'unit' :
+				toClass(Item).isAssignableFrom(type) ? 'Item' :
+				toClass(Liquid).isAssignableFrom(type) ? 'liquid' : type.getContentType()) + 's'
 			: 'blocks'
 		);
 		this.file = dir.child(file.name());

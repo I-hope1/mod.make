@@ -28,33 +28,32 @@ exports.showTextArea = function (text) {
 	let text1 = text,
 		text2 = dialog.cont.add(new TextArea(text.getText())).size(w * 0.85, h * 0.75).get();
 	dialog.buttons.table(cons(t => {
-		t.button('$back', Icon.left, run(() => dialog.hide())).size(w / 3 - 25, h * 0.05);
-		t.button('$edit', Icon.edit, run(() => {
+		t.button('$back', Icon.left, () => dialog.hide()).size(w / 3 - 25, h * 0.05);
+		t.button('$edit', Icon.edit, () => {
 			let dialog = new Dialog('');
 			dialog.addCloseButton();
 			dialog.table(Tex.button, cons(t => {
 				let style = Styles.cleart;
 				t.defaults().size(280, 60).left();
 				t.row();
-				t.button("@schematic.copy.import", Icon.download, style, run(
-					() => {
-						dialog.hide();
-						text2.setText(Core.app.getClipboardText());
-					})).marginLeft(12);
+				t.button("@schematic.copy.import", Icon.download, style, () => {
+					dialog.hide();
+					text2.setText(Core.app.getClipboardText());
+				}).marginLeft(12);
 				t.row();
-				t.button("@schematic.copy", Icon.copy, style, run(() => {
+				t.button("@schematic.copy", Icon.copy, style, () => {
 					dialog.hide();
 					Core.app.setClipboardText(text2.getText()
 						.replace(
 							/\r/g, '\n'));
-				})).marginLeft(12);
+				}).marginLeft(12);
 			}));
 			dialog.show();
-		})).size(w / 3 - 25, h * 0.05);
-		t.button('$ok', Icon.ok, run(() => {
+		}).size(w / 3 - 25, h * 0.05);
+		t.button('$ok', Icon.ok, () => {
 			dialog.hide();
 			text1.setText(text2.getText().replace(/\r/g, '\\n'));
-		})).size(w / 3 - 25, h * 0.05);
+		}).size(w / 3 - 25, h * 0.05);
 	}));
 	dialog.show();
 }
@@ -68,7 +67,7 @@ exports.HjsonParse = function (str) {
 		let obj1 = (new JsonReader).parse(str), arr = [],
 			obj2 = output = new IntCons.Object();
 		while (true) {
-			for (let i = obj1.size; --i >= 0;) {
+			for (let i = 0; i < obj1.size; i++) {
 				let child = obj1.get(i);
 				if (child.isArray()) {
 					let array = new IntCons.Array()
@@ -209,10 +208,10 @@ exports.showSelectTable = function (button, fun, searchable) {
 
 	t.update(() => {
 		if (b.parent == null || !b.isDescendantOf(Core.scene.root)) {
-			return Core.app.post(run(() => {
+			return Core.app.post(() => {
 				hitter.remove();
 				t.remove();
-			}));
+			});
 		}
 
 		b.localToStageCoordinates(Tmp.v1.set(b.getWidth() / 2, b.getHeight() / 2));
@@ -230,7 +229,7 @@ exports.showSelectTable = function (button, fun, searchable) {
 			t.image(Icon.zoom);
 			let text;
 			t.add(text = new TextField).fillX();
-			text.changed(run(() => fun(p, hide, text.getText())));
+			text.changed(() => fun(p, hide, text.getText()));
 			// /* 自动聚焦到搜索框 */
 			// text.fireClick();
 		})).padRight(8).fillX().fill().top().row();
@@ -253,10 +252,10 @@ exports.showSelectListTable = function(button, list, current, width, height, con
 
 		for (let i = 0; i < list.length; i++) {
 			let item = list[i];
-			p.button('' + item, Styles.cleart, run(() => {
+			p.button('' + item, Styles.cleart, () => {
 				cons.get(item)
 				hide.run();
-			})).size(width, height).disabled(current == item).row();
+			}).size(width, height).disabled(current == item).row();
 		}
 	}, searchable);
 }
@@ -277,21 +276,25 @@ exports.showSelectImageTableWithIcons = function (button, content, icons, curren
 	return this.showSelectTable(button, (p, hide, v) => {
 		p.left();
 		p.clearChildren();
+		let group = new ButtonGroup();
+		group.setMinCheckCount(0);
+		p.defaults().size(size);
 
 		let reg = RegExp(v, 'i');
-		let c = 0;
 		for (let i = 0; i < content.length; i++) {
 			let cont = content[i];
 			if (typeof current == 'string' && current == cont.name) current = cont;
 			// 过滤不满足条件的
 			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) continue;
 
-			p.button(icons[i], Styles.cleari, imageSize, run(() => {
+			let btn = p.button(Tex.whiteui, Styles.clearToggleTransi, imageSize, () => {
 				cons.get(current = cont);
 				hide.run();
-			})).size(size).checked(boolf(() => cont == current))
+			}).size(size).get()
+			btn.getStyle().imageUp = icons[i];
+			btn.update(() => btn.setChecked(cont == current))
 
-			if (++c % cols == 0) p.row();
+			if ((i + 1) % cols == 0) p.row();
 		}
 	}, searchable);
 }
@@ -305,12 +308,12 @@ exports.showSelectImageTable = function (button, content, current, size, imageSi
 	return this.showSelectImageTableWithIcons(button, content, icons, current, size, imageSize, cons, cols, searchable)
 }
 
-exports.selectionWithField = function(table, items, current, size, imageSize, func, cols, searchable){
+exports.selectionWithField = function(table, items, current, size, imageSize, cols, searchable){
 	let field = new TextField(current);
 	table.add(field).fillX()
-	let btn = table.button(Icon.pencilSmall, Styles.logici, run(() => {
-		this.showSelectImageTable(btn, items, current, size, imageSize, cons(item => field.setText(func.get(item))), cols, searchable);
-	})).size(40).padLeft(-1).get();
+	let btn = table.button(Icon.pencilSmall, Styles.clearFulli, () => {
+		this.showSelectImageTable(btn, items, current, size, imageSize, cons(item => field.setText(item.name)), cols, searchable);
+	}).size(40).padLeft(-1).get();
 
 	return prov(() => field.getText())
 }

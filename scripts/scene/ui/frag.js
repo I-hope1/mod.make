@@ -26,12 +26,12 @@ Events.on(ClientLoadEvent, () => {
 			if (cont.load instanceof Function) cont.load();
 			cont.name = Core.bundle.get(cont.name, cont.name)
 
-			cont.btn = t.button(cont.name, Styles.cleart, run(() => {
+			cont.btn = t.button(cont.name, Styles.cleart, () => {
 				frag.cont.clearChildren();
 				frag.cont.actions(Actions.scaleTo(0, 1), Actions.visible(true),
 				Actions.scaleTo(1, 1, 0.07, Interp.pow3Out));
 				cont.buildConfiguration(frag.cont);
-			})).size(120, 40).get();
+			}).size(120, 40).get();
 			t.row();
 		})
 	})).row();

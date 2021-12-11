@@ -3,7 +3,7 @@ var useable = require('testFi').useable;
 exports.cont = {
 	name:'more', show: false,
 
-	all: ['lastlog', 'unit_spawn', 'showcrashes', 'select'].map(str => {
+	all: ['lastlog', 'unit_spawn', 'showcrashes', 'select', 'showicon'].map(str => {
 		if (!Core.settings.get(modName + '-load-' + str, true)) return
 		try {
 			var cont = require('content/others/' + str).cont;
@@ -21,7 +21,7 @@ exports.cont = {
 			if (cont.load instanceof Function) cont.load();
 			cont.name = Core.bundle.get(cont.name, cont.name)
 
-			t.button(cont.name, run(() => cont.click && cont.click())).size(120, 40).disabled(boolf(() => !!cont.disabled)).row();
+			t.button(cont.name, () => cont.click && cont.click()).size(120, 40).disabled(boolf(() => !!cont.disabled)).row();
 		})
 	},
 	buildConfiguration(table){
