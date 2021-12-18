@@ -4,7 +4,7 @@ exports.cont = {
 	load() {
 		let ui = this.ui = new BaseDialog('$settings')
 		if (!Core.settings.has(modName + '-load-dummy')) Core.settings.put(modName + '-load-dummy', false)
-		let arr = ['tester', 'makeMod', 'dummy', 'other'], arr2 = ['lastlog', 'unit_spawn', 'showcrashes', 'select', 'showicon']
+		let arr = ['tester', 'makeMod', 'dummy', 'other'], arr2 = ['lastlog', 'unit_spawn', 'showcrashes', 'select']
 		let cont = ui.cont.table().width(400).get()
 		cont.add('load').color(Pal.accent).growX().left().row();
 		cont.table(cons(t => {

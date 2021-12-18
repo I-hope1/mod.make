@@ -136,7 +136,7 @@ exports.selectFile = function (open, purpose, ext, _cons) {
 		try {
 			_cons.get(fi);
 		} catch (err) {
-			Log.err('thorw error when failed to select file: ', err);
+			Log.err('throw error when failed to select file: ', err);
 		}
 	}));
 }

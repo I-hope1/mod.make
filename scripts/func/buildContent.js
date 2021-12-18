@@ -4,8 +4,7 @@ const types = require('scene/ui/dialogs/Editor').types
 const add = require('scene/ui/components/addFieldBtn');
 const typeSelection = require('scene/ui/components/typeSelection');
 const Fields = require('scene/ui/components/Fields');
-const IntObject = require('func/constructor').Object;
-const IntArray = require('func/constructor').Array;
+const { Object: IntObject, Array: IntArray } = require('func/constructor');
 const Classes = exports.classes = Packages.mindustry.mod.ClassMap.classes;
 
 const lang = Packages.java.lang
@@ -62,7 +61,7 @@ exports.filterClass = ObjectMap.of(
 	ItemStack, (table, value) => {
 		let [item, amount] =
 			typeof value == 'string' ? value.split('/') :
-			value instanceof IntObject ? [value.get('item'), value.get('amount')] : [Items.copper, 0];
+				value instanceof IntObject ? [value.get('item'), value.get('amount')] : [Items.copper, 0];
 
 		let items = Vars.content.items().toArray()
 
@@ -154,31 +153,31 @@ exports.filterKey = ObjectMap.of(
 	'consumes', (table, value) => {
 		value = value || new IntObject()
 		let cont = table.table(Tex.button).get()
-		let tables = {item: new Table, liquid: new Table}
-		let enable = {item:true, liquid:true}
-		let itemsetup = b => {
+		let tables = { item: new Table, liquid: new Table }
+		let enable = { item: true, liquid: true }
+		let itemSetup = b => {
 			if (enable.item = b) {
 				items.add(tables.item)
 			} else tables.item.remove()
 		}
 		let items = new Table()
-		itemsetup(value.get('items') != null)
-		cont.check('items', enable.item, boolc(b => itemsetup(b))).row()
+		itemSetup(value.get('items') != null)
+		cont.check('items', enable.item, boolc(b => itemSetup(b))).row()
 		cont.add(items).row()
 		value.put('items', fArray(tables.item, IntFunc.toClass(ItemStack), value.getDefault('items', [])));
 		cont.row()
 
-		let liquidsetup = b => {
+		let liquidSetup = b => {
 			if (enable.liquid = b) {
 				liquids.add(tables.liquid)
 			} else tables.liquid.remove()
 		}
 		let liquids = new Table()
-		liquidsetup(value.get('liquid') != null)
-		cont.check('liquid', enable.liquid, boolc(b => liquidsetup(b))).row()
+		liquidSetup(value.get('liquid') != null)
+		cont.check('liquid', enable.liquid, boolc(b => liquidSetup(b))).row()
 		cont.add(liquids).row()
 		value.put('liquid', exports.filterClass.get(LiquidStack)(tables.liquid, value.getDefault('liquid', 'water/0')))
-		
+
 		return prov(() => {
 			if (!enable.item) value.remove('items')
 			if (!enable.liquid) value.remove('liquid')
@@ -200,7 +199,6 @@ exports.make = function (type) {
 		Vars.ui.showErrorMessage(e);
 	}
 }
-exports.parse = (new JsonReader).parse
 
 function fObject(t, type, value, typeBlackList) {
 	let table = new Table(Tex.button), children = new Table,
@@ -260,10 +258,11 @@ function buildOneStack(t, type, stack, content, amount) {
 	return output;
 }
 
+let _class = Packages.java.lang.Class;
 exports.getGenericType = function (field) {
 	return ('class ' + field.getGenericType())
 		.replace(field.type, '').replace(/\<(.+?)\>/, '$1')
-		.split(/\,\s*/).map(str => Seq([Seq]).get(0).forName(str))
+		.split(/\,\s*/).map(str => _class.forName(str, false, _class.getClassLoader()))
 }
 
 const lstr = lang.String
@@ -289,7 +288,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 				return
 			}
 			if (vType.isPrimitive()) {
-				if (vType + '' == 'boolean'){
+				if (vType + '' == 'boolean') {
 					let btn = t.button('' + v, Styles.cleart, () => btn.setText('' + (v = !v))).size(130, 45).get()
 					return prov(() => v)
 				}

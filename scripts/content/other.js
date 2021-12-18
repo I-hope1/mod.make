@@ -3,7 +3,7 @@ var useable = require('testFi').useable;
 exports.cont = {
 	name:'more', show: false,
 
-	all: ['lastlog', 'unit_spawn', 'showcrashes', 'select', 'showicon'].map(str => {
+	all: ['lastlog', 'unit_spawn', 'showcrashes', 'select'].map(str => {
 		if (!Core.settings.get(modName + '-load-' + str, true)) return
 		try {
 			var cont = require('content/others/' + str).cont;
