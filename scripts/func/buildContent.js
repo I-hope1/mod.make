@@ -13,7 +13,9 @@ exports.defaultClass = ObjectMap.of(
 	Effect, 'none',
 	UnitType, 'mono',
 	Item, 'copper',
-	Liquid, 'water'
+	Liquid, 'water',
+	ItemStack, 'copper/0',
+	LiquidStack, 'water/0'
 )
 
 const effects = new Seq()
@@ -278,7 +280,7 @@ function fArray(t, vType, v) {
 		addItem(vType, fields, j, v[j])
 	}
 	table.button('$add', () => {
-		addItem(vType, fields, v.length, exports.make(vType))
+		addItem(vType, fields, v.length, exports.defaultClass.get(vType) || new IntObject())
 	}).fillX()
 	return prov(() => v)
 }
