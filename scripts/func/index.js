@@ -283,7 +283,7 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 		p.defaults().size(size);
 
 		let reg = RegExp(v, 'i');
-		items.each(cons(cont => {
+		items.each(new Cons({get:cont => {
 			if (typeof current == 'string' && current == cont.name) current = cont;
 			// 过滤不满足条件的
 			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) return;
@@ -296,7 +296,7 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 			btn.update(() => btn.setChecked(cont == current))
 
 			if ((i + 1) % cols == 0) p.row();
-		}))
+		}}))
 	}, searchable);
 }
 
