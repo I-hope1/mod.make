@@ -247,16 +247,16 @@ exports.showSelectTable = function (button, fun, searchable) {
 
 
 exports.showSelectListTable = function(button, list, current, width, height, cons, searchable){
-	this.showSelectTable(button, (p, hide) => {
+	this.showSelectTable(button, (p, hide, text) => {
 		p.clearChildren();
 
-		for (let i = 0; i < list.length; i++) {
-			let item = list[i];
+		let reg = new RegExp(text, 'i')
+		list.each(boolf(item => reg.test(item)	), new Cons({get:item => {
 			p.button('' + item, Styles.cleart, () => {
 				cons.get(item)
 				hide.run();
 			}).size(width, height).disabled(current == item).row();
-		}
+		}}))
 	}, searchable);
 }
 
@@ -272,7 +272,9 @@ exports.showSelectListTable = function(button, list, current, width, height, con
  * * @param cont 提供选中的内容
  * @param cols 一行的元素数量
  */
-exports.showSelectImageTableWithIcons = function (button, content, icons, current, size, imageSize, cons, cols, searchable) {
+exports.showSelectImageTableWithIcons = function (button, items, icons, current, size, imageSize, cons, cols, searchable) {
+	if (!(items instanceof Seq)) throw TypeError("'" + items + "' isn't a Seq")
+
 	return this.showSelectTable(button, (p, hide, v) => {
 		p.left();
 		p.clearChildren();
@@ -281,11 +283,10 @@ exports.showSelectImageTableWithIcons = function (button, content, icons, curren
 		p.defaults().size(size);
 
 		let reg = RegExp(v, 'i');
-		for (let i = 0; i < content.length; i++) {
-			let cont = content[i];
+		items.each(cons(cont => {
 			if (typeof current == 'string' && current == cont.name) current = cont;
 			// 过滤不满足条件的
-			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) continue;
+			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) return;
 
 			let btn = p.button(Tex.whiteui, Styles.clearToggleTransi, imageSize, () => {
 				cons.get(current = cont);
@@ -295,17 +296,17 @@ exports.showSelectImageTableWithIcons = function (button, content, icons, curren
 			btn.update(() => btn.setChecked(cont == current))
 
 			if ((i + 1) % cols == 0) p.row();
-		}
+		}))
 	}, searchable);
 }
 
 // 弹出一个可以选择内容的窗口（无需你提供图标）
-exports.showSelectImageTable = function (button, content, current, size, imageSize, cons, cols, searchable) {
+exports.showSelectImageTable = function (button, items, current, size, imageSize, cons, cols, searchable) {
 	let icons = []
-	for (let i = 0; i < content.length; i++) {
-		icons.push(new TextureRegionDrawable(content[i].icon(Cicon.small)))
+	for (let i = 0; i < items.length; i++) {
+		icons.push(new TextureRegionDrawable(items.get(i).icon(Cicon.small)))
 	}
-	return this.showSelectImageTableWithIcons(button, content, icons, current, size, imageSize, cons, cols, searchable)
+	return this.showSelectImageTableWithIcons(button, items, icons, current, size, imageSize, cons, cols, searchable)
 }
 
 exports.selectionWithField = function(table, items, current, size, imageSize, cols, searchable){

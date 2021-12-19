@@ -10,11 +10,17 @@ const Classes = exports.classes = Packages.mindustry.mod.ClassMap.classes;
 const lang = Packages.java.lang
 
 exports.defaultClass = ObjectMap.of(
+	Effect, 'none',
 	UnitType, 'mono',
 	Item, 'copper',
 	Liquid, 'water'
 )
 
+const effects = new Seq()
+let fs = IntFunc.toClass(Fx).getFields()
+for (let i = 0; i < fs.length; i++) {
+	effects.add(fs[i].name)
+}
 exports.filterClass = ObjectMap.of(
 	/* Effect, (table, value) => {},
 	Attribute, (table, value) => {},
@@ -48,6 +54,13 @@ exports.filterClass = ObjectMap.of(
 		let map = fObject(cont, prov(() => selection.type), value, Seq([BulletType]))
 		return map
 	},
+	StatusEffect, (table, value) => {
+		table = table.table().get()
+		value = value || new IntObject()
+		let cont = table.table().name('cont').get()
+		let map = fObject(cont, prov(() => StatusEffect), value, Seq([StatusEffect]))
+		return map
+	},
 	/* AmmoType, (table, value) => {},
 	DrawBlock, (table, value) => {},
 	Ability, (table, value) => {}, */
@@ -61,41 +74,47 @@ exports.filterClass = ObjectMap.of(
 	ItemStack, (table, value) => {
 		let [item, amount] =
 			typeof value == 'string' ? value.split('/') :
-				value instanceof IntObject ? [value.get('item'), value.get('amount')] : [Items.copper, 0];
+				value instanceof IntObject ? [value.get('item'), value.get('amount')] : [Items.copper, 0]
 
-		let items = Vars.content.items().toArray()
+		let items = Vars.content.items()
 
 		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Item.'
 		if (isNaN(amount)) throw TypeError('\'' + amount + '\' isn\'t a number')
-		let output = buildOneStack(table, 'item', items, item, amount)
-		return prov(() => '{item:' + output[0].get() + ', amount:' + output[1].get() + '}');
+		return buildOneStack(table, 'item', items, item, amount)
 	},
 	// like ItemStack
 	LiquidStack, (table, value) => {
 		let [item, amount] = typeof value == 'string' ?
-			value.split('/') : [value.get('liquid'), value.get('amount')],
-			items = Vars.content.liquids().toArray()
+			value.split('/') : [value.get('liquid'), value.get('amount')]
+
+		let items = Vars.content.liquids()
 
 		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Liquid.'
 		if (isNaN(amount)) amount = 0// throw TypeError('\'' + amount + '\' isn\'t a number')
-		let output = buildOneStack(table, 'liquid', items, item, amount)
-		return prov(() => '{liquid:' + output[0].get() + ', amount:' + output[1].get() + '}');
+		return buildOneStack(table, 'liquid', items, item, amount)
+	},
+	Effect, (table, value) => {
+		let val = '' + value || exports.defaultClass.get(Effect);
+		let btn = table.button(val, Styles.cleart, () => {
+			IntFunc.showSelectListTable(btn, effects, val, 130, 50, cons(fx => btn.setText(val = fx)), true);
+		}).size(130, 45).get();
+		return prov(() => val)
 	},
 	UnitType, (table, value) => {
 		value = '' + value || exports.defaultClass.get(UnitType);
-		let prov = IntFunc.selectionWithField(table, Vars.content.units().toArray(), value, 42, 32, 6, true)
+		let prov = IntFunc.selectionWithField(table, Vars.content.units(), value, 42, 32, 6, true)
 
 		return prov
 	},
 	Item, (table, value) => {
 		value = '' + value || exports.defaultClass.get(Item);
-		let prov = IntFunc.selectionWithField(table, Vars.content.items().toArray(), value, 42, 32, 6, true)
+		let prov = IntFunc.selectionWithField(table, Vars.content.items(), value, 42, 32, 6, true)
 
 		return prov
 	},
 	Liquid, (table, value) => {
 		value = '' + value || exports.defaultClass.get(Liquid);
-		let prov = IntFunc.selectionWithField(table, Vars.content.liquids().toArray(), value, 42, 32, 6, true)
+		let prov = IntFunc.selectionWithField(table, Vars.content.liquids(), value, 42, 32, 6, true)
 
 		return prov
 	},
@@ -129,10 +148,10 @@ exports.filterClass = ObjectMap.of(
 	}
 )
 
-const category = [], unitType = ['none', 'flying', 'mech', 'legs', 'naval', 'payload'];
+const category = new Seq(), unitType = Seq.withArrays('none', 'flying', 'mech', 'legs', 'naval', 'payload');
 exports.filterKey = ObjectMap.of(
 	'category', (table, value) => {
-		if (!category.includes('' + value)) return null;
+		if (!category.contains('' + value)) return null;
 		let val = value || 'distribution';
 		let btn = table.button(val, Styles.cleart, () => {
 			IntFunc.showSelectListTable(btn, category, val, 130, 50, cons(cat => btn.setText(val = cat)), false);
@@ -153,41 +172,63 @@ exports.filterKey = ObjectMap.of(
 	'consumes', (table, value) => {
 		value = value || new IntObject()
 		let cont = table.table(Tex.button).get()
-		let tables = { item: new Table, liquid: new Table }
-		let enable = { item: true, liquid: true }
-		let itemSetup = b => {
-			if (enable.item = b) {
-				items.add(tables.item)
-			} else tables.item.remove()
+		let content = {
+			power: (t, v) => {
+				let field = new TextField(v instanceof IntObject ? 0 : '' + v)
+				t.add(field);
+				return prov(() => field.getText())
+			}, item: (t, obj) => {
+				obj.put('items', fArray(t, Classes.get('ItemStack'), obj.getDefault('items', [])))
+				t.row()
+				t.table(cons(t => {
+					t.check(Core.bundle.get('ModMake.consumes-optional', 'optional'), obj.getDefault('optional', false), boolc(b => obj.put('optional', b)))
+					t.check(Core.bundle.get('ModMake.consumes-booster', 'booster'), obj.getDefault('booster', false), boolc(b => obj.put('booster', b)))
+				})).row()
+				return obj
+			}, liquid: (t, obj) => {
+				let p = exports.filterClass.get(LiquidStack)(t, obj)
+				let v = p.get()
+				t.row()
+				t.table(cons(t => {
+					t.check(Core.bundle.get('ModMake.consumes-optional', 'optional'), obj.getDefault('optional', false), boolc(b => v.put('optional', b)))
+					t.check(Core.bundle.get('ModMake.consumes-booster', 'booster'), obj.getDefault('booster', false), boolc(b => v.put('booster', b)))
+				})).row()
+				return v
+			}
 		}
-		let items = new Table()
-		itemSetup(value.get('items') != null)
-		cont.check('items', enable.item, boolc(b => itemSetup(b))).row()
-		cont.add(items).row()
-		value.put('items', fArray(tables.item, IntFunc.toClass(ItemStack), value.getDefault('items', [])));
-		cont.row()
+		function consumer(name, displayName, key, obj) {
+			this.enable = obj != null
+			obj = obj || new IntObject()
+			this.name = name
+			let table = new Table()
+			let t = this.table = new Table()
 
-		let liquidSetup = b => {
-			if (enable.liquid = b) {
-				liquids.add(tables.liquid)
-			} else tables.liquid.remove()
+			cont.check(displayName, this.enable, boolc(b => this.setup(b))).row()
+			cont.add(table).row()
+			value.put(key, content[name](t, obj));
+			cont.row()
+			this.setup = function (b) {
+				if (this.enable = b) {
+					table.add(this.table)
+				} else this.table.remove()
+			}
+			this.setup(this.enable)
 		}
-		let liquids = new Table()
-		liquidSetup(value.get('liquid') != null)
-		cont.check('liquid', enable.liquid, boolc(b => liquidSetup(b))).row()
-		cont.add(liquids).row()
-		value.put('liquid', exports.filterClass.get(LiquidStack)(tables.liquid, value.getDefault('liquid', 'water/0')))
+		let power = new consumer('power', 'power', 'power', value.get('power'));
+		let item = new consumer('item', 'items', 'items', value.get('items'));
+		let liquid = new consumer('liquid', 'liquids', 'liquid', value.get('liquid'));
 
 		return prov(() => {
-			if (!enable.item) value.remove('items')
-			if (!enable.liquid) value.remove('liquid')
+			if (!power.enable) value.remove('power')
+			if (!item.enable) value.remove('items')
+			if (!liquid.enable) value.remove('liquid')
 			return value + ''
 		})
 	}
 )
 
 exports.load = function () {
-	for (let cat of Category.all) category.push('' + cat)
+	for (let cat of Category.all) category.add('' + cat)
 }
 
 exports.make = function (type) {
@@ -244,21 +285,21 @@ function fArray(t, vType, v) {
 
 let cont = Packages.mindustry.ctype.UnlockableContent
 function buildOneStack(t, type, stack, content, amount) {
-	let output = [];
+	let output = new IntObject();
 
 	t.add('$' + type);
 
-	content = content || stack[0]
-	output[0] = IntFunc.selectionWithField(t, stack, content instanceof cont ? content.name : '' + content, 42, 32, 6, true)
+	content = content || stack.get(0)
+	output.put(type, IntFunc.selectionWithField(t, stack, content instanceof cont ? content.name : '' + content, 42, 32, 6, true))
 
 	t.add('$amount');
 	let atf = t.field('' + (amount | 0), cons(t => { })).get();
-	output[1] = prov(() => atf.getText() | 0);
+	output.put('amount', prov(() => atf.getText() | 0));
 
-	return output;
+	return prov(() => output);
 }
 
-let _class = Packages.java.lang.Class;
+let _class = Seq([Seq]).get(0);
 exports.getGenericType = function (field) {
 	return ('class ' + field.getGenericType())
 		.replace(field.type, '').replace(/\<(.+?)\>/, '$1')

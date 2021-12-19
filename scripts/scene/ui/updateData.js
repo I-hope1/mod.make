@@ -2,7 +2,7 @@
 var meta = Vars.mods.locateMod(modName).meta
 Events.on(ClientLoadEvent, () => {
 	// 更新日志弹窗
-	if (Core.settings.get(modName + '-不再显示', false)) return;
+	if (Core.settings.get(modName + '-not_show_again', false)) return;
 	// 更新日志函数
 	function fun(table, version, text, hasImage) {
 		table.add('' + version).size(20).growX().left().row();
@@ -67,7 +67,7 @@ Events.on(ClientLoadEvent, () => {
 	t.row();
 	t.table(cons(_t => {
 		_t.button('$ok', () => t.hide()).size(120, 50);
-		_t.check(Core.bundle.get('not_show_again', 'not show again'), boolc(b => Core.settings.put(modName + '-not_show_again', b)
+		_t.check(Core.bundle.get('not_show_again', 'not show again'), Core.settings.get(modName + '-not_show_again', false), boolc(b => Core.settings.put(modName + '-not_show_again', b)
 		));
 	}));
 

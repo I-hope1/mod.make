@@ -170,7 +170,7 @@ exports.cont = {
 		/* tiles */
 		tiles.cont = new Table(cons(t => {
 			let btn1 = t.button('Set',
-				() => IntFunc.showSelectImageTable(btn1, Vars.content.blocks().toArray(), null, 42, 32, cons(block =>
+				() => IntFunc.showSelectImageTable(btn1, Vars.content.blocks(), null, 42, 32, cons(block =>
 					tiles.arr.forEach(t => t.block() != block && t.setBlock(block, t.team()))
 				), 6, true)
 			).height(H).growX().right().get()
@@ -191,7 +191,7 @@ exports.cont = {
 				for (let i = 0; i < arr.length; i++) {
 					icons.push(Tex.whiteui.tint(arr[i].color));
 				}
-				IntFunc.showSelectImageTableWithIcons(btn1, arr, icons, null, 42, 32, cons(team =>
+				IntFunc.showSelectImageTableWithIcons(btn1, Seq(arr), icons, null, 42, 32, cons(team =>
 					buildings.arr.forEach(b => b.changeTeam(team))
 				), 3, false)
 			}).height(H).growX().right().get()
@@ -204,19 +204,19 @@ exports.cont = {
 		/* floors */
 		floors.cont = new Table(cons(t => {
 			let btn1 = t.button('Set Floor Reset Overlay',
-				() => IntFunc.showSelectImageTable(btn1, Vars.content.blocks().toArray().filter(block => block instanceof Floor), null, 42, 32, cons(floor =>
+				() => IntFunc.showSelectImageTable(btn1, Vars.content.blocks().select(boolf(block => block instanceof Floor)), null, 42, 32, cons(floor =>
 					tiles.arr.forEach(t => t.setFloor(floor))
 				), 6, true)
 			).height(H).growX().right().get();
 			t.row()
 			let btn2 = t.button('Set Floor Preserving Overlay',
-				() => IntFunc.showSelectImageTable(btn2, Vars.content.blocks().toArray().filter(block => block instanceof Floor && !(block instanceof OverlayFloor)), null, 42, 32, cons(floor =>
+				() => IntFunc.showSelectImageTable(btn2, Vars.content.blocks().select(boolf(block => block instanceof Floor && !(block instanceof OverlayFloor))), null, 42, 32, cons(floor =>
 					tiles.arr.forEach(t => t.setFloorUnder(floor))
 				), 6, true)
 			).height(H).growX().right().get();
 			t.row()
 			let btn3 = t.button('Set Overlay',
-				() => IntFunc.showSelectImageTable(btn3, Vars.content.blocks().toArray().filter(block => block instanceof OverlayFloor), null, 42, 32, cons(overlay =>
+				() => IntFunc.showSelectImageTable(btn3, Vars.content.blocks().select(boolf(block => block instanceof OverlayFloor)), null, 42, 32, cons(overlay =>
 					tiles.arr.forEach(t => t.setOverlay(overlay))
 				), 6, true)
 			).height(H).growX().right().get();

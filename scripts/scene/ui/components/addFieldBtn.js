@@ -4,33 +4,37 @@ const IntFunc = require('func/index');
 const IntCons = require('func/constructor');
 const Modifier = Packages.java.lang.reflect.Modifier;
 
-exports.filter = function(field){
-	if (!Modifier.isPublic(field.getModifiers()) || field.getName() == 'id' || /i|Icon/.test(field.getName())) return false;
-	let type = field.type, name = field.getName()
+exports.filter = function (field) {
+	if (!Modifier.isPublic(field.getModifiers()) || field.name == 'id' || /(i|I)con/.test(field.name)) return false;
+	let type = field.type, name = field.name
 	while (type.isArray() || type == Seq) {
 		type = type == Seq ? buildContent.getGenericType(field)[0] : type.getComponentType()
 	}
 	if (type.isPrimitive() || type == lstr) return true;
 	// 使用throw跳出循环
 	try {
-		buildContent.filterClass.each(new Cons2({get:(k, v) => {
-			if (k.isAssignableFrom(type)) throw''
-		}}))
-		buildContent.filterKey.each(new Cons2({get:(k, v) => {
-			if (k == name) throw''
-		}}))
+		buildContent.filterClass.each(new Cons2({
+			get: (k, v) => {
+				if (k.isAssignableFrom(type)) throw ''
+			}
+		}))
+		buildContent.filterKey.each(new Cons2({
+			get: (k, v) => {
+				if (k == name) throw ''
+			}
+		}))
 	} catch (e) { return true }
 	return false
 }
 
 let lstr = Packages.java.lang.String
-exports.constructor = function(obj, Fields, prov){
+exports.constructor = function (obj, Fields, prov) {
 	let btn = new TextButton('$add');
 	btn.add(new Image(Icon.add))
 	btn.getCells().reverse()
 	btn.clicked(() => {
 		let content = cont = prov.get(), fields;
-		
+
 		let table = new Table;
 		let reg, hide;
 		function eachFields() {
@@ -43,16 +47,18 @@ exports.constructor = function(obj, Fields, prov){
 				.disabled(obj.get('type') != null).row();
 			for (let i = 0; i < fields.length; i++) {
 				let field = fields[i]
-				if (!exports.filter(field)) continue
+				if (!exports.filter(field))
+					continue
 				let name = field.getName()
 				if (reg != null && !reg.test(name)) continue
 				table.button(name, Styles.cleart, run(() => {
 					let type = field.type
 					Fields.add(null, name,
 						type.isArray() || type == Seq ? new IntCons.Array() :
-						/^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
+							/^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
 						type.getSimpleName() == 'boolean' ? false :
-						type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */new IntCons.Object()
+						type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */
+						buildContent.defaultClass.containsKey(type) ? buildContent.defaultClass.get(type) : new IntCons.Object()
 					);
 
 					hide.run();
@@ -60,7 +66,7 @@ exports.constructor = function(obj, Fields, prov){
 					.disabled(obj.get(name) != null).row();
 			}
 			if (table.children.size == 0) {
-				table.add('$none')
+				table.table(cons(t => t.add('$none'))).size(Core.graphics.getWidth() * .2, 45)
 			}
 		}
 
@@ -70,7 +76,7 @@ exports.constructor = function(obj, Fields, prov){
 			if (!load) {
 				try {
 					reg = RegExp(v, 'i');
-				} catch(e) { reg = null };
+				} catch (e) { reg = null };
 				eachFields(fields)
 				return;
 			}
@@ -91,8 +97,8 @@ exports.constructor = function(obj, Fields, prov){
 				p.row();
 				p.button('$ok', Styles.cleart, run(() => {
 					this.Fields.add(null, name
-							.getText(), value
-								.getText());
+						.getText(), value
+							.getText());
 					_hide.run()
 				})).fillX();
 				return;
@@ -103,13 +109,13 @@ exports.constructor = function(obj, Fields, prov){
 			p.button('reload', Styles.cleart, () => reload(p, _hide, v, load = true)).size(Core.graphics.getWidth() * .2, 45).row()
 			p.button('获取所有信息', Styles.cleart, () => {
 				all = true
-				eachFields(fields = cont.getFields())
+				eachFields(fields = prov.get().getFields())
 			}).size(Core.graphics.getWidth() * .2, 45).disabled(boolf(() => all)).row()
 
 			p.button('获取超类信息', Styles.cleart, () => {
 				all = false;
 				eachFields(fields = (cont = cont.getSuperclass()).getDeclaredFields())
-			}).size(Core.graphics.getWidth() * .2, 45).disabled(boolf(() => cont.getSuperclass() == Packages.java.lang.Object)).row()
+			}).size(Core.graphics.getWidth() * .2, 45).disabled(boolf(() => cont.getSuperclass() == Packages.java.lang.Object || all)).row()
 			p.image().color(Color.gray).pad(6).fillX().row()
 			p.add(table).padBottom(4).fillX()
 			eachFields(fields = cont.getDeclaredFields())
