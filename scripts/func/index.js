@@ -283,7 +283,8 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 		p.defaults().size(size);
 
 		let reg = RegExp(v, 'i');
-		items.each(new Cons({get:cont => {
+		for (let i = 0; i < items.size;) {
+			let cont = items.get(i)
 			if (typeof current == 'string' && current == cont.name) current = cont;
 			// 过滤不满足条件的
 			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) return;
@@ -295,15 +296,15 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 			btn.getStyle().imageUp = icons[i];
 			btn.update(() => btn.setChecked(cont == current))
 
-			if ((i + 1) % cols == 0) p.row();
-		}}))
+			if (++i % cols == 0) p.row();
+		}
 	}, searchable);
 }
 
 // 弹出一个可以选择内容的窗口（无需你提供图标）
 exports.showSelectImageTable = function (button, items, current, size, imageSize, cons, cols, searchable) {
 	let icons = []
-	for (let i = 0; i < items.length; i++) {
+	for (let i = 0; i < items.size; i++) {
 		icons.push(new TextureRegionDrawable(items.get(i).icon(Cicon.small)))
 	}
 	return this.showSelectImageTableWithIcons(button, items, icons, current, size, imageSize, cons, cols, searchable)
