@@ -3,6 +3,8 @@ const Fields = require('scene/ui/components/Fields');
 const scripts = require('scene/ui/scripts');
 const addBtn = require('scene/ui/components/addFieldBtn');
 const typeSelection = require('scene/ui/components/typeSelection');
+const { MyObject, MyArray } = require('func/constructor')
+
 
 const Classes = Packages.mindustry.mod.ClassMap.classes;
 
@@ -13,7 +15,14 @@ exports.contentTypes = [];
 const types = exports.types = {};
 
 exports.load = function () {
+	let field = Vars.mods.getClass().getDeclaredField('parser')
+	field.setAccessible(true)
+	let parser = field.get(Vars.mods)
+	field = parser.getClass().getDeclaredField("parsers")
+	field.setAccessible(true)
+	let parsers = field.get(parser)
 	for (let type of ContentType.all) {
+		if (!parsers.containsKey(type)) continue
 		let arr = Vars.content.getBy(type);
 		if (!arr.isEmpty()) {
 			let c = arr.first().getClass();
@@ -92,6 +101,40 @@ exports.edit = function (file, mod) {
 	Vars.ui.loadfrag.hide()
 }
 
+function toIntObject(value) {
+	let obj2 = new MyObject(), arr = []
+	let output = obj2
+	while (true) {
+		for (let child = value.child; child != null; child = child.next) {
+			let result = (() => {
+				if (child.isArray()) {
+					let array = new MyArray()
+					arr.push(child, array);
+					return array
+				}
+				if (child.isObject()) {
+					let obj = new MyObject()
+					arr.push(child, obj);
+					return obj
+				}
+
+				let value = child.asString()
+				if (child.isNumber()) value *= 1
+				if (child.isBoolean()) value = value == 'true'
+				return value
+			})()
+			if (obj2 instanceof Array) obj2.push(result)
+			else obj2.put(child.name, result)
+		}
+		if (arr.length == 0) break
+		value = arr.shift()
+		obj2 = arr.shift()
+	}
+	// Log.info(output + "")
+	return output
+}
+
+
 // 编辑代码
 exports.build = function () {
 	pane.clearChildren()
@@ -99,13 +142,12 @@ exports.build = function () {
 	let file = this.file
 	let ext = file.extension();
 	if (/^h?json$/.test(ext)) {
-		let obj = result.value = IntFunc.HjsonParse(file.readString())
+		let obj = result.value = toIntObject(IntFunc.HjsonParse(file.readString()))
 
 		let parentname = file.parent().name();
 		let typeName = parentname.slice(0, -1);
-		if (obj.get('type') != null && parentname == 'blocks') {
-			typeName = obj.get('type')
-			obj.remove('type')
+		if (obj.has('type') && parentname == 'blocks') {
+			typeName = obj.remove('type')
 		}
 		else if (types[typeName] != null && types[typeName][0] != null) {
 			typeName = types[typeName][0].getSimpleName()
@@ -124,6 +166,7 @@ exports.build = function () {
 
 		let table = new Table(Tex.whiteui.tint(.4, .4, .4, .9))
 		let fields = new Fields.constructor(obj, prov(() => selection.type), table)
+
 		pane.table(Tex.button, cons(t => {
 			t.add(table).fillX().pad(4).row();
 
@@ -146,7 +189,7 @@ exports.build = function () {
 				} */
 				// 研究
 				var k = 'research';
-				let value = obj.get(k)
+				let value = obj.getDefault(k, "core-shard")
 				t.add(Core.bundle.get(k, k));
 				t.add(':');
 
@@ -169,21 +212,19 @@ exports.build = function () {
 							let t = tech.content;
 							if (!reg.test(t.name) && !reg.test(t.localizedName)) continue;
 
-							let table = tableArr[
-								t instanceof Item ? 0 :
+							let index = t instanceof Item ? 0 :
 								t instanceof Liquid ? 1 :
-								t instanceof Block ? 2 :
-								t instanceof UnitType ? 3 :
-								t instanceof SectorPreset ? 4 :
-								5
-							];
+									t instanceof Block ? 2 :
+										t instanceof UnitType ? 3 :
+											t instanceof SectorPreset ? 4 : 5
+							let table = tableArr[index];
 							let button = table.button(Tex.whiteui, Styles.clearToggleTransi, 32, () => {
 								obj.put(k, t.name)
 								btn.setText(t.localizedName);
 								hide.run()
 							}).size(42).get();
 							button.getStyle().imageUp = new TextureRegionDrawable(t.uiIcon);
-							button.update(() => button.setChecked(obj.get(k) == t.name));
+							button.update(() => button.setChecked(obj.getDefault(k, '') == t.name));
 
 							if (table.children.size % (Vars.mobile ? 6 : 10) == 0) {
 								table.row();
@@ -201,7 +242,7 @@ exports.build = function () {
 					)).size(150, 60).get();
 			})).fillX();
 		})).fillX().row();
-		obj.each((k, v) => {
+		fields.map.each((k, v) => {
 			if (k == 'research') return;
 			// try {
 			fields.add(null, k);
@@ -308,19 +349,19 @@ exports.parse = function () {
 		if (type != null) {
 			if (toClass(UnitType).isAssignableFrom(type) ||
 				toClass(Item).isAssignableFrom(type) ||
-				toClass(Liquid).isAssignableFrom(type)) {}
+				toClass(Liquid).isAssignableFrom(type)) { }
 
 			else if (!obj.has('type')) obj.put('type', typeName)
 		}
 
-		file.writeString(obj + '');
+		file.writeString(obj + "");
 		let dir = this.mod.file.child('content').child(
 			type != null ?
 				(toClass(Block).isAssignableFrom(type) ? 'block' :
-				toClass(UnitType).isAssignableFrom(type) ? 'unit' :
-				toClass(Item).isAssignableFrom(type) ? 'Item' :
-				toClass(Liquid).isAssignableFrom(type) ? 'liquid' : type.getContentType()) + 's'
-			: 'blocks'
+					toClass(UnitType).isAssignableFrom(type) ? 'unit' :
+						toClass(Item).isAssignableFrom(type) ? 'item' :
+							toClass(Liquid).isAssignableFrom(type) ? 'liquid' : type.getContentType()) + 's'
+				: 'blocks'
 		);
 		this.file = dir.child(file.name());
 		file.moveTo(this.file)

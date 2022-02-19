@@ -1,6 +1,7 @@
 const IntStyles = require('scene/styles');
 const IntFunc = require('func/index');
 const JsonDialog = require('scene/ui/dialogs/JsonDialog');
+const IntModsDialog = require('scene/ui/dialogs/ModsDialog');
 const Editor = require('scene/ui/dialogs/Editor');
 
 // 语言
@@ -40,20 +41,20 @@ const bundles = [
 ];
 
 const framework = [
-	'--blocks--',,
+	'--blocks--', ,
 	'No Framework', '',
-	'Block', 'type: Block\nname: ""\ndescription: ""\nhealth: 40\nupdate: true\nresearch: core-shard\nrequirements: []\ncategory: distribution',
+	'Block', 'type: Block\nname: "block"\ndescription: ""\nhealth: 40\nupdate: true\nresearch: core-shard\nrequirements: []\ncategory: distribution',
 
-	'--items--',,
-	'Item', 'name: ""\ndescription: ""\nexplosiveness: 0\nflammability: 0\nradioactivity: 0\ncost: 1',
+	'--items--', ,
+	'Item', 'name: "item"\ndescription: ""\nexplosiveness: 0\nflammability: 0\nradioactivity: 0\ncost: 1',
 
-	'--liquids--',,
-	'Liquid', 'name: ""\ndescription: ""\ncolor: "000000"\nflammability: 0\nviscosity: 0.5\nexplosiveness: 0.1\nlightColor: "00000000"\nheatCapacity: 0.5\ntemperature: 0.5\neffect: none',
+	'--liquids--', ,
+	'Liquid', 'name: "liquid"\ndescription: ""\ncolor: "000000"\nflammability: 0\nviscosity: 0.5\nexplosiveness: 0.1\nlightColor: "00000000"\nheatCapacity: 0.5\ntemperature: 0.5\neffect: none',
 ]
 
 let dialog, desc;
 let w = Core.graphics.getWidth() > Core.graphics.getHeight() ? 540 : 440;
-exports.load = function(){
+exports.load = function () {
 	JsonDialog.load()
 
 	dialog = new BaseDialog('');
@@ -68,7 +69,8 @@ exports.load = function(){
 	dialog.addCloseListener();
 }
 
-exports.constructor = function(mod){
+exports.current = null
+exports.constructor = function (mod) {
 	let meta = mod.meta;
 	let displayName = '' + mod.displayName();
 	dialog.title.setText(displayName)
@@ -88,15 +90,15 @@ exports.constructor = function(mod){
 
 	if (meta.has('author')) {
 		desc.add('$editor.author', Color.gray).padRight(10).row();
-		desc.add('' + meta.get('author')).growX().wrap().padTop(2).row();
+		desc.add('' + meta.getString('author', "???")).growX().wrap().padTop(2).row();
 	}
 	if (meta.has('version')) {
 		desc.add('$editor.version', Color.gray).padRight(10).row();
-		desc.add('' + meta.get('version')).growX().wrap().padTop(2).row();
+		desc.add('' + meta.getString('version', "???")).growX().wrap().padTop(2).row();
 	}
 	if (meta.has('description')) {
 		desc.add('$editor.description').padRight(10).color(Color.gray).top().row();
-		desc.add('' + meta.get('description')).growX().wrap().padTop(2).row();
+		desc.add('' + meta.getString('description', "???")).growX().wrap().padTop(2).row();
 	}
 
 
@@ -124,20 +126,23 @@ exports.constructor = function(mod){
 				let reg = /^\/.+?\/$/;
 				content.findAll().each(boolf(c => {
 					try {
-						return reg.test(filter) ? RegExp(filter).test(c.path()) :
-						/^name:\w*/.test(filter) ? RegExp(filter.replace(/^name:/).test(c.nameWithoutExtension())) :
-						/^type:\w*/.test(filter) ? RegExp(filter.replace(/^type:/).test(c.path().replace(/.+\/content\/(\w+s).+/, '$1'))) :
-						filter == '';
+						return reg.test(filter) ? RegExp(filter).test(c.path())
+							: /^name:\w*/.test(filter) ? RegExp(filter.replace(/^name:/).test(c.nameWithoutExtension()))
+								: /^type:\w*/.test(filter) ? RegExp(filter.replace(/^type:/).test(c.path().replace(/.+\/content\/(\w+s).+/, '$1')))
+									: filter == '';
 					} catch (e) { return false }
 				}), cons(json => {
 					if (json != null && !/^h?json$/.test(json.extension())) return;
 
 					body.button(cons(b => {
 						b.left()
-						let image = b.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
-						if (!Vars.mobile) image.addListener(new HandCursorListener());
+						b.table(cons(t => {
+							t.left()
+							let image = t.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
+							if (!Vars.mobile) image.addListener(new HandCursorListener());
 
-						b.add(json.name()).top();
+							t.add(json.name()).top();
+						})).growX().left().get()
 						IntFunc.longPress(b, 600, longPress => {
 							if (longPress) {
 								Vars.ui.showConfirm('$confirm',
@@ -150,9 +155,54 @@ exports.constructor = function(mod){
 							}
 							else {
 								let _dialog = JsonDialog.constructor(json, mod);
-								if (_dialog != null) _dialog.hidden(run(() => setup()));
+								if (_dialog != null) _dialog.hidden(() => setup());
 							}
 						});
+
+						let mod_name = meta.has("name") ? meta.getString("name").toLowerCase().replace(' ', '-') : modName
+						let _mod = Vars.mods.getMod(mod_name)
+						let clazz = Vars.mods.getClass()
+						let field = clazz.getDeclaredField('parser')
+						field.setAccessible(true)
+						let parser = field.get(Vars.mods)
+						// this.current = Vars.content.getLastAdded();
+						/* b.table(cons(t => {
+							t.button(Icon.add, Styles.clearTransi, () => {
+								try {
+									//this binds the content but does not load it entirely
+									let name = json.parent().name()
+									let ctype = Seq([ContentType]).get(0).getField(name[name.length - 1] != "s" ? name : name.substring(0, name.length - 1)).get(null)
+									let loader = parser.parse(_mod, json.nameWithoutExtension(), json.readString(), json, ctype)
+									loader.init()
+									loader.load()
+									if (loader instanceof Block) {
+										loader.loadIcon()
+										loader.buildVisibility = BuildVisibility.shown
+									}
+									dialog.hide()
+									IntModsDialog.ui.hide()
+									IntModsDialog.ui.shown(() => {
+										loader = null
+										let c = this.current
+										if (c != null && Vars.content.getLastAdded() == c) {
+											Vars.content.removeLast()
+											if (this.current instanceof Block) {
+												this.current.buildVisibility = BuildVisibility.hidden
+												this.current = null
+											}
+										}
+										Time.run(1, () => dialog.show())
+										IntModsDialog.ui.shown(() => { })
+									})
+								} catch (e) {
+									if (this.current != Vars.content.getLastAdded() && Vars.content.getLastAdded() != null) {
+										Log.err(e)
+									}
+									Vars.ui.showErrorMessage(e);
+									this.current = null
+								}
+							});
+						})) */
 					}), Styles.defaultb, run(() => { })).fillX().minWidth(400).pad(2).padLeft(4).left().row();
 				}))
 			}
@@ -167,7 +217,8 @@ exports.constructor = function(mod){
 					t.add('$name')
 					t.add(name).fillX();
 				})).fillX().row();
-				let table = new Table, values = [], selected = j = 0, type = {};
+				let table = new Table, values = [],
+					selected = 0, type = {};
 				for (let i = 0; i < framework.length; i += 2) {
 					let k = framework[i]
 					if (/^--[a-z]+s--$/.test(k)) {
@@ -188,7 +239,7 @@ exports.constructor = function(mod){
 				children.get(selected).fireClick()
 				table.defaults().width(300)
 				ui.cont.pane(table).width(300).height(400)
-				
+
 				ui.buttons.button('$back', run(() => ui.hide())).size(150, 64);
 				ui.buttons.button('$ok', run(() => {
 					let file = content.child(type.finalValue).child(name.getText() + '.json');

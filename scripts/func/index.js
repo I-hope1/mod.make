@@ -1,5 +1,5 @@
 
-const IntCons = require('func/constructor');
+const { MyObject, MyArray } = require('func/constructor');
 
 const forIn = exports.forIn = function (obj, str, method) {
 	var jg = [], method = method instanceof Function ? method : str => str;
@@ -61,30 +61,30 @@ exports.showTextArea = function (text) {
 /* hjson解析 (使用arc的JsonReader) */
 exports.HjsonParse = function (str) {
 	if (typeof str !== 'string') return str;
-	if (str == '') return new IntCons.Object();
+	if (str == '') return new MyObject();
 	if (str.replace(/^\s+/, '')[0] != '{') str = '{' + str + '}'
 	try {
-		let obj1 = (new JsonReader).parse(str), arr = [],
-			obj2 = output = new IntCons.Object();
+		return (new JsonReader).parse(str)
+		let obj1 = (new JsonReader).parse(str), arr = [];
+		let output, obj2 = output = new MyObject();
 		while (true) {
-			for (let i = 0; i < obj1.size; i++) {
-				let child = obj1.get(i);
+			for (let child = obj1.child; child != null; child = child.next) {
 				if (child.isArray()) {
-					let array = new IntCons.Array()
+					let array = new MyArray()
 					if (obj2 instanceof Array) obj2.push(array)
 					else obj2.put(child.name, array)
 					arr.push(child, array);
 					continue
 				}
 				if (child.isObject()) {
-					let obj = new IntCons.Object()
+					let obj = new MyObject()
 					if (obj2 instanceof Array) obj2.push(obj)
 					else obj2.put(child.name, obj)
 					arr.push(child, obj);
 					continue
 				}
 
-				let value = obj1.getString(i)
+				let value = child.asString()
 				if (child.isNumber()) value *= 1
 				if (child.isBoolean()) value = value == 'true'
 				if (obj2 instanceof Array) obj2.push(value)
@@ -97,7 +97,7 @@ exports.HjsonParse = function (str) {
 		return output;
 	} catch (err) {
 		Vars.ui.showErrorMessage(err);
-		return new IntCons.Object();
+		return new MyObject();
 	};
 	// hjson = hjson.replace(/\s/g, '')[0] != '{' ? '{' + hjson + '}' : hjson;
 	/* try {
@@ -162,11 +162,9 @@ exports.doubleClick = function (elem, runs) {
 };
 // 长按事件
 exports.longPress = function (elem, duration, func) {
-	elem.addListener(extend(ClickListener, {
-		clicked(a, b, c) {
-			func(Time.millis() - this.visualPressedTime > duration)
-		}
-	}));
+	elem.clicked(cons(l => { }), cons(l => {
+		func(Time.millis() - l.visualPressedTime > duration)
+	}))
 
 	return elem;
 }
@@ -246,17 +244,19 @@ exports.showSelectTable = function (button, fun, searchable) {
 }
 
 
-exports.showSelectListTable = function(button, list, current, width, height, cons, searchable){
+exports.showSelectListTable = function (button, list, current, width, height, cons, searchable) {
 	this.showSelectTable(button, (p, hide, text) => {
 		p.clearChildren();
 
 		let reg = new RegExp(text, 'i')
-		list.each(boolf(item => reg.test(item)	), new Cons({get:item => {
-			p.button('' + item, Styles.cleart, () => {
-				cons.get(item)
-				hide.run();
-			}).size(width, height).disabled(current == item).row();
-		}}))
+		list.each(boolf(item => reg.test(item)), new Cons({
+			get: item => {
+				p.button('' + item, Styles.cleart, () => {
+					cons.get(item)
+					hide.run();
+				}).size(width, height).disabled(current == item).row();
+			}
+		}))
 	}, searchable);
 }
 
@@ -302,15 +302,15 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 }
 
 // 弹出一个可以选择内容的窗口（无需你提供图标）
-exports.showSelectImageTable = function (button, items, current, size, imageSize, cons, cols, searchable) {
+exports.showSelectImageTable = function (button, items, current, size, imageSize, _cons, cols, searchable) {
 	let icons = []
-	for (let i = 0; i < items.size; i++) {
-		icons.push(new TextureRegionDrawable(items.get(i).icon(Cicon.small)))
-	}
-	return this.showSelectImageTableWithIcons(button, items, icons, current, size, imageSize, cons, cols, searchable)
+	items.each(cons(item => {
+		icons.push(new TextureRegionDrawable(item.uiIcon))
+	}))
+	return this.showSelectImageTableWithIcons(button, items, icons, current, size, imageSize, _cons, cols, searchable)
 }
 
-exports.selectionWithField = function(table, items, current, size, imageSize, cols, searchable){
+exports.selectionWithField = function (table, items, current, size, imageSize, cols, searchable) {
 	let field = new TextField(current);
 	table.add(field).fillX()
 	let btn = table.button(Icon.pencilSmall, Styles.clearFulli, () => {

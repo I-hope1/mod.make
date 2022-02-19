@@ -1,11 +1,11 @@
 
 const buildContent = require('func/buildContent')
-const IntCons = require('func/constructor')
+const { MyObject, MyArray } = require('func/constructor')
 
 exports.colorfulTable = (i, cons) => {
-	return new Table(i % 3 == 0 ? Tex.whiteui.tint(0, 1, 1, .7) :
-		i % 3 == 1 ? Tex.whiteui.tint(1, 1, 0, .7) :
-			Tex.whiteui.tint(1, 0, 1, .7), cons)
+	return new Table(i % 3 == 0 ? Tex.whiteui.tint(0, .8, .8, .7) :
+		i % 3 == 1 ? Tex.whiteui.tint(.8, .8, 0, .7) :
+			Tex.whiteui.tint(.8, 0, .8, .7), cons)
 }
 
 exports.json = function (fields, i, key) {
@@ -23,18 +23,20 @@ exports.json = function (fields, i, key) {
 		} */
 	})
 }
+const reader = new JsonReader()
 
-exports.constructor = function (map, type, table) {
-	if (map == null) throw Error("'map' cannot be null")
-	if (!(map instanceof IntCons.Array || map instanceof IntCons.Object)) {
-		if (map instanceof Array) map = new IntCons.Array(map)
-		else map = new IntCons.Object(map)
-	}
-	this.map = map, this.table = table
+exports.constructor = function (value, type, table) {
+	if (value == null) throw Error("'value' can't be null");
+
+	if (value instanceof MyArray || value instanceof MyObject) {
+		this.map = value
+	} else throw new TypeError(value + " is not MyArray or MyObject")
+
+	this.table = table
 	Object.defineProperty(this, 'type', { get: () => type.get() })
 	let i = 0;
 	this.add = function (table, key, value) {
-		if (value != null && this.map.get(key) == null) {
+		if (value != null && !this.map.has(key)) {
 			this.map.put(key, value)
 		}
 		let t = table || exports.json(this, i++, key)
@@ -43,7 +45,7 @@ exports.constructor = function (map, type, table) {
 	this.remove = function (item, key) {
 		this.map.remove(key)
 		if (item != null) item.remove()
-		else Log.info(key)
+		else Log.err("can't remove key: " + key)
 	}/* 
 	this.init = function(){
 		

@@ -1,7 +1,7 @@
 const Editor = require('scene/ui/dialogs/Editor')
 
 let dialog, label, p
-exports.load = function(){
+exports.load = function () {
 	dialog = new Dialog
 	label = new Label('')
 	p = new Table
@@ -11,11 +11,11 @@ exports.load = function(){
 	p.table(cons(t => {
 		t.right();
 		t.button(Icon.download, Styles.clearPartiali, run(() => Vars.ui
-		.showConfirm(
-			'粘贴', '是否要粘贴', run(() => {
-				this.file.writeString(Core.app.getClipboardText());
-				label.setText(this.getText());
-			}))
+			.showConfirm(
+				'粘贴', '是否要粘贴', run(() => {
+					this.file.writeString(Core.app.getClipboardText());
+					label.setText(this.getText());
+				}))
 		));
 		t.button(Icon.copy, Styles.clearPartiali, run(() => {
 			Core.app.setClipboardText(this.file.readString());
@@ -29,7 +29,7 @@ exports.load = function(){
 	})).size(bw / 2, bh);
 
 	let listener = extend(VisibilityListener, {
-		hidden:() => {
+		hidden: () => {
 			this.file = Editor.file
 			dialog.title.setText(this.file.nameWithoutExtension())
 			label.setText(this.getText())
@@ -43,15 +43,15 @@ exports.load = function(){
 	})).size(bw / 2, bh);
 	dialog.closeOnBack();
 }
-exports.getText = function(){
+exports.getText = function () {
 	return this.file.readString().replace(/\r/g, '\n').replace(/\t/g, '  ').replace(/\[\s*([^]*?)\s*\]/g, '[ $1 ]')
 }
 
 let w = Core.graphics.getWidth(),
 	h = Core.graphics.getHeight(),
-	bw = w > h ? 550 : 450;
-	bh = w > h ? 64 : 70;;
-exports.constructor = function(file, mod){
+	bw = w > h ? 550 : 450,
+	bh = w > h ? 64 : 70;
+exports.constructor = function (file, mod) {
 	if (!/^h?json$/.test(file.extension())) return null;
 	this.file = file, this.mod = mod
 

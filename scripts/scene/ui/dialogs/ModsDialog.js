@@ -16,7 +16,8 @@ function newMod(file) {
 			return this.file.child('sprites').exists() ? this.file.child('sprites').findAll().toArray() : [];
 		},
 		displayName() {
-			return this.meta.getDefault('displayName', this.meta.getDefault('name', ''));
+			let meta = this.meta
+			return meta.getString('displayName', meta.getString("name"));
 		},
 		logo() {
 			try {
@@ -140,7 +141,7 @@ exports.constructor = function () {
 
 				title.table(cons(text => {
 					text.add('[accent]' + /*Strings.stripColors*/mod.displayName() + '\n[lightgray]v' +
-						mod.meta.get('version')).wrap().width(300).growX().left();
+						mod.meta.getString('version', '???')).wrap().width(300).growX().left();
 
 				})).top().growX();
 

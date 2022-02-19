@@ -7,7 +7,7 @@ const write = mod => {
 	if (!isNull) file.moveTo(mod);
 	let str = []
 	str.push('minGameVersion: ' + Fields.minGameVersion.getText())
-	
+
 	for (let item of arr) {
 		let text = Fields[item].getText()
 		str.push(item + ': ' + (text.replace(/\s+/, '') == '' ? '""' : text))
@@ -22,7 +22,7 @@ const arr = ['name', 'displayName', 'description', 'author', 'version', 'main', 
 
 let ui, cont, buttons, ok
 let isNull, obj, file
-exports.load = function(){
+exports.load = function () {
 	ui = new Dialog;
 	cont = ui.cont
 	buttons = ui.buttons
@@ -42,19 +42,23 @@ exports.load = function(){
 	})).size(Math.max(w, h) * 0.1, Math.min(w, h) * 0.1).get();
 
 	cont.add('$mod.fileName');
-	cont.add(Fields.fileName = new TextField).valid(extend(TextField.TextFieldValidator, {valid(text){
-		let valid
-		ok.setDisabled(valid = (text.replace(/\s/g, '') == '') || (text == 'tmp'));
-		return !valid
-	}})).row()
+	cont.add(Fields.fileName = new TextField).valid(extend(TextField.TextFieldValidator, {
+		valid(text) {
+			let valid
+			ok.setDisabled(valid = (text.replace(/\s/g, '') == '') || (text == 'tmp'));
+			return !valid
+		}
+	})).row()
 
 	cont.add('$minGameVersion');
-	cont.add(Fields.minGameVersion = new TextField).valid(extend(TextField.TextFieldValidator, {valid(text){
-		let num = +text
-		let valid
-		ok.setDisabled(valid = isNaN(num) || (num < 105) || (num > Version.build))
-		return !valid
-	}})).row()
+	cont.add(Fields.minGameVersion = new TextField).valid(extend(TextField.TextFieldValidator, {
+		valid(text) {
+			let num = +text
+			let valid
+			ok.setDisabled(valid = isNaN(num) || (num < 105) || (num > Version.build))
+			return !valid
+		}
+	})).row()
 
 	for (let i of arr) {
 		cont.add(Core.bundle.get(i, i));
@@ -70,7 +74,7 @@ exports.load = function(){
 	ui.closeOnBack();
 }
 
-exports.constructor = function(f){
+exports.constructor = function (f) {
 	file = f;
 	isNull = !f.exists()
 	if (isNull) file.writeString('')
@@ -78,8 +82,8 @@ exports.constructor = function(f){
 	ui.title.setText(isNull ? '$mod.create' : '$edit');
 
 	Fields.fileName.setText(isNull ? '' : f.parent().name())
-	Fields.minGameVersion.setText('' + obj.getDefault('minGameVersion', '105'))
-	
+	Fields.minGameVersion.setText('' + obj.getString('minGameVersion', '105'));
+
 	for (let item of arr) {
 		Fields[item].setText(obj.has(item) ? ('' + obj.get(item)).replace(/\n|\r/g, '\\n') : '')
 	}

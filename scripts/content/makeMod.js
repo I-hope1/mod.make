@@ -53,9 +53,9 @@ function TextField_JS(text, i, arr, t) {
 	t.addChildAt(i, arr[i]);
 }
 
-exports.cont = {
+contArr.push({
 	o: this,
-	name: Core.bundle.get('makeMod.localizedName', 'makeMod'), needFi: true,
+	name: 'makeMod', needFi: true,
 
 	load() {
 		IntModsDialog.load(this.name)
@@ -66,4 +66,4 @@ exports.cont = {
 	buildConfiguration(table) {
 		IntModsDialog.constructor()
 	}
-};
+});

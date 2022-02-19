@@ -1,13 +1,10 @@
-name: "mod tools"
+name: "mod make"
 description: '''
-[orange]WARNING: []此mod仍在测试中，bug很多
-如果发现bug，可以反馈给作者
+此mod分离自mod tools.
+[orange]WARNING: []此mod仍在测试中.
 []-----------------------
-2.4-beta更新内容:
-1. 优化ui.
-2. 修复bug.
-3. 完善select.
-目前还没完善
+1.0
+修复bug.
 
 创建的是文件夹(在[orange]mods(I hope...)[]文件夹).
 
