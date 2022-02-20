@@ -30,7 +30,7 @@ exports.constructor = function (value, type, table) {
 
 	if (value instanceof MyArray || value instanceof MyObject) {
 		this.map = value
-	} else throw new TypeError(value + " is not MyArray or MyObject")
+	} else throw new TypeError("'" + value + "' is not MyArray or MyObject")
 
 	this.table = table
 	Object.defineProperty(this, 'type', { get: () => type.get() })

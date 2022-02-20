@@ -11,13 +11,14 @@ const Classes = Packages.mindustry.mod.ClassMap.classes;
 let fileName, fileNameTable,
 	cont, pane, result = {};
 
-exports.contentTypes = [];
+exports.contentTypes = new Seq();
+const ContentTypes = exports.ContentTypes = new ObjectMap();
 const types = exports.types = {};
 
 exports.load = function () {
 	let field = Vars.mods.getClass().getDeclaredField('parser')
 	field.setAccessible(true)
-	let parser = field.get(Vars.mods)
+	let parser = this.parser = field.get(Vars.mods)
 	field = parser.getClass().getDeclaredField("parsers")
 	field.setAccessible(true)
 	let parsers = field.get(parser)
@@ -30,18 +31,21 @@ exports.load = function () {
 			while (!(c.getSuperclass() == Content || c.getSuperclass() == UnlockableContent || Packages.java.lang.reflect.Modifier.isAbstract(c.getSuperclass().getModifiers()))) {
 				c = c.getSuperclass();
 			}
-			this.contentTypes.push(c, type);
+			let _type = type + ""
+			type = _type[_type.length - 1] == "s" ? _type : _type + "s"
+			this.ContentTypes.put(type, _type)
+			this.contentTypes.add(c, type);
 		}
 	}
 
-	for (let i = 0; i < this.contentTypes.length; i += 2) {
-		this.types[this.contentTypes[i + 1]] = []
+	for (let i = 0; i < this.contentTypes.size; i += 2) {
+		this.types[this.contentTypes.get(i + 1)] = []
 	}
 	Classes.each(new Cons2({
 		get: (k, type) => {
-			for (let i = 0; i < this.contentTypes.length; i += 2) {
-				if (this.contentTypes[i].isAssignableFrom(type)) {
-					this.types[this.contentTypes[i + 1]].push(type);
+			for (let i = 0; i < this.contentTypes.size; i += 2) {
+				if (this.contentTypes.get(i).isAssignableFrom(type)) {
+					this.types[this.contentTypes.get(i + 1)].push(type);
 					break;
 				}
 			}
@@ -144,22 +148,24 @@ exports.build = function () {
 	if (/^h?json$/.test(ext)) {
 		let obj = result.value = toIntObject(IntFunc.HjsonParse(file.readString()))
 
-		let parentname = file.parent().name();
-		let typeName = parentname.slice(0, -1);
-		if (obj.has('type') && parentname == 'blocks') {
-			typeName = obj.remove('type')
-		}
-		else if (types[typeName] != null && types[typeName][0] != null) {
-			typeName = types[typeName][0].getSimpleName()
-		} else typeName = 'none'
+		let parentName = (() => {
+			let content = this.mod.file.child("content")
 
-		// type接口
-		let _types = {};
-		for (let k in types) {
-			if (k == 'bullet') continue
-			_types[k] = types[k];
-		}
-		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, _types, true);
+			let f = file
+			while (!f.parent().equals(content)) {
+				f = f.parent();
+			}
+			return f.name()
+		})()
+		let typeName
+		if (obj.has('type') && parentName == 'blocks') {
+			typeName = obj.remove('type')
+		} else if (types[parentName] != null && types[parentName][0] != null) {
+			typeName = types[parentName][0].getSimpleName()
+		} else typeName = 'none'
+		if (typeName[0].toLowerCase() == typeName[0]) typeName = typeName[0].toUpperCase() + typeName.slice(1);
+
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, types[parentName], true);
 		pane.add(selection.table).padBottom(4).row()
 		Object.defineProperty(result, 'type', { get: () => selection.type })
 		Object.defineProperty(result, 'typeName', { get: () => selection.typeName })

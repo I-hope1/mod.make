@@ -14,6 +14,7 @@ const forIn = exports.forIn = function (obj, str, method) {
 	return typeof str == 'string' ? jg.join(str) : jg;
 }
 
+exports.mod = Vars.mods.getMod(modName)
 
 /* 转换为可用的class */
 exports.toClass = function (_class) {
@@ -61,7 +62,6 @@ exports.showTextArea = function (text) {
 /* hjson解析 (使用arc的JsonReader) */
 exports.HjsonParse = function (str) {
 	if (typeof str !== 'string') return str;
-	if (str == '') return new MyObject();
 	if (str.replace(/^\s+/, '')[0] != '{') str = '{' + str + '}'
 	try {
 		return (new JsonReader).parse(str)
@@ -97,7 +97,7 @@ exports.HjsonParse = function (str) {
 		return output;
 	} catch (err) {
 		Vars.ui.showErrorMessage(err);
-		return new MyObject();
+		return null;
 	};
 	// hjson = hjson.replace(/\s/g, '')[0] != '{' ? '{' + hjson + '}' : hjson;
 	/* try {
@@ -162,13 +162,32 @@ exports.doubleClick = function (elem, runs) {
 };
 // 长按事件
 exports.longPress = function (elem, duration, func) {
-	elem.clicked(cons(l => { }), cons(l => {
-		func(Time.millis() - l.visualPressedTime > duration)
+	elem.addListener(extend(ClickListener, {
+		clicked(a, b, c) {
+			func(Time.millis() - this.visualPressedTime > duration)
+		}
 	}))
 
 	return elem;
 }
 
+exports.searchTable = function (t, fun) {
+	t.table(cons(t => {
+		t.image(Icon.zoom);
+		let text;
+		t.add(text = new TextField).fillX();
+		text.changed(() => fun(p, text.getText()));
+		// /* 自动聚焦到搜索框 */
+		// text.fireClick();
+	})).padRight(8).fillX().fill().top().row();
+
+	let pane = t.top().pane(cons(p => fun(p.top(), ''))).pad(0).top().get();
+	pane.setScrollingDisabled(true, false);
+
+	let p = pane.getWidget();
+
+	t.pack();
+}
 
 /**
  * 弹出一个小窗，自己设置内容

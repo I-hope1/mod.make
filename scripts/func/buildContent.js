@@ -50,7 +50,7 @@ exports.filterClass = ObjectMap.of(
 		table = table.table().get()
 		value = value || new MyObject();
 		let typeName = value.remove('type') || 'BulletType'
-		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, { bullet: types.bullet });
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, types.bullets);
 		table.add(selection.table).padBottom(4).row()
 		let cont = table.table().name('cont').get()
 		let map = fObject(cont, prov(() => selection.type), value, Seq([BulletType]))
@@ -151,6 +151,7 @@ exports.filterClass = ObjectMap.of(
 )
 
 const category = new Seq(), unitType = Seq.withArrays('none', 'flying', 'mech', 'legs', 'naval', 'payload');
+
 exports.filterKey = ObjectMap.of(
 	'category', (table, value) => {
 		if (!category.contains('' + value)) return null;
@@ -176,11 +177,17 @@ exports.filterKey = ObjectMap.of(
 		let cont = table.table(Tex.button).get()
 		let content = {
 			power: (t, v) => {
-				let field = new TextField(v instanceof MyObject ? 0 : '' + v)
+				let field = new TextField(isNaN(v) ? '0' : '' + v)
 				t.add(field).row();
 				t.image().fillX().color(Pal.accent)
-				return prov(() => field.getText())
+				return prov(() => isNaN(field.getText()) ? 0 : field.getText())
+			}, powerBuffered: (t, v) => {
+				let field = new TextField(isNaN(v) ? '0' : '' + v)
+				t.add(field).row();
+				t.image().fillX().color(Pal.accent)
+				return prov(() => isNaN(field.getText()) ? 0 : field.getText())
 			}, item: (t, obj) => {
+				obj = obj || new MyObject()
 				obj.put('items', fArray(t, Classes.get('ItemStack'), obj.getDefault('items', new MyArray())))
 				t.row()
 				t.table(cons(t => {
@@ -191,6 +198,7 @@ exports.filterKey = ObjectMap.of(
 
 				return obj
 			}, liquid: (t, obj) => {
+				obj = obj || new MyObject()
 				let table = new Table()
 				t.add(table).fillX()
 				let p = exports.filterClass.get(LiquidStack)(table, obj)
@@ -203,15 +211,14 @@ exports.filterKey = ObjectMap.of(
 				return v
 			}
 		}
-		function consumer(name, displayName, key, obj) {
+		function consumer(name, key, obj) {
 			this.enable = obj != null
-			obj = obj || new MyObject()
 			this.name = name
 			let table = new Table()
 			let t = this.table = new Table()
 			t.defaults().growX()
 
-			cont.check(displayName, this.enable, boolc(b => this.setup(b))).row()
+			cont.check(Core.bundle.get("consumes." + name, name), this.enable, boolc(b => this.setup(b))).row()
 			cont.add(table).fillX().row()
 			value.put(key, content[name](t, obj));
 			cont.row()
@@ -222,12 +229,14 @@ exports.filterKey = ObjectMap.of(
 			}
 			this.setup(this.enable)
 		}
-		let power = new consumer('power', 'power', 'power', value.getDefault('power', 0));
-		let item = new consumer('item', 'items', 'items', value.getDefault('items', new MyObject()));
-		let liquid = new consumer('liquid', 'liquids', 'liquid', value.getDefault('liquid', new MyObject()));
+		let power = new consumer('power', 'power', value.get('power'));
+		let powerBuffered = new consumer('powerBuffered', 'powerBuffered', value.get('powerBuffered'));
+		let item = new consumer('item', 'items', value.get('items'));
+		let liquid = new consumer('liquid', 'liquid', value.get('liquid'));
 
 		return prov(() => {
 			if (!power.enable) value.remove('power')
+			if (!powerBuffered.enable) value.remove('powerBuffered')
 			if (!item.enable) value.remove('items')
 			if (!liquid.enable) value.remove('liquid')
 			return value
@@ -286,7 +295,7 @@ function fArray(t, vType, v) {
 		addItem(vType, fields, j, v)
 	})
 	table.button('$add', () => {
-		addItem(vType, fields, v.length, exports.defaultClass.get(vType) || [])
+		addItem(vType, fields, v.length, exports.defaultClass.get(vType) || new MyObject())
 	}).fillX()
 	return prov(() => v)
 }

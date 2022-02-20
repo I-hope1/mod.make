@@ -130,9 +130,13 @@ exports.constructor = function () {
 
 				let image = extend(BorderImage, {});
 				if (mod.file.child('icon.png').exists()) {
-					image.setDrawable(
-						TextureRegion(Texture(mod.file.child('icon.png')))
-					);
+					try {
+						image.setDrawable(
+							new TextureRegion(new Texture(mod.file.child('icon.png')))
+						);
+					} catch (e) {
+						image.setDrawable(Tex.nomap);
+					}
 				} else {
 					image.setDrawable(Tex.nomap);
 				}

@@ -40,17 +40,18 @@ const bundles = [
 	'bundle_zh_TW'
 ];
 
-const framework = [
-	'--blocks--', ,
-	'No Framework', '',
-	'Block', 'type: Block\nname: "block"\ndescription: ""\nhealth: 40\nupdate: true\nresearch: core-shard\nrequirements: []\ncategory: distribution',
+const framework = {};
+(() => {
+	const dir = IntFunc.mod.root.child("framework")
+	dir.list().forEach(fi => {
+		let arr = []
+		fi.findAll().each(cons(f => {
+			arr.push(f.nameWithoutExtension(), f.readString())
+		}))
+		framework[fi.name()] = arr
+	})
+})()
 
-	'--items--', ,
-	'Item', 'name: "item"\ndescription: ""\nexplosiveness: 0\nflammability: 0\nradioactivity: 0\ncost: 1',
-
-	'--liquids--', ,
-	'Liquid', 'name: "liquid"\ndescription: ""\ncolor: "000000"\nflammability: 0\nviscosity: 0.5\nexplosiveness: 0.1\nlightColor: "00000000"\nheatCapacity: 0.5\ntemperature: 0.5\neffect: none',
-]
 
 let dialog, desc;
 let w = Core.graphics.getWidth() > Core.graphics.getHeight() ? 540 : 440;
@@ -112,145 +113,174 @@ exports.constructor = function (mod) {
 		Table(Styles.none, cons(t => {
 			t.center();
 			t.defaults().padTop(10).left();
-			let content = mod.file.child('content');
+			let contentDir = mod.file.child('content');
+			let selectedContent
 			let cont = new Table();
 			cont.defaults().padTop(10).left();
+			let body = new Table();
+			body.top().left();
+			body.defaults().padTop(2).top().left();
+			cont.pane(cons(p => p.add(body).left().grow().get().left())).fillX().minWidth(450).row();
 
-			let filter = '';
-			let setup = () => {
-				cont.clearChildren();
-				let body = new Table();
-				body.top().left();
-				body.defaults().padTop(2).top().left();
-				cont.pane(cons(p => p.add(body).left().grow().get().left())).fillX().minWidth(450).row();
-				let reg = /^\/.+?\/$/;
-				content.findAll().each(boolf(c => {
-					try {
-						return reg.test(filter) ? RegExp(filter).test(c.path())
-							: /^name:\w*/.test(filter) ? RegExp(filter.replace(/^name:/).test(c.nameWithoutExtension()))
-								: /^type:\w*/.test(filter) ? RegExp(filter.replace(/^type:/).test(c.path().replace(/.+\/content\/(\w+s).+/, '$1')))
-									: filter == '';
-					} catch (e) { return false }
-				}), cons(json => {
-					if (json != null && !/^h?json$/.test(json.extension())) return;
+			let setup = content => {
+				selectedContent = content
+				body.clearChildren();
 
-					body.button(cons(b => {
-						b.left()
-						b.table(cons(t => {
-							t.left()
-							let image = t.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
-							if (!Vars.mobile) image.addListener(new HandCursorListener());
+				if (content == contentDir) {
+					let types = Editor.contentTypes;
+					for (let i = 0; i < types.size; i += 2) {
+						let type = types.get(i + 1)
+						let f = content.child(type)
+						if (f.exists() && !f.isDirectory()) {
+							f.deleteDirectory()
+						}
+						body.button(cons(b => {
+							b.left()
+							b.add(f.name());
+						}), Styles.defaultb, () => setup(f)).fillX().minWidth(400).pad(2).padLeft(4).left().row();
+					}
+					return
+				}
+				IntFunc.searchTable(body, (p, text) => {
+					p.clearChildren()
+					content.findAll().each(boolf(c => {
+						try {
+							if (!/^h?json$/.test(c.extension())) return false;
+							return text == '' || RegExp(text, 'i').test(c.nameWithoutExtension())
+						} catch (e) { return false }
+					}), cons(json => {
+						p.button(cons(b => {
+							b.left()
+							b.table(cons(t => {
+								t.left()
+								let image = t.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
+								if (!Vars.mobile) image.addListener(new HandCursorListener());
 
-							t.add(json.name()).top();
-						})).growX().left().get()
-						IntFunc.longPress(b, 600, longPress => {
-							if (longPress) {
-								Vars.ui.showConfirm('$confirm',
-									Core.bundle.format('confirm.remove', json.nameWithoutExtension()),
-									run(() => {
-										json.delete();
-										setup();
-									})
-								);
-							}
-							else {
-								let _dialog = JsonDialog.constructor(json, mod);
-								if (_dialog != null) _dialog.hidden(() => setup());
-							}
-						});
-
-						let mod_name = meta.has("name") ? meta.getString("name").toLowerCase().replace(' ', '-') : modName
-						let _mod = Vars.mods.getMod(mod_name)
-						let clazz = Vars.mods.getClass()
-						let field = clazz.getDeclaredField('parser')
-						field.setAccessible(true)
-						let parser = field.get(Vars.mods)
-						// this.current = Vars.content.getLastAdded();
-						/* b.table(cons(t => {
-							t.button(Icon.add, Styles.clearTransi, () => {
-								try {
-									//this binds the content but does not load it entirely
-									let name = json.parent().name()
-									let ctype = Seq([ContentType]).get(0).getField(name[name.length - 1] != "s" ? name : name.substring(0, name.length - 1)).get(null)
-									let loader = parser.parse(_mod, json.nameWithoutExtension(), json.readString(), json, ctype)
-									loader.init()
-									loader.load()
-									if (loader instanceof Block) {
-										loader.loadIcon()
-										loader.buildVisibility = BuildVisibility.shown
-									}
-									dialog.hide()
-									IntModsDialog.ui.hide()
-									IntModsDialog.ui.shown(() => {
-										loader = null
-										let c = this.current
-										if (c != null && Vars.content.getLastAdded() == c) {
-											Vars.content.removeLast()
-											if (this.current instanceof Block) {
-												this.current.buildVisibility = BuildVisibility.hidden
-												this.current = null
-											}
-										}
-										Time.run(1, () => dialog.show())
-										IntModsDialog.ui.shown(() => { })
-									})
-								} catch (e) {
-									if (this.current != Vars.content.getLastAdded() && Vars.content.getLastAdded() != null) {
-										Log.err(e)
-									}
-									Vars.ui.showErrorMessage(e);
-									this.current = null
+								t.add(json.name()).top();
+							})).growX().left().get()
+							IntFunc.longPress(b, 600, longPress => {
+								if (longPress) {
+									Vars.ui.showConfirm('$confirm',
+										Core.bundle.format('confirm.remove', json.nameWithoutExtension()),
+										run(() => {
+											json.delete();
+											setup(selectedContent);
+										})
+									);
+								}
+								else {
+									JsonDialog.constructor(json, mod);
 								}
 							});
-						})) */
-					}), Styles.defaultb, run(() => { })).fillX().minWidth(400).pad(2).padLeft(4).left().row();
-				}))
+
+							let mod_name = meta.has("name") ? meta.getString("name").toLowerCase().replace(' ', '-') : modName
+							let _mod = Vars.mods.getMod(mod_name)
+							let clazz = Vars.mods.getClass()
+							let field = clazz.getDeclaredField('parser')
+							field.setAccessible(true)
+							let parser = field.get(Vars.mods)
+							// this.current = Vars.content.getLastAdded();
+							/* b.table(cons(t => {
+								t.button(Icon.add, Styles.clearTransi, () => {
+									try {
+										//this binds the content but does not load it entirely
+										let name = json.parent().name()
+										let ctype = Seq([ContentType]).get(0).getField(name[name.length - 1] != "s" ? name : name.substring(0, name.length - 1)).get(null)
+										let loader = parser.parse(_mod, json.nameWithoutExtension(), json.readString(), json, ctype)
+										loader.init()
+										loader.load()
+										if (loader instanceof Block) {
+											loader.loadIcon()
+											loader.buildVisibility = BuildVisibility.shown
+										}
+										dialog.hide()
+										IntModsDialog.ui.hide()
+										IntModsDialog.ui.shown(() => {
+											loader = null
+											let c = this.current
+											if (c != null && Vars.content.getLastAdded() == c) {
+												Vars.content.removeLast()
+												if (this.current instanceof Block) {
+													this.current.buildVisibility = BuildVisibility.hidden
+													this.current = null
+												}
+											}
+											Time.run(1, () => dialog.show())
+											IntModsDialog.ui.shown(() => { })
+										})
+									} catch (e) {
+										if (this.current != Vars.content.getLastAdded() && Vars.content.getLastAdded() != null) {
+											Log.err(e)
+										}
+										Vars.ui.showErrorMessage(e);
+										this.current = null
+									}
+								});
+							})) */
+						}), Styles.defaultb, run(() => { })).fillX().minWidth(400).pad(2).padLeft(4).left().row();
+
+					}))
+
+				})
+				body.row()
+				body.table(cons(t => {
+					t.defaults().fillX()
+					t.button("$back", Icon.left, () => setup(contentDir)).fillX().minWidth(200);
+					t.button('$add', Icon.add, run(() => {
+						let ui = new Dialog('');
+						let name = new TextField;
+						ui.cont.table(cons(t => {
+							t.add('$name')
+							t.add(name).fillX();
+						})).fillX().row();
+						let table = new Table, values = [],
+							selected = 0, type = {};
+						let ok = false, j = 0;
+						let arr = framework[type.value = content.name()] || []
+						for (let i = 0; i < arr.length; i += 2) {
+							if (type.value != content.name()) continue
+							if (!ok) {
+								let k = j;
+								table.button("空白模板", Styles.clearTogglet, () => {
+									children.get(selected).setChecked(false)
+									children.get(selected = k).setChecked(true)
+								}).size(150, 64)
+								values.push('')
+								if (j++ % 2) table.row()
+							}
+							ok = true
+
+							let k = j
+							table.button(arr[i], Styles.clearTogglet, () => {
+								children.get(selected).setChecked(false)
+								children.get(selected = k).setChecked(true)
+							}).size(150, 64)
+							values.push(arr[i + 1])
+							if (j++ % 2) table.row()
+						}
+						let children = table.children
+						children.get(selected).fireClick()
+						table.defaults().width(300)
+						ui.cont.pane(table).width(300).height(400)
+
+						ui.buttons.button('$back', () => ui.hide()).size(150, 64);
+						ui.buttons.button('$ok', run(() => {
+							let file = content.child(type.value).child(name.getText() + '.json');
+							file.writeString(values[selected]);
+							// dialog.hide();
+							setup(selectedContent)
+							ui.hide();
+						})).size(150, 64);
+
+						ui.show();
+					})).fillX().minWidth(200).disabled(boolf(() => framework[content.name()] == null)).row();
+				})).fillX().growX()
+
 			}
-			setup();
+			setup(contentDir);
 
 			t.add('$content.info').row();
 			t.add(cont).growX().width(w).row();
-			t.button('$add', Icon.add, run(() => {
-				let ui = new Dialog('');
-				let name = new TextField;
-				ui.cont.table(cons(t => {
-					t.add('$name')
-					t.add(name).fillX();
-				})).fillX().row();
-				let table = new Table, values = [],
-					selected = 0, type = {};
-				for (let i = 0; i < framework.length; i += 2) {
-					let k = framework[i]
-					if (/^--[a-z]+s--$/.test(k)) {
-						type.value = k.replace(/--/g, '')
-						continue
-					}
-					let size = table.children.size
-					let _type = type.value
-					table.button(k, Styles.clearTogglet, () => {
-						type.finalValue = _type
-						children.get(selected).setChecked(false)
-						children.get(selected = size).setChecked(true)
-					}).size(150, 64)
-					values.push(framework[i + 1])
-					if (size % 2) table.row()
-				}
-				let children = table.children
-				children.get(selected).fireClick()
-				table.defaults().width(300)
-				ui.cont.pane(table).width(300).height(400)
-
-				ui.buttons.button('$back', run(() => ui.hide())).size(150, 64);
-				ui.buttons.button('$ok', run(() => {
-					let file = content.child(type.finalValue).child(name.getText() + '.json');
-					file.writeString(values[selected]);
-					// dialog.hide();
-					ui.hide();
-					Editor.edit(file, mod)
-				})).size(150, 64);
-				Editor.ui.hidden(run(() => setup()));
-				ui.show();
-			})).width(w - 20).row();
 
 			let spritesDirectory = mod.file.child('sprites');
 			t.button('查看图片库', run(() => {
@@ -292,7 +322,7 @@ exports.constructor = function (mod) {
 					}))
 				)).size(90, 64);
 
-				ui.hidden(run(() => setup()));
+				ui.hidden(run(() => setup(selectedContent)));
 
 				ui.show();
 			})).width(w - 20);

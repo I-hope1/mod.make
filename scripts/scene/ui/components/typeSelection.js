@@ -12,19 +12,15 @@ exports.constructor = function (type, typeName, types, other) {
 		button.clicked(run(() => IntFunc.showSelectTable(button, (p, hide, v) => {
 			p.clearChildren()
 			let reg = RegExp('' + v, 'i')
-			for (let k in types) {
-				p.add(k, Pal.accent).growX().left().row()
-				p.image().color(Pal.accent).fillX().row()
 
-				types[k].forEach(t => {
-					if (v != '' && !reg.test(t.getSimpleName())) return;
-					p.button(Core.bundle.get(t.getSimpleName().toLowerCase(), t.getSimpleName()), Styles.cleart, run(() => {
-						type = t
-						typeName = t.getSimpleName();
-						hide.run();
-					})).pad(5).size(200, 65).disabled(type == t).row();
-				})
-			}
+			types.forEach(t => {
+				if (v != '' && !reg.test(t.getSimpleName())) return;
+				p.button(Core.bundle.get(t.getSimpleName().toLowerCase(), t.getSimpleName()), Styles.cleart, run(() => {
+					type = t
+					typeName = t.getSimpleName();
+					hide.run();
+				})).pad(5).size(200, 65).disabled(type == t).row();
+			})
 
 			if (!other) return
 			p.add('other', Pal.accent).growX().left().row()
