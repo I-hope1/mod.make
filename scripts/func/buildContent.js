@@ -23,6 +23,8 @@ let fs = IntFunc.toClass(Fx).getFields()
 for (let i = 0; i < fs.length; i++) {
 	effects.add(fs[i].name)
 }
+const UnitPlan = UnitFactory.UnitPlan
+
 exports.filterClass = ObjectMap.of(
 	/* Effect, (table, value) => {},
 	Attribute, (table, value) => {},
@@ -73,6 +75,14 @@ exports.filterClass = ObjectMap.of(
 		let map = fObject(cont, prov(() => Weapon), value, Seq([Weapon]))
 		return map
 	},
+	/* UnitPlan, (table, value) => {
+		table = table.table().get()
+		value = value || new MyObject()
+		let cont = table.table().name('cont').get()
+		let map = fObject(cont, prov(() => UnitPlan), value, Seq([UnitPlan]), true)
+		return map
+	}, */
+
 	ItemStack, (table, value) => {
 		let [item, amount] =
 			typeof value == 'string' ? value.split('/') :
@@ -120,7 +130,7 @@ exports.filterClass = ObjectMap.of(
 
 		return prov
 	},
-	ObjectMap, (table, value, classes) => {
+	ObjectMap, (table, value, vType, classes) => {
 		let map = new MyObject()
 		let cont = new Table(Tex.button)
 		let children = new Table()
@@ -177,15 +187,15 @@ exports.filterKey = ObjectMap.of(
 		let cont = table.table(Tex.button).get()
 		let content = {
 			power: (t, v) => {
-				let field = new TextField(isNaN(v) ? '0' : '' + v)
+				let field = new TextField(isNaN(v) ? '0' : '' + +v)
 				t.add(field).row();
 				t.image().fillX().color(Pal.accent)
-				return prov(() => isNaN(field.getText()) ? 0 : field.getText())
+				return prov(() => isNaN(field.getText()) ? 0 : +field.getText())
 			}, powerBuffered: (t, v) => {
-				let field = new TextField(isNaN(v) ? '0' : '' + v)
+				let field = new TextField(isNaN(v) ? '0' : '' + +v)
 				t.add(field).row();
 				t.image().fillX().color(Pal.accent)
-				return prov(() => isNaN(field.getText()) ? 0 : field.getText())
+				return prov(() => isNaN(field.getText()) ? 0 : +field.getText())
 			}, item: (t, obj) => {
 				obj = obj || new MyObject()
 				obj.put('items', fArray(t, Classes.get('ItemStack'), obj.getDefault('items', new MyArray())))
@@ -241,7 +251,8 @@ exports.filterKey = ObjectMap.of(
 			if (!liquid.enable) value.remove('liquid')
 			return value
 		})
-	}
+	},
+
 )
 
 exports.load = function () {
@@ -258,21 +269,25 @@ exports.make = function (type) {
 	}
 }
 
-function fObject(t, type, value, typeBlackList) {
+function fObject(t, type, value, typeBlackList, all) {
 	let table = new Table(Tex.button), children = new Table,
 		fields = new Fields.constructor(value, type, children);
 	value = fields.map
 	children.center().defaults().center().minWidth(100)
 	table.add(children).row()
 	t.add(table)
-	value.each((k, v) => {
-		if (!(v instanceof Function))
-		/* try {
-			if (add.filter(type.getField(k)))  */fields.add(null, k)/* ;
-		} catch(e) { continue } */
-	})
-	// Log.info(value + "")
-	table.add(add.constructor(value, fields, type)).fillX().growX()
+
+	if (all) {
+		type.getDeclaredFields().forEach(f => {
+			fields.add(null, f.name())
+		})
+	} else {
+		value.each((k, v) => {
+			if (!(v instanceof Function))
+				fields.add(null, k)
+		})
+		table.add(add.constructor(value, fields, type)).fillX().growX()
+	}
 	return prov(() => {
 		if (!typeBlackList.contains(type.get())) value.put('type', type.get().getSimpleName())
 		return value
@@ -360,10 +375,10 @@ exports.build = function (type, fields, t, k, v, isArray) {
 			}
 			if (IntFunc.toClass(ObjectMap).isAssignableFrom(vType)) {
 				let classes = this.getGenericType(field)
-				return this.filterClass.get(vType)(t, v, classes)
+				return this.filterClass.get(vType)(t, v, vType, classes)
 			}
 			if (this.filterClass.containsKey(vType)) {
-				return this.filterClass.get(vType)(t, v)
+				return this.filterClass.get(vType)(t, v, vType)
 			}
 		} catch (e) {
 			Log.info(type)

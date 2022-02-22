@@ -1,0 +1,9 @@
+type: GenericCrafter
+name: 基础工厂
+description: ""
+health: "100"
+size: 1
+requirements: []
+category: crafting
+consumes: {}
+outputItem: { item: copper, amount: 1 }
