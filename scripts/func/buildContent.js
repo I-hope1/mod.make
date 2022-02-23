@@ -1,6 +1,6 @@
 
 const IntFunc = require('func/index');
-const types = require('scene/ui/dialogs/Editor').types
+const { otherTypes } = require('scene/ui/dialogs/Editor');
 const add = require('scene/ui/components/addFieldBtn');
 const typeSelection = require('scene/ui/components/typeSelection');
 const Fields = require('scene/ui/components/Fields');
@@ -52,7 +52,7 @@ exports.filterClass = ObjectMap.of(
 		table = table.table().get()
 		value = value || new MyObject();
 		let typeName = value.remove('type') || 'BulletType'
-		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, types.bullets);
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.bullet);
 		table.add(selection.table).padBottom(4).row()
 		let cont = table.table().name('cont').get()
 		let map = fObject(cont, prov(() => selection.type), value, Seq([BulletType]))

@@ -13,6 +13,7 @@ let fileName, fileNameTable,
 
 exports.contentTypes = new Seq();
 const ContentTypes = exports.ContentTypes = new ObjectMap();
+exports.otherTypes = {}
 const types = exports.types = {};
 
 exports.load = function () {
@@ -23,7 +24,6 @@ exports.load = function () {
 	field.setAccessible(true)
 	let parsers = field.get(parser)
 	for (let type of ContentType.all) {
-		if (!parsers.containsKey(type)) continue
 		let arr = Vars.content.getBy(type);
 		if (!arr.isEmpty()) {
 			let c = arr.first().getClass();
@@ -31,26 +31,36 @@ exports.load = function () {
 			while (!(c.getSuperclass() == Content || c.getSuperclass() == UnlockableContent || Packages.java.lang.reflect.Modifier.isAbstract(c.getSuperclass().getModifiers()))) {
 				c = c.getSuperclass();
 			}
-			let _type = type + ""
-			type = _type[_type.length - 1] == "s" ? _type : _type + "s"
-			this.ContentTypes.put(type, _type)
 			this.contentTypes.add(c, type);
+			type = type + ""
+			let type_s = type.endsWith("s") ? type : type + "s"
+			this.ContentTypes.put(type_s, type)
 		}
 	}
 
 	for (let i = 0; i < this.contentTypes.size; i += 2) {
-		this.types[this.contentTypes.get(i + 1)] = []
+		let key = this.contentTypes.get(i + 1)
+		if (parsers.containsKey(key)) {
+			types[key] = []
+		} else {
+			this.otherTypes[key] = []
+		}
 	}
+
 	Classes.each(new Cons2({
 		get: (k, type) => {
 			for (let i = 0; i < this.contentTypes.size; i += 2) {
 				if (this.contentTypes.get(i).isAssignableFrom(type)) {
-					this.types[this.contentTypes.get(i + 1)].push(type);
+					let key = this.contentTypes.get(i + 1)
+					let arr = types[key] || this.otherTypes[key]
+					arr.push(type)
 					break;
 				}
 			}
 		}
 	}));
+
+	Log.info(Object.keys(this.otherTypes) + "")
 
 
 	const Editor = exports.ui = new BaseDialog(Core.bundle.get('code-editor', 'code editor'))
@@ -155,10 +165,10 @@ exports.build = function () {
 			while (!f.parent().equals(content)) {
 				f = f.parent();
 			}
-			return f.name()
+			return ContentTypes.get(f.name())
 		})()
 		let typeName
-		if (obj.has('type') && parentName == 'blocks') {
+		if (obj.has('type') && parentName == 'block') {
 			typeName = obj.remove('type')
 		} else if (types[parentName] != null && types[parentName][0] != null) {
 			typeName = types[parentName][0].getSimpleName()

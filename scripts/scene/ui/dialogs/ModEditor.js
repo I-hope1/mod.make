@@ -127,9 +127,8 @@ exports.constructor = function (mod) {
 				body.clearChildren();
 
 				if (content == contentDir) {
-					let types = Editor.contentTypes;
-					for (let i = 0; i < types.size; i += 2) {
-						let type = types.get(i + 1)
+					let types = Editor.ContentTypes;
+					types.keys().toSeq().each(cons(type => {
 						let f = content.child(type)
 						if (f.exists() && !f.isDirectory()) {
 							f.deleteDirectory()
@@ -138,7 +137,7 @@ exports.constructor = function (mod) {
 							b.left()
 							b.add(f.name());
 						}), Styles.defaultb, () => setup(f)).fillX().minWidth(400).pad(2).padLeft(4).left().row();
-					}
+					}))
 					return
 				}
 				IntFunc.searchTable(body, (p, text) => {
