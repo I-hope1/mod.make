@@ -34,13 +34,13 @@ exports.filterClass = ObjectMap.of(
 		try {
 			color = Color.valueOf(value);
 		} catch (e) { color = new Color; }
-		let button = new Button;
+		let button = new Button();
 
 		let image = button.image().size(30).color(color);
 		let field = button.add('' + color).get();
 		/* 使用原本自带的采色器 */
 		button.clicked(() => Vars.ui.picker.show(color, cons(c => {
-			image.color(color = c);
+			image.color(color = c.cpy());
 			field.setText(c + '');
 		})));
 

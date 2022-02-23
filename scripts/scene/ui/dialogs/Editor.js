@@ -32,9 +32,11 @@ exports.load = function () {
 				c = c.getSuperclass();
 			}
 			this.contentTypes.add(c, type);
-			type = type + ""
-			let type_s = type.endsWith("s") ? type : type + "s"
-			this.ContentTypes.put(type_s, type)
+			if (parsers.containsKey(type)) {
+				type = type + ""
+				let type_s = type.endsWith("s") ? type : type + "s"
+				this.ContentTypes.put(type_s, type)
+			}
 		}
 	}
 
@@ -59,9 +61,6 @@ exports.load = function () {
 			}
 		}
 	}));
-
-	Log.info(Object.keys(this.otherTypes) + "")
-
 
 	const Editor = exports.ui = new BaseDialog(Core.bundle.get('code-editor', 'code editor'))
 

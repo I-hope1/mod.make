@@ -127,8 +127,8 @@ exports.constructor = function (mod) {
 				body.clearChildren();
 
 				if (content == contentDir) {
-					let types = Editor.ContentTypes;
-					types.keys().toSeq().each(cons(type => {
+					let cTypes = Editor.ContentTypes
+					cTypes.keys().toSeq().each(cons(type => {
 						let f = content.child(type)
 						if (f.exists() && !f.isDirectory()) {
 							f.deleteDirectory()
