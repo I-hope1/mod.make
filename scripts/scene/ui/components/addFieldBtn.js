@@ -10,7 +10,7 @@ exports.filter = function (field) {
 	while (type.isArray() || type == Seq) {
 		type = type == Seq ? buildContent.getGenericType(field)[0] : type.getComponentType()
 	}
-	if (/^(id|minfo|iconId|uiIcon|fullIcon|unlocked|bars|timers)$/.test(name)) return false;
+	if (/^(id|minfo|iconId|uiIcon|fullIcon|unlocked|stats|bars|timers)$/.test(name)) return false;
 	if (type.isPrimitive() || type == java.lang.String) return true;
 	// 使用throw跳出循环
 	try {
@@ -52,19 +52,25 @@ exports.constructor = function (obj, Fields, prov) {
 					if (!exports.filter(field)) return
 					let name = key
 					if (reg != null && !reg.test(name)) return
-					table.button(Core.bundle.get('content.' + name, name), Styles.cleart, run(() => {
-						let type = field.type
-						Fields.add(null, name,
-							type.isArray() || type == Seq ? new MyArray() :
-								/^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
-									type.getSimpleName() == 'boolean' ? false :
-										type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */
-											buildContent.defaultClass.containsKey(type) ? buildContent.defaultClass.get(type) : new MyObject()
-						);
+					table.table(cons(t => {
+						t.button(Core.bundle.get('content.' + name, name), Styles.cleart, run(() => {
+							let type = field.type
+							Fields.add(null, name,
+								type.isArray() || type == Seq ? new MyArray() :
+									/^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
+										type.getSimpleName() == 'boolean' ? false :
+											type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */
+												buildContent.defaultClass.containsKey(type) ? buildContent.defaultClass.get(type) : new MyObject()
+							);
 
-						hide.run();
-					})).size(Core.graphics.getWidth() * .2, 45)
-						.disabled(obj.has(name)).row();
+							hide.run();
+						})).size(Core.graphics.getWidth() * .2, 45)
+							.disabled(obj.has(name))
+						let help = Core.bundle.get('content.' + name + '.help', null)
+						if (help != null) let btn = t.button('?', Styles.clearPartialt, () => IntFunc.showSelectTable(btn, (p, hide) => {
+							p.pane(p => p.add(help)).pad(4, 8, 4, 8).row()
+						}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
+					})).row();
 				}
 			}));
 			if (table.children.size == 0) {

@@ -13,7 +13,10 @@ let fileName, fileNameTable,
 
 exports.contentTypes = new Seq();
 const ContentTypes = exports.ContentTypes = new ObjectMap();
-exports.otherTypes = {}
+exports.otherTypes = ObjectMap.of(
+	BulletType, [],
+	DrawBlock, [],
+)
 const types = exports.types = {};
 
 exports.load = function () {
@@ -31,8 +34,8 @@ exports.load = function () {
 			while (!(c.getSuperclass() == Content || c.getSuperclass() == UnlockableContent || Packages.java.lang.reflect.Modifier.isAbstract(c.getSuperclass().getModifiers()))) {
 				c = c.getSuperclass();
 			}
-			this.contentTypes.add(c, type);
 			if (parsers.containsKey(type)) {
+				this.contentTypes.add(c, type);
 				type = type + ""
 				let type_s = type.endsWith("s") ? type : type + "s"
 				this.ContentTypes.put(type_s, type)
@@ -44,8 +47,6 @@ exports.load = function () {
 		let key = this.contentTypes.get(i + 1)
 		if (parsers.containsKey(key)) {
 			types[key] = []
-		} else {
-			this.otherTypes[key] = []
 		}
 	}
 
@@ -54,11 +55,17 @@ exports.load = function () {
 			for (let i = 0; i < this.contentTypes.size; i += 2) {
 				if (this.contentTypes.get(i).isAssignableFrom(type)) {
 					let key = this.contentTypes.get(i + 1)
-					let arr = types[key] || this.otherTypes[key]
-					arr.push(type)
+					types[key].push(type)
 					break;
 				}
 			}
+			this.otherTypes.each(new Cons2({
+				get: (k, arr) => {
+					if (k.isAssignableFrom(type)) {
+						arr.push(type)
+					}
+				}
+			}))
 		}
 	}));
 

@@ -52,7 +52,7 @@ exports.filterClass = ObjectMap.of(
 		table = table.table().get()
 		value = value || new MyObject();
 		let typeName = value.remove('type') || 'BulletType'
-		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.bullet);
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(BulletType));
 		table.add(selection.table).padBottom(4).row()
 		let cont = table.table().name('cont').get()
 		let map = fObject(cont, prov(() => selection.type), value, Seq([BulletType]))
@@ -65,9 +65,18 @@ exports.filterClass = ObjectMap.of(
 		let map = fObject(cont, prov(() => StatusEffect), value, Seq([StatusEffect]))
 		return map
 	},
-	/* AmmoType, (table, value) => {},
-	DrawBlock, (table, value) => {},
-	Ability, (table, value) => {}, */
+	// AmmoType, (table, value) => {},
+	DrawBlock, (table, value) => {
+		table = table.table().get()
+		value = value || new MyObject();
+		let typeName = value.remove('type') || 'DrawBlock'
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(DrawBlock));
+		table.add(selection.table).padBottom(4).row()
+		let cont = table.table().name('cont').get()
+		let map = fObject(cont, prov(() => selection.type), value)
+		return map
+	},
+	// Ability, (table, value) => {},
 	Weapon, (table, value) => {
 		table = table.table().get()
 		value = value || new MyObject()
@@ -160,15 +169,30 @@ exports.filterClass = ObjectMap.of(
 	}
 )
 
-const category = new Seq(), unitType = Seq.withArrays('none', 'flying', 'mech', 'legs', 'naval', 'payload');
+const unitType = Seq.withArrays('none', 'flying', 'mech', 'legs', 'naval', 'payload');
+const categories = new Seq();
+const categoriesString = new ObjectMap();
+const categoriesIcon = [];
+
+exports.load = function () {
+	Category.all.forEach(c => {
+		categories.add(c)
+		categoriesString.put(c.name(), c)
+		categoriesIcon.push(Vars.ui.getIcon(c.name()));
+	});
+}
 
 exports.filterKey = ObjectMap.of(
 	'category', (table, value) => {
-		if (!category.contains('' + value)) return null;
-		let val = value || 'distribution';
-		let btn = table.button(val, Styles.cleart, () => {
-			IntFunc.showSelectListTable(btn, category, val, 130, 50, cons(cat => btn.setText(val = cat)), false);
-		}).size(130, 45).get();
+		let val = categoriesString.get(value, Category.distribution);
+
+		let btn = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.clearToggleTransi));
+		let style = btn.getStyle();
+		style.imageUp = Vars.ui.getIcon(val);
+		btn.clicked(() => {
+			IntFunc.showSelectImageTableWithIcons(btn, categories, categoriesIcon, val, 42, 32, cons(cat => style.imageUp = Vars.ui.getIcon(val = cat)), 2, false);
+		});
+		table.add(btn).size(45, 45);
 		return prov(() => val)
 	},
 	'type', (table, value, type) => {
@@ -255,10 +279,6 @@ exports.filterKey = ObjectMap.of(
 
 )
 
-exports.load = function () {
-	for (let cat of Category.all) category.add('' + cat)
-}
-
 exports.make = function (type) {
 	try {
 		let cons = Seq([type]).get(0).getDeclaredConstructor();
@@ -289,7 +309,7 @@ function fObject(t, type, value, typeBlackList, all) {
 		table.add(add.constructor(value, fields, type)).fillX().growX()
 	}
 	return prov(() => {
-		if (!typeBlackList.contains(type.get())) value.put('type', type.get().getSimpleName())
+		if (typeBlackList != null && !typeBlackList.contains(type.get())) value.put('type', type.get().getSimpleName())
 		return value
 	})
 }
@@ -387,7 +407,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 		finally {
 
 			if (this.filterKey.containsKey(k)) {
-				return this.filterKey.get(k)(t, v)
+				return this.filterKey.get(k)(t, v, type)
 			}
 		}
 		return
@@ -416,11 +436,10 @@ exports.build = function (type, fields, t, k, v, isArray) {
 
 	t.table(cons(right => {
 		right.right().defaults().right()
-		if (!isArray && Core.bundle.has(type.getSimpleName() + '_' + k + '.help')) {
-			let btn = right.button('?', () => IntFunc.showSelectTable(btn, (p, hide) => {
-				p.pane(p => p.add(Core.bundle.get(type.getSimpleName() + '_' + k + '.help'))).width(400)
-				p.button('ok', hide).fillX()
-			}, false)).padLeft(2);
+		if (!isArray && Core.bundle.has('content.' + k + '.help')) {
+			let btn = right.button('?', Styles.clearPartialt, () => IntFunc.showSelectTable(btn, (p, hide) => {
+				p.pane(p => p.add(Core.bundle.get('content.' + k + '.help'))).pad(4, 8, 4, 8)
+			}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
 		}
 		right.button('', Icon.trash, Styles.cleart, () => fields.remove(t, k));
 	})).right().growX().right();

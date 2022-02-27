@@ -1,19 +1,4 @@
 
-const { MyObject, MyArray } = require('func/constructor');
-
-const forIn = exports.forIn = function (obj, str, method) {
-	var jg = [], method = method instanceof Function ? method : str => str;
-	for (var k in obj) {
-		try {
-			let str = (obj[k] instanceof Array ? '[ ' + obj[k] + ' ]' : obj[k])
-			jg.push(k + ': ' + method(str))
-		} catch (e) {
-			Log.err(k)
-		}
-	}
-	return typeof str == 'string' ? jg.join(str) : jg;
-}
-
 exports.mod = Vars.mods.getMod(modName)
 
 /* 转换为可用的class */
@@ -49,6 +34,7 @@ exports.showTextArea = function (text) {
 							/\r/g, '\n'));
 				}).marginLeft(12);
 			}));
+			dialog.closeOnBack();
 			dialog.show();
 		}).size(w / 3 - 25, h * 0.05);
 		t.button('$ok', Icon.ok, () => {
@@ -65,7 +51,7 @@ exports.HjsonParse = function (str) {
 	if (str.replace(/^\s+/, '')[0] != '{') str = '{' + str + '}'
 	try {
 		return (new JsonReader).parse(str)
-		let obj1 = (new JsonReader).parse(str), arr = [];
+		/* let obj1 = (new JsonReader).parse(str), arr = [];
 		let output, obj2 = output = new MyObject();
 		while (true) {
 			for (let child = obj1.child; child != null; child = child.next) {
@@ -94,7 +80,7 @@ exports.HjsonParse = function (str) {
 			obj1 = arr.shift()
 			obj2 = arr.shift()
 		}
-		return output;
+		return output; */
 	} catch (err) {
 		Vars.ui.showErrorMessage(err);
 		return null;
@@ -218,6 +204,11 @@ exports.showSelectTable = function (button, fun, searchable) {
 		t.actions(Actions.fadeOut(0.3, Interp.fade), Actions.remove())
 	});
 	hitter.fillParent = true;
+	/* 	hitter.keyDown(cons(key => {
+		if (key == "escape" || key == "back") {
+			Core.app.post(hide);
+		}
+	})); */
 	hitter.clicked(hide);
 
 	Core.scene.add(hitter);
@@ -304,7 +295,7 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 		let reg = RegExp(v, 'i');
 		for (let i = 0; i < items.size;) {
 			let cont = items.get(i)
-			if (typeof current == 'string' && current == cont.name) current = cont;
+			if (typeof current == 'string' && cont instanceof UnlockableContent && current == cont.name) current = cont;
 			// 过滤不满足条件的
 			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) return;
 

@@ -7,7 +7,7 @@ exports.constructor = function (type, typeName, types, other) {
 		t.add('$type').padRight(2);
 		let button = new Button(IntStyles.clearb);
 		t.add(button).size(190, 40);
-		button.label(() => Core.bundle.get("type." + typeName.toLowerCase(), typeName)).center().grow().row();
+		button.label(() => Core.bundle.get("type." + typeName, typeName)).center().grow().row();
 		button.image().color(Color.gray).fillX();
 		button.clicked(run(() => IntFunc.showSelectTable(button, (p, hide, v) => {
 			p.clearChildren()
@@ -15,7 +15,7 @@ exports.constructor = function (type, typeName, types, other) {
 
 			types.forEach(t => {
 				if (v != '' && !reg.test(t.getSimpleName())) return;
-				p.button(Core.bundle.get(t.getSimpleName().toLowerCase(), t.getSimpleName()), Styles.cleart, run(() => {
+				p.button(Core.bundle.get("type." + t.getSimpleName(), t.getSimpleName()), Styles.cleart, run(() => {
 					type = t
 					typeName = t.getSimpleName();
 					hide.run();

@@ -1,8 +1,9 @@
 const IntStyles = require('scene/styles');
 const IntFunc = require('func/index');
+const IntSettings = require('content/settings');
 const JsonDialog = require('scene/ui/dialogs/JsonDialog');
-const IntModsDialog = require('scene/ui/dialogs/ModsDialog');
 const Editor = require('scene/ui/dialogs/Editor');
+
 
 // 语言
 const bundles = [
@@ -41,7 +42,7 @@ const bundles = [
 ];
 
 const framework = {};
-(() => {
+Events.run(ClientLoadEvent, () => {
 	const dir = IntFunc.mod.root.child("framework")
 	dir.list().forEach(fi => {
 		let arr = []
@@ -50,7 +51,7 @@ const framework = {};
 		}))
 		framework[fi.name()] = arr
 	})
-})()
+});
 
 
 let dialog, desc;
@@ -66,8 +67,6 @@ exports.load = function () {
 	desc.defaults().padTop(10).left();
 
 	dialog.cont.pane(desc).fillX().fillY().get().setScrollingDisabled(true, false);;
-
-	dialog.addCloseListener();
 }
 
 exports.current = null
@@ -152,8 +151,10 @@ exports.constructor = function (mod) {
 							b.left()
 							b.table(cons(t => {
 								t.left()
-								let image = t.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
-								if (!Vars.mobile) image.addListener(new HandCursorListener());
+								if (IntSettings.getValue("base", "display-content-sprite")) {
+									let image = t.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
+									if (!Vars.mobile) image.addListener(new HandCursorListener());
+								}
 
 								t.add(json.name()).top();
 							})).growX().left().get()
@@ -173,7 +174,7 @@ exports.constructor = function (mod) {
 							});
 
 							let mod_name = meta.has("name") ? meta.getString("name").toLowerCase().replace(' ', '-') : modName
-							let _mod = Vars.mods.getMod(mod_name)
+							let _mod = IntFunc.mod
 							let clazz = Vars.mods.getClass()
 							let field = clazz.getDeclaredField('parser')
 							field.setAccessible(true)
@@ -264,7 +265,7 @@ exports.constructor = function (mod) {
 
 						ui.buttons.button('$back', () => ui.hide()).size(150, 64);
 						ui.buttons.button('$ok', run(() => {
-							let file = content.child(type.value).child(name.getText() + '.json');
+							let file = content.child(type.value).child(name.getText() + '.hjson');
 							file.writeString(values[selected]);
 							// dialog.hide();
 							setup(selectedContent)
@@ -296,7 +297,7 @@ exports.constructor = function (mod) {
 					if (file.extension() != 'png') return;
 					t.table(cons(t => {
 						t.left();
-						let field = t.field(file.nameWithoutExtension(),
+						t.field(file.nameWithoutExtension(),
 							cons(text => {
 								let toFile = file.parent().child(text + '.png');
 								file.moveTo(toFile);
@@ -304,7 +305,7 @@ exports.constructor = function (mod) {
 							})).growX().left().get();
 						t.row();
 						t.image().color(Color.gray).minWidth(440).row();
-						t.image(TextureRegion(Texture(file))).size(96);
+						t.image(new TextureRegion(new Texture(file))).size(96);
 					})).padTop(10).left().row();
 				}
 				ui.cont.pane(cont).fillX().fillY();
@@ -319,7 +320,7 @@ exports.constructor = function (mod) {
 						if (toFile.exists()) Vars.ui.showConfirm('$confirm', '是否要覆盖', run(go));
 						else go();
 					}))
-				)).size(90, 64);
+				)).size(210, 64);
 
 				ui.hidden(run(() => setup(selectedContent)));
 
@@ -341,71 +342,71 @@ exports.constructor = function (mod) {
 		Table(Tex.whiteui.tint(.7, .7, 1, .8), cons(t => {
 			t.add('未完成')
 			return
-			let scripts = mod.file.child('scripts');
-			let main = scripts.child('main.js');
-			main.exists() || main.writeString('');
-			let cont = new Table;
+			// let scripts = mod.file.child('scripts');
+			// let main = scripts.child('main.js');
+			// main.exists() || main.writeString('');
+			// let cont = new Table;
 
-			let all = scripts.findAll().toArray();
-			let buttons = [];
+			// let all = scripts.findAll().toArray();
+			// let buttons = [];
 
-			let buildButton = (cont, i, f) => cont.button(cons(b => {
-				b.top().left();
-				b.margin(12);
-				b.defaults().left().top();
-				b.table(cons(title => {
-					title.left();
-					title.image(Core.atlas.find(modName + '-js.file', Tex.clear)).size(64).padTop(8).padLeft(-8).padRight(8);
-					title.add(f.nameWithoutExtension(), f.name() == 'main.js' ? Color.gold : Color.white).wrap().width(170).growX().left()/* .get().clicked(run(() => {
+			// let buildButton = (cont, i, f) => cont.button(cons(b => {
+			// 	b.top().left();
+			// 	b.margin(12);
+			// 	b.defaults().left().top();
+			// 	b.table(cons(title => {
+			// 		title.left();
+			// 		title.image(Core.atlas.find(modName + '-js.file', Tex.clear)).size(64).padTop(8).padLeft(-8).padRight(8);
+			// 		title.add(f.nameWithoutExtension(), f.name() == 'main.js' ? Color.gold : Color.white).wrap().width(170).growX().left()/* .get().clicked(run(() => {
 
-					})); */
-					title.add().growX().left();
-				}));
-				b.table(cons(right => {
-					right.right();
-					right.button(Icon.trash, Styles.clearPartiali, run(() => Vars.ui.showConfirm('$confirm', Core.bundle.format('confirm.remove', f.name()), run(() => {
-						f.delete();
-						buttons.splice(i, 1).clear();
-					})))).size(50);
-				})).grow();
-			}), IntStyles.clearb, run(() => Editor.edit(f, mod))).width(w - 20).get()
+			// 		})); */
+			// 		title.add().growX().left();
+			// 	}));
+			// 	b.table(cons(right => {
+			// 		right.right();
+			// 		right.button(Icon.trash, Styles.clearPartiali, run(() => Vars.ui.showConfirm('$confirm', Core.bundle.format('confirm.remove', f.name()), run(() => {
+			// 			f.delete();
+			// 			buttons.splice(i, 1).clear();
+			// 		})))).size(50);
+			// 	})).grow();
+			// }), IntStyles.clearb, run(() => Editor.edit(f, mod))).width(w - 20).get()
 
-			for (let i = 0; i < all.length; i++) {
-				buttons.push(buildButton(cont, i, all[i]));
-				cont.row();
-			}
+			// for (let i = 0; i < all.length; i++) {
+			// 	buttons.push(buildButton(cont, i, all[i]));
+			// 	cont.row();
+			// }
 
-			cont.table(cons(t => {
-				t.button('$add', Icon.add, run(() => {
-					let dialog = new Dialog('$add');
-					dialog.cont.add('$fileName');
-					let name = dialog.cont.add(new TextField('')).get();
-					dialog.cont.row();
-					let table = dialog.buttons;
-					table.button('$back', Icon.left, run(() => dialog.hide()));
-					table.button('$ok', Icon.ok, run(() => {
-						if (name.getText() == 'main') return Vars.ui.showErrorMessage('文件名不能为[orange]main[]。');
-						let toFile = scripts.child(name.getText() + '.js');
-						function go() {
-							toFile.writeString('');
-							dialog.hide();
-							build(cont, buttons.length - 1, toFile);
-						}
-						if (toFile.exists()) {
-							Vars.ui.showConfirm('覆盖', '同名文件已存在\n是否要覆盖', run(() => go()));
-						} else go();
-					}));
-					dialog.show();
-				})).size(120, 64);
-				// t.button('导入插件', Icon.download, run(() => {})).fillX();
-				t.button('test', run(() => {
-					// let o = Vars.mods.scripts.runConsole(main.readString());
-					// if(o != null) Vars.ui.showInfo('' + o);
-					Vars.mods.scripts.run(Vars.mods.locateMod(modName), main.readString());
-				})).size(120, 64);
-			})).name('buttons').fillX();
+			// cont.table(cons(t => {
+			// 	t.button('$add', Icon.add, run(() => {
+			// 		let dialog = new Dialog('$add');
+			// 		dialog.cont.add('$fileName');
+			// 		let name = dialog.cont.add(new TextField('')).get();
+			// 		dialog.cont.row();
+			// 		let table = dialog.buttons;
+			// 		table.button('$back', Icon.left, run(() => dialog.hide()));
+			// 		table.button('$ok', Icon.ok, run(() => {
+			// 			if (name.getText() == 'main') return Vars.ui.showErrorMessage('文件名不能为[orange]main[]。');
+			// 			let toFile = scripts.child(name.getText() + '.js');
+			// 			function go() {
+			// 				toFile.writeString('');
+			// 				dialog.hide();
+			// 				build(cont, buttons.length - 1, toFile);
+			// 			}
+			// 			if (toFile.exists()) {
+			// 				Vars.ui.showConfirm('覆盖', '同名文件已存在\n是否要覆盖', run(() => go()));
+			// 			} else go();
+			// 		}));
+			// 		dialog.show();
+			// 	})).size(120, 64);
+			// 	// t.button('导入插件', Icon.download, run(() => {})).fillX();
+			// 	t.button('test', run(() => {
+			// 		// let o = Vars.mods.scripts.runConsole(main.readString());
+			// 		// if(o != null) Vars.ui.showInfo('' + o);
+			// 		Vars.mods.scripts.run(Vars.mods.locateMod(modName), main.readString());
+			// 	})).size(120, 64);
+			// })).name('buttons').fillX();
 
-			t.add(cont);
+			// t.add(cont);
 		}))
 	];
 

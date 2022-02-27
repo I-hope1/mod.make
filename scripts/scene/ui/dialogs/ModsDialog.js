@@ -73,8 +73,6 @@ exports.load = function (name) {
 		Core.app.openFolder(dataDirectory.absolutePath())
 	})).margin(margin).size(210, 64);
 	buttons.button('$quit', Icon.exit, style, run(() => Core.app.exit())).margin(margin).size(210, 64);
-
-	dialog.addCloseListener();
 }
 
 exports.import = function (file) {
