@@ -1,8 +1,0 @@
-type: Block
-name: "block"
-description: ""
-health: 40
-update: true
-research: core-shard
-requirements: []
-category: distribution

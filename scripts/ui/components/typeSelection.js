@@ -1,20 +1,22 @@
 const IntFunc = require('func/index');
-const IntStyles = require('scene/styles');
+const IntStyles = require('ui/styles');
 
 exports.constructor = function (type, typeName, types, other) {
 	this.table = new Table(Tex.clear, cons(t => {
 		t.defaults().fillX()
-		t.add('$type').padRight(2);
+		t.add('$type').padRight(4);
 		let button = new Button(IntStyles.clearb);
-		t.add(button).size(190, 40);
-		button.label(() => Core.bundle.get("type." + typeName, typeName)).center().grow().row();
+		t.add(button).height(40);
+		button.table(cons(l => {
+			l.label(() => Core.bundle.get("type." + typeName, typeName))
+		})).padLeft(4).padRight(4).grow().row();
 		button.image().color(Color.gray).fillX();
 		button.clicked(run(() => IntFunc.showSelectTable(button, (p, hide, v) => {
 			p.clearChildren()
 			let reg = RegExp('' + v, 'i')
 
 			types.forEach(t => {
-				if (v != '' && !reg.test(t.getSimpleName())) return;
+				if (v != '' && !reg.test(t.getSimpleName()) && !reg.test(Core.bundle.get("type." + t.getSimpleName()))) return;
 				p.button(Core.bundle.get("type." + t.getSimpleName(), t.getSimpleName()), Styles.cleart, run(() => {
 					type = t
 					typeName = t.getSimpleName();

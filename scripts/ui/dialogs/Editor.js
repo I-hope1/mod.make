@@ -1,10 +1,8 @@
 const IntFunc = require('func/index');
-const Fields = require('scene/ui/components/Fields');
-const scripts = require('scene/ui/scripts');
-const addBtn = require('scene/ui/components/addFieldBtn');
-const typeSelection = require('scene/ui/components/typeSelection');
-const { MyObject, MyArray } = require('func/constructor')
-
+const Fields = require('ui/components/Fields');
+const scripts = require('ui/scripts');
+const addBtn = require('ui/components/addFieldBtn');
+const typeSelection = require('ui/components/typeSelection');
 
 const Classes = Packages.mindustry.mod.ClassMap.classes;
 
@@ -71,6 +69,12 @@ exports.load = function () {
 
 	const Editor = exports.ui = new BaseDialog(Core.bundle.get('code-editor', 'code editor'))
 
+	// 为了更好看，仿写 CustomGameDialog
+	Editor.clearChildren();
+	Editor.add(Editor.titleTable).growX().row();
+	Editor.stack(Editor.cont, Editor.buttons).grow();
+	Editor.buttons.bottom();
+
 	cont = Editor.cont;
 	cont.top().defaults().padTop(0).top();
 
@@ -98,9 +102,7 @@ exports.load = function () {
 	Editor.addCloseListener();
 }
 
-
 exports.edit = function (file, mod) {
-	Vars.ui.loadfrag.show()
 
 	file.exists() || file.writeString('');
 
@@ -115,45 +117,10 @@ exports.edit = function (file, mod) {
 		fileName.setText(file.nameWithoutExtension())
 	} else fileNameTable.clearChildren()
 
-	this.build()
+	this.build();
 
 	this.ui.show()
-	Vars.ui.loadfrag.hide()
 }
-
-function toIntObject(value) {
-	let obj2 = new MyObject(), arr = []
-	let output = obj2
-	while (true) {
-		for (let child = value.child; child != null; child = child.next) {
-			let result = (() => {
-				if (child.isArray()) {
-					let array = new MyArray()
-					arr.push(child, array);
-					return array
-				}
-				if (child.isObject()) {
-					let obj = new MyObject()
-					arr.push(child, obj);
-					return obj
-				}
-
-				let value = child.asString()
-				if (child.isNumber()) value *= 1
-				if (child.isBoolean()) value = value == 'true'
-				return value
-			})()
-			if (obj2 instanceof Array) obj2.push(result)
-			else obj2.put(child.name, result)
-		}
-		if (arr.length == 0) break
-		value = arr.shift()
-		obj2 = arr.shift()
-	}
-	// Log.info(output + "")
-	return output
-}
-
 
 // 编辑代码
 exports.build = function () {
@@ -162,7 +129,7 @@ exports.build = function () {
 	let file = this.file
 	let ext = file.extension();
 	if (/^h?json$/.test(ext)) {
-		let obj = result.value = toIntObject(IntFunc.HjsonParse(file.readString()))
+		let obj = result.value = IntFunc.toIntObject(IntFunc.hjsonParse(file.readString()))
 
 		let parentName = (() => {
 			let content = this.mod.file.child("content")
@@ -218,7 +185,7 @@ exports.build = function () {
 				let techs = TechTree.all.toArray();
 
 				let btn = t.button(value != '' && value != null ? value : '$none', Styles.cleart,
-					run(() => IntFunc.showSelectTable(btn, (p, hide, v) => {
+					() => IntFunc.showSelectTable(btn, (p, hide, v) => {
 						p.clearChildren();
 						p.button('$none', Styles.cleart, run(() => {
 							obj.put(k, '');
@@ -229,16 +196,18 @@ exports.build = function () {
 						let tableArr = [new Table, new Table, new Table, new Table, new Table, new Table];
 
 						let reg = RegExp(v, 'i'), i = 0;
+						let cols = Vars.mobile ? 6 : 10;
 
 						for (let tech of techs) {
 							let t = tech.content;
 							if (!reg.test(t.name) && !reg.test(t.localizedName)) continue;
 
-							let index = t instanceof Item ? 0 :
-								t instanceof Liquid ? 1 :
-									t instanceof Block ? 2 :
-										t instanceof UnitType ? 3 :
-											t instanceof SectorPreset ? 4 : 5
+							let index = (t instanceof Item && "0")
+								|| (t instanceof Liquid && 1)
+								|| (t instanceof Block && 2)
+								|| (t instanceof UnitType && 3)
+								|| (t instanceof SectorPreset && 4)
+								|| 5;
 							let table = tableArr[index];
 							let button = table.button(Tex.whiteui, Styles.clearToggleTransi, 32, () => {
 								obj.put(k, t.name)
@@ -248,7 +217,7 @@ exports.build = function () {
 							button.getStyle().imageUp = new TextureRegionDrawable(t.uiIcon);
 							button.update(() => button.setChecked(obj.getDefault(k, '') == t.name));
 
-							if (table.children.size % (Vars.mobile ? 6 : 10) == 0) {
+							if (table.children.size % cols == 0) {
 								table.row();
 							}
 						}
@@ -261,7 +230,7 @@ exports.build = function () {
 							}
 						}
 					}, true)
-					)).size(150, 60).get();
+				).size(150, 60).get();
 			})).fillX();
 		})).fillX().row();
 		fields.map.each((k, v) => {
@@ -360,6 +329,9 @@ exports.build = function () {
 		}));*/
 		//area.clicked(run(() => IntFunc.showTextArea(result.value)));
 	}
+
+	// 为了不阻挡最低下的部分
+	pane.image().color(Color.clear).height(74)
 }
 // 编译代码
 exports.parse = function () {
@@ -371,18 +343,20 @@ exports.parse = function () {
 		if (type != null) {
 			if (toClass(UnitType).isAssignableFrom(type) ||
 				toClass(Item).isAssignableFrom(type) ||
-				toClass(Liquid).isAssignableFrom(type)) { }
+				toClass(Liquid).isAssignableFrom(type) ||
+				toClass(StatusEffect).isAssignableFrom(type)) { }
 
 			else if (!obj.has('type')) obj.put('type', typeName)
 		}
 
 		file.writeString(obj + "");
 		let dir = this.mod.file.child('content').child(
-			type != null ?
-				(toClass(Block).isAssignableFrom(type) ? 'block' :
-					toClass(UnitType).isAssignableFrom(type) ? 'unit' :
-						toClass(Item).isAssignableFrom(type) ? 'item' :
-							toClass(Liquid).isAssignableFrom(type) ? 'liquid' : type.getContentType()) + 's'
+			type != null ? ((toClass(Block).isAssignableFrom(type) && 'block')
+				|| (toClass(UnitType).isAssignableFrom(type) && 'unit')
+				|| (toClass(Item).isAssignableFrom(type) && 'item')
+				|| (toClass(Liquid).isAssignableFrom(type) && 'liquid')
+				|| (toClass(StatusEffect).isAssignableFrom(type) && 'statu')
+				|| type.getContentType()) + 's'
 				: 'blocks'
 		);
 		this.file = dir.child(file.name());

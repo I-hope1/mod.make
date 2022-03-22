@@ -1,4 +1,4 @@
-const Editor = require('scene/ui/dialogs/Editor')
+const Editor = require('ui/dialogs/Editor')
 
 let dialog, label, p
 exports.load = function () {
@@ -21,12 +21,12 @@ exports.load = function () {
 			Core.app.setClipboardText(this.file.readString());
 		}));
 	})).growX().right().row();
-	p.pane(cons(p => p.left().add(label))).width(bw).height(h / 3);
-	dialog.cont.pane(p).size(bw, h / 2).grow().row();
+	p.pane(cons(p => p.left().add(label))).width(bw).height(bh);
+	dialog.cont.add(p).grow().row();
 
 	dialog.buttons.button('$back', Icon.left, Styles.defaultt, run(() => {
 		dialog.hide();
-	})).size(bw / 2, bh);
+	})).size(bw / 2, 55);
 
 	let listener = extend(VisibilityListener, {
 		hidden: () => {
@@ -40,7 +40,7 @@ exports.load = function () {
 	dialog.buttons.button('$edit', Icon.edit, Styles.defaultt, run(() => {
 		Editor.edit(this.file, this.mod)
 		Editor.ui.addListener(listener)
-	})).size(bw / 2, bh);
+	})).size(bw / 2, 55);
 	dialog.closeOnBack();
 }
 exports.getText = function () {
@@ -50,7 +50,7 @@ exports.getText = function () {
 let w = Core.graphics.getWidth(),
 	h = Core.graphics.getHeight(),
 	bw = w > h ? 550 : 450,
-	bh = w > h ? 64 : 70;
+	bh = w > h ? 200 : Vars.mobile ? 300 : 350;
 exports.constructor = function (file, mod) {
 	if (!/^h?json$/.test(file.extension())) return null;
 	this.file = file, this.mod = mod

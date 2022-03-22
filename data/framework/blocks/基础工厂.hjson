@@ -1,9 +1,7 @@
-type: GenericCrafter
+// extend 方块
 name: 基础工厂
-description: ""
-health: "100"
-size: 1
-requirements: []
+type: GenericCrafter
+health: 100
 category: crafting
 consumes: {}
 outputItem: { item: copper, amount: 1 }

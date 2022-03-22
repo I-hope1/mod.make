@@ -4,8 +4,15 @@ function MyArray(arr) {
 	Array.apply(this, arr instanceof Array ? arr : [])
 	this.has = i => i < arr.length
 	this.put = (i, v) => i >= arr.length ? arr.push(v) : arr[i] = v
+	this.append = v => arr.push(v)
 	this.get = i => arr[i]
 	this.remove = i => arr.splice(i, 1)[0]
+	this.removeValue = v => {
+		for (let i = 0; i < arr.length; i++) {
+			if (arr[i] == v) return arr.splice(i, 1)[0];
+		}
+		return null;
+	};
 
 	this.each = this.forEach
 	Object.defineProperty(this, 'toString', {
@@ -57,10 +64,12 @@ function MyObject(obj) {
 }
 
 exports.MyObject = MyObject;
-
+/* 
 function MyField(field) {
 	let meta = new FieldMetadata(field)
 	this.field = meta.field
 	this.elementType = meta.elementType
 	this.keyType = meta.keyType
 }
+
+exports.MyField = MyField; */

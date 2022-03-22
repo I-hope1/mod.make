@@ -12,7 +12,7 @@ description: '''
 '''
 
 author: "I hope..."
-version: "2.4-beta"
+version: "1.0"
 minGameVersion: 110
 hidden: true
 repo: "I-hope1/mod.make"

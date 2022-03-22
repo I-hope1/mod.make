@@ -1,5 +1,5 @@
 exports.clearb = exports.nonePane = {};
-Events.on(ClientLoadEvent, () => {
+Events.run(ClientLoadEvent, () => {
 	exports.nonePane = new ScrollPane.ScrollPaneStyle;
 
 	exports.clearb = new Button.ButtonStyle(Styles.defaultb);

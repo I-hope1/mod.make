@@ -1,5 +1,5 @@
 
-Events.on(ClientLoadEvent, () => {
+Events.run(ClientLoadEvent, () => {
 	/* 浮窗 */
 	const frag = extend(Table, {
 		cont: new Table,
@@ -29,7 +29,7 @@ Events.on(ClientLoadEvent, () => {
 			cont.btn = t.button(cont.name, Styles.cleart, () => {
 				frag.cont.clearChildren();
 				frag.cont.actions(Actions.scaleTo(0, 1), Actions.visible(true),
-				Actions.scaleTo(1, 1, 0.07, Interp.pow3Out));
+					Actions.scaleTo(1, 1, 0.07, Interp.pow3Out));
 				cont.buildConfiguration(frag.cont);
 			}).size(120, 40).get();
 			t.row();

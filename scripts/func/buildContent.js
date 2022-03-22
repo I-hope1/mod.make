@@ -1,15 +1,16 @@
 
 const IntFunc = require('func/index');
-const { otherTypes } = require('scene/ui/dialogs/Editor');
-const add = require('scene/ui/components/addFieldBtn');
-const typeSelection = require('scene/ui/components/typeSelection');
-const Fields = require('scene/ui/components/Fields');
+const { otherTypes } = require('ui/dialogs/Editor');
+const add = require('ui/components/addFieldBtn');
+const typeSelection = require('ui/components/typeSelection');
+const Fields = require('ui/components/Fields');
 const { MyObject, MyArray } = require('func/constructor');
 const Classes = exports.classes = Packages.mindustry.mod.ClassMap.classes;
+const { caches: { content: contentIni } } = require('func/IniHandle')
 
 const lang = Packages.java.lang
 
-exports.defaultClass = ObjectMap.of(
+const defaultClass = exports.defaultClass = ObjectMap.of(
 	Effect, 'none',
 	UnitType, 'mono',
 	Item, 'copper',
@@ -26,9 +27,7 @@ for (let i = 0; i < fs.length; i++) {
 const UnitPlan = UnitFactory.UnitPlan
 
 exports.filterClass = ObjectMap.of(
-	/* Effect, (table, value) => {},
-	Attribute, (table, value) => {},
-	StatusEffect, (table, value) => {}, */
+	// Attribute, (table, value) => {},
 	Color, (table, value) => {
 		let color
 		try {
@@ -84,13 +83,12 @@ exports.filterClass = ObjectMap.of(
 		let map = fObject(cont, prov(() => Weapon), value, Seq([Weapon]))
 		return map
 	},
-	/* UnitPlan, (table, value) => {
-		table = table.table().get()
-		value = value || new MyObject()
-		let cont = table.table().name('cont').get()
-		let map = fObject(cont, prov(() => UnitPlan), value, Seq([UnitPlan]), true)
-		return map
-	}, */
+	/* 	UnitPlan, (table, value) => {
+			table = table.table().get()
+			value = value || new MyObject();
+			let cont = table.table().name('cont').get()
+	
+		}, */
 
 	ItemStack, (table, value) => {
 		let [item, amount] =
@@ -115,26 +113,26 @@ exports.filterClass = ObjectMap.of(
 		return buildOneStack(table, 'liquid', items, item, amount)
 	},
 	Effect, (table, value) => {
-		let val = '' + value || exports.defaultClass.get(Effect);
+		let val = '' + value || defaultClass.get(Effect);
 		let btn = table.button(val, Styles.cleart, () => {
 			IntFunc.showSelectListTable(btn, effects, val, 130, 50, cons(fx => btn.setText(val = fx)), true);
-		}).size(130, 45).get();
+		}).width(200).height(45).get();
 		return prov(() => val)
 	},
 	UnitType, (table, value) => {
-		value = '' + value || exports.defaultClass.get(UnitType);
+		value = '' + value || defaultClass.get(UnitType);
 		let prov = IntFunc.selectionWithField(table, Vars.content.units(), value, 42, 32, 6, true)
 
 		return prov
 	},
 	Item, (table, value) => {
-		value = '' + value || exports.defaultClass.get(Item);
+		value = '' + value || defaultClass.get(Item);
 		let prov = IntFunc.selectionWithField(table, Vars.content.items(), value, 42, 32, 6, true)
 
 		return prov
 	},
 	Liquid, (table, value) => {
-		value = '' + value || exports.defaultClass.get(Liquid);
+		value = '' + value || defaultClass.get(Liquid);
 		let prov = IntFunc.selectionWithField(table, Vars.content.liquids(), value, 42, 32, 6, true)
 
 		return prov
@@ -163,7 +161,7 @@ exports.filterClass = ObjectMap.of(
 		value = value || new MyObject()
 		value.each(add)
 
-		cont.button('$add', Icon.add, () => add(exports.defaultClass.get(classes[0]), new MyObject())).fillX()
+		cont.button('$add', Icon.add, () => add(defaultClass.get(classes[0]), new MyObject())).fillX()
 
 		return prov(() => map)
 	}
@@ -186,7 +184,7 @@ exports.filterKey = ObjectMap.of(
 	'category', (table, value) => {
 		let val = categoriesString.get(value, Category.distribution);
 
-		let btn = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.clearToggleTransi));
+		let btn = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.clearPartial2i));
 		let style = btn.getStyle();
 		style.imageUp = Vars.ui.getIcon(val);
 		btn.clicked(() => {
@@ -201,7 +199,7 @@ exports.filterKey = ObjectMap.of(
 			val = value || 'none';
 			let btn = table.button(val, Styles.cleart, () => {
 				IntFunc.showSelectListTable(btn, unitType, val, 130, 50, cons(type => btn.setText(val = type)), false);
-			}).size(130, 45).get();
+			}).minWidth(100).height(45).get();
 		}
 
 		return prov(() => val)
@@ -239,8 +237,8 @@ exports.filterKey = ObjectMap.of(
 				let v = p.get()
 				t.row()
 				t.table(cons(t => {
-					t.check(Core.bundle.get('ModMake.consumes-optional', 'optional'), obj.getDefault('optional', false), boolc(b => v.put('optional', b)))
-					t.check(Core.bundle.get('ModMake.consumes-booster', 'booster'), obj.getDefault('booster', false), boolc(b => v.put('booster', b)))
+					t.check(Core.bundle.get(modName + '.consumes-optional', 'optional'), obj.getDefault('optional', false), boolc(b => v.put('optional', b)))
+					t.check(Core.bundle.get(modName + '.consumes-booster', 'booster'), obj.getDefault('booster', false), boolc(b => v.put('booster', b)))
 				})).fillX().row()
 				return v
 			}
@@ -250,10 +248,10 @@ exports.filterKey = ObjectMap.of(
 			this.name = name
 			let table = new Table()
 			let t = this.table = new Table()
-			t.defaults().growX()
+			t.left().defaults().fillX().left()
 
 			cont.check(Core.bundle.get("consumes." + name, name), this.enable, boolc(b => this.setup(b))).row()
-			cont.add(table).fillX().row()
+			cont.add(table).fillX().left().padLeft(10).row()
 			value.put(key, content[name](t, obj));
 			cont.row()
 			this.setup = function (b) {
@@ -276,6 +274,40 @@ exports.filterKey = ObjectMap.of(
 			return value
 		})
 	},
+
+	'upgrades', (table, value) => {
+		if (!(value instanceof MyArray)) return null;
+		table = table.table().fillX().get()
+		let cont = new Table();
+		//.name('upgrades-cont');
+		table.add(cont).row();
+		function build(item) {
+			if (item instanceof MyArray) {
+				let table = cont.table().get()
+				cont.row();
+				let unitType1 = exports.filterClass.get(UnitType)(table, item.get(0) || defaultClass.get(UnitType))
+				item.put(0, unitType1)
+				table.add("-->");
+				let unitType2 = exports.filterClass.get(UnitType)(table, item.get(1) || defaultClass.get(UnitType))
+				item.put(1, unitType2)
+				table.button('', Icon.trash, Styles.cleart, () => {
+					value.removeValue(item);
+					table.remove()
+				});
+			} else {
+				Vars.ui.showErrorMessage("upgrades解析错误");
+				return null;
+			}
+		}
+		value.each(build)
+		table.button("$add", () => {
+			let array = new MyArray()
+			value.append(array)
+			build(array)
+		}).fillX()
+
+		return value
+	}
 
 )
 
@@ -309,7 +341,7 @@ function fObject(t, type, value, typeBlackList, all) {
 		table.add(add.constructor(value, fields, type)).fillX().growX()
 	}
 	return prov(() => {
-		if (typeBlackList != null && !typeBlackList.contains(type.get())) value.put('type', type.get().getSimpleName())
+		if (typeBlackList == null || !typeBlackList.contains(type.get())) value.put('type', type.get().getSimpleName())
 		return value
 	})
 }
@@ -330,7 +362,7 @@ function fArray(t, vType, v) {
 		addItem(vType, fields, j, v)
 	})
 	table.button('$add', () => {
-		addItem(vType, fields, v.length, exports.defaultClass.get(vType) || new MyObject())
+		addItem(vType, fields, v.length, defaultClass.get(vType) || new MyObject())
 	}).fillX()
 	return prov(() => v)
 }
@@ -353,24 +385,30 @@ function buildOneStack(t, type, stack, content, amount) {
 
 let _class = Seq([Seq]).get(0);
 exports.getGenericType = function (field) {
-	return ('class ' + field.getGenericType())
-		.replace(field.type, '').replace(/\<(.+?)\>/, '$1')
-		.split(/\,\s*/).map(str => _class.forName(str, false, _class.getClassLoader()))
-}
+	let method = IntFunc.toClass(Json).getDeclaredMethod("getElementType", java.lang.reflect.Field, java.lang.Integer.TYPE);
+	method.setAccessible(true);
+	let arr = [], val, i = 0;
+	do {
+		val = method.invoke(null, field, new java.lang.Integer(i++))
+		if (val != null) arr.push(val)
+	} while (val != null);
 
+	return arr;
+}
 
 const lstr = lang.String
 /* 构建table */
 exports.build = function (type, fields, t, k, v, isArray) {
 	if (type == null) return;
 	function fail() {
-		let field = new TextField('' + v)
+		let field = new TextField(('' + v).replace(/\n|\r/g, '\\n'))
+		IntFunc.longPress(field, 600, longPress => longPress && IntFunc.showTextArea(field))
 		t.add(field);
 		return prov(() => field.getText().replace(/\s*/, '') != '' ? field.getText() : '')
 	}
 	let map = fields.map
 
-	if (!isArray) t.add(Core.bundle.get('content.' + k, k) + ':').fillX().left().padLeft(2).padRight(6);
+	if (!isArray) t.add((contentIni.get(k) || k) + ':').fillX().left().padLeft(2).padRight(6);
 
 	let output = (() => {
 
@@ -384,13 +422,17 @@ exports.build = function (type, fields, t, k, v, isArray) {
 			}
 			if (vType.isPrimitive()) {
 				if (vType + '' == 'boolean') {
-					let btn = t.button('' + v, Styles.cleart, () => btn.setText('' + (v = !v))).size(130, 45).get()
+					let obj = {
+						"true": "是",
+						"false": "否"
+					}
+					let btn = t.button(obj['' + v], Styles.cleart, () => btn.setText(obj['' + (v = !v)])).minWidth(100).height(45).get()
 					return prov(() => v)
 				}
 				return
 			}
 
-			if ((vType.isArray() || vType == Seq) && v instanceof MyArray) {
+			if ((vType.isArray() || vType == Seq) && v instanceof MyArray && k != "upgrades") {
 				return fArray(t, vType == Seq ? this.getGenericType(field)[0] : vType.getComponentType(), v)
 			}
 			if (IntFunc.toClass(ObjectMap).isAssignableFrom(vType)) {
@@ -411,34 +453,15 @@ exports.build = function (type, fields, t, k, v, isArray) {
 			}
 		}
 		return
-
-		/* else if (k == 'ammoTypes') {
-			v = v.toArray()
-	
-			let contents = Vars.content[type == 'LiquidTurret' ? 'liquids' : 'items']().toArray();
-			let btn = t.button('$add', () => IntFunc.showSelectImageTable(
-				btn, contents, null, 40, 32, cons(item => {
-				v[item.name] = {}
-			}), 6, true)).get();
-	
-			map.put(k, {
-				toString() {
-					t.clear();
-					t.remove();
-					return JSON.stringify(v)
-				}
-			})
-		} */
-
 	})();
 	map.put(k, output || fail())
 
 
 	t.table(cons(right => {
 		right.right().defaults().right()
-		if (!isArray && Core.bundle.has('content.' + k + '.help')) {
+		if (!isArray && contentIni.has(k + '.help')) {
 			let btn = right.button('?', Styles.clearPartialt, () => IntFunc.showSelectTable(btn, (p, hide) => {
-				p.pane(p => p.add(Core.bundle.get('content.' + k + '.help'))).pad(4, 8, 4, 8)
+				p.pane(p => p.add(contentIni.get(k + '.help'), 1.3)).pad(4, 8, 4, 8)
 			}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
 		}
 		right.button('', Icon.trash, Styles.cleart, () => fields.remove(t, k));

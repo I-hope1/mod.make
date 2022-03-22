@@ -23,7 +23,6 @@ exports.json = function (fields, i, key) {
 		} */
 	})
 }
-const reader = new JsonReader()
 
 exports.constructor = function (value, type, table) {
 	if (value == null) throw Error("'value' can't be null");

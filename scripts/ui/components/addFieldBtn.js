@@ -2,6 +2,7 @@
 const buildContent = require('func/buildContent');
 const IntFunc = require('func/index');
 const { MyObject, MyArray } = require('func/constructor');
+const { caches: { content: contentIni } } = require('func/IniHandle')
 
 const json = new Json();
 
@@ -10,7 +11,7 @@ exports.filter = function (field) {
 	while (type.isArray() || type == Seq) {
 		type = type == Seq ? buildContent.getGenericType(field)[0] : type.getComponentType()
 	}
-	if (/^(id|minfo|iconId|uiIcon|fullIcon|unlocked|stats|bars|timers)$/.test(name)) return false;
+	if (/^(id|minfo|iconId|uiIcon|fullIcon|unlocked|stats|bars|timers|singleTarget|mapColor|buildCost|flags|timerDump|dumpTime)$/.test(name) | /region/i.test(name)) return false;
 	if (type.isPrimitive() || type == java.lang.String) return true;
 	// 使用throw跳出循环
 	try {
@@ -28,6 +29,7 @@ exports.filter = function (field) {
 	return false
 }
 
+
 exports.constructor = function (obj, Fields, prov) {
 	let btn = new TextButton('$add');
 	btn.add(new Image(Icon.add))
@@ -35,7 +37,7 @@ exports.constructor = function (obj, Fields, prov) {
 	btn.clicked(() => {
 		let cont = prov.get(), fields = json.getFields(cont);
 
-		let table = new Table;
+		let table = new Table();
 		let reg, hide;
 		function eachFields() {
 			table.clearChildren()
@@ -51,9 +53,10 @@ exports.constructor = function (obj, Fields, prov) {
 					let field = meta.field
 					if (!exports.filter(field)) return
 					let name = key
-					if (reg != null && !reg.test(name)) return
+					let displayName = contentIni.get(name) || name
+					if (reg != null && !reg.test(name) && !reg.test(displayName)) return
 					table.table(cons(t => {
-						t.button(Core.bundle.get('content.' + name, name), Styles.cleart, run(() => {
+						t.button(displayName, Styles.cleart, run(() => {
 							let type = field.type
 							Fields.add(null, name,
 								type.isArray() || type == Seq ? new MyArray() :
@@ -66,10 +69,12 @@ exports.constructor = function (obj, Fields, prov) {
 							hide.run();
 						})).size(Core.graphics.getWidth() * .2, 45)
 							.disabled(obj.has(name))
-						let help = Core.bundle.get('content.' + name + '.help', null)
-						if (help != null) let btn = t.button('?', Styles.clearPartialt, () => IntFunc.showSelectTable(btn, (p, hide) => {
-							p.pane(p => p.add(help)).pad(4, 8, 4, 8).row()
-						}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
+						let help = contentIni.get(name + '.help')
+						if (help != null) {
+							let btn = t.button('?', Styles.clearPartialt, () => IntFunc.showSelectTable(btn, (p, hide) => {
+								p.pane(p => p.add(help, 1.3)).pad(4, 8, 4, 8).row()
+							}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
+						}
 					})).row();
 				}
 			}));

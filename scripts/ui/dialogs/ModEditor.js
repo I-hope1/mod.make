@@ -1,63 +1,22 @@
-const IntStyles = require('scene/styles');
+const IntStyles = require('ui/styles');
 const IntFunc = require('func/index');
 const IntSettings = require('content/settings');
-const JsonDialog = require('scene/ui/dialogs/JsonDialog');
-const Editor = require('scene/ui/dialogs/Editor');
-
+const JsonDialog = require('ui/dialogs/JsonDialog');
+const Editor = require('ui/dialogs/Editor');
+const { caches: { framework } } = require('func/IniHandle')
 
 // 语言
-const bundles = [
-	'bundle',
-	'bundle_be',
-	'bundle_cs',
-	'bundle_da',
-	'bundle_de',
-	'bundle_es',
-	'bundle_et',
-	'bundle_eu',
-	'bundle_fi',
-	'bundle_fil',
-	'bundle_fr',
-	'bundle_fr_BE',
-	'bundle_hu',
-	'bundle_in_ID',
-	'bundle_it',
-	'bundle_ja',
-	'bundle_ko',
-	'bundle_lt',
-	'bundle_nl',
-	'bundle_nl_BE',
-	'bundle_pl',
-	'bundle_pt_BR',
-	'bundle_pt_PT',
-	'bundle_ro',
-	'bundle_ru',
-	'bundle_sv',
-	'bundle_th',
-	'bundle_tk',
-	'bundle_tr',
-	'bundle_uk_UA',
-	'bundle_zh_CN',
-	'bundle_zh_TW'
-];
-
-const framework = {};
-Events.run(ClientLoadEvent, () => {
-	const dir = IntFunc.mod.root.child("framework")
-	dir.list().forEach(fi => {
-		let arr = []
-		fi.findAll().each(cons(f => {
-			arr.push(f.nameWithoutExtension(), f.readString())
-		}))
-		framework[fi.name()] = arr
-	})
-});
+exports.bundles = null;
 
 
 let dialog, desc;
 let w = Core.graphics.getWidth() > Core.graphics.getHeight() ? 540 : 440;
 exports.load = function () {
 	JsonDialog.load()
+
+	let field = IntFunc.toClass(LanguageDialog).getDeclaredField("displayNames")
+	field.setAccessible(true)
+	this.bundles = field.get(Vars.ui.language)
 
 	dialog = new BaseDialog('');
 	dialog.addCloseButton();
@@ -109,7 +68,7 @@ exports.constructor = function (mod) {
 	let names = ['editor.content', 'bundles', 'scripts'];
 	let tables = [
 		/* content */
-		Table(Styles.none, cons(t => {
+		new Table(Styles.none, cons(t => {
 			t.center();
 			t.defaults().padTop(10).left();
 			let contentDir = mod.file.child('content');
@@ -141,12 +100,11 @@ exports.constructor = function (mod) {
 				}
 				IntFunc.searchTable(body, (p, text) => {
 					p.clearChildren()
-					content.findAll().each(boolf(c => {
+					content.walk(cons(json => {
 						try {
-							if (!/^h?json$/.test(c.extension())) return false;
-							return text == '' || RegExp(text, 'i').test(c.nameWithoutExtension())
-						} catch (e) { return false }
-					}), cons(json => {
+							if (!/^h?json$/.test(json.extension())) return;
+							if (text != '' && !RegExp(text, 'i').test(json.nameWithoutExtension())) return
+						} catch (e) { return }
 						p.button(cons(b => {
 							b.left()
 							b.table(cons(t => {
@@ -172,51 +130,6 @@ exports.constructor = function (mod) {
 									JsonDialog.constructor(json, mod);
 								}
 							});
-
-							let mod_name = meta.has("name") ? meta.getString("name").toLowerCase().replace(' ', '-') : modName
-							let _mod = IntFunc.mod
-							let clazz = Vars.mods.getClass()
-							let field = clazz.getDeclaredField('parser')
-							field.setAccessible(true)
-							let parser = field.get(Vars.mods)
-							// this.current = Vars.content.getLastAdded();
-							/* b.table(cons(t => {
-								t.button(Icon.add, Styles.clearTransi, () => {
-									try {
-										//this binds the content but does not load it entirely
-										let name = json.parent().name()
-										let ctype = Seq([ContentType]).get(0).getField(name[name.length - 1] != "s" ? name : name.substring(0, name.length - 1)).get(null)
-										let loader = parser.parse(_mod, json.nameWithoutExtension(), json.readString(), json, ctype)
-										loader.init()
-										loader.load()
-										if (loader instanceof Block) {
-											loader.loadIcon()
-											loader.buildVisibility = BuildVisibility.shown
-										}
-										dialog.hide()
-										IntModsDialog.ui.hide()
-										IntModsDialog.ui.shown(() => {
-											loader = null
-											let c = this.current
-											if (c != null && Vars.content.getLastAdded() == c) {
-												Vars.content.removeLast()
-												if (this.current instanceof Block) {
-													this.current.buildVisibility = BuildVisibility.hidden
-													this.current = null
-												}
-											}
-											Time.run(1, () => dialog.show())
-											IntModsDialog.ui.shown(() => { })
-										})
-									} catch (e) {
-										if (this.current != Vars.content.getLastAdded() && Vars.content.getLastAdded() != null) {
-											Log.err(e)
-										}
-										Vars.ui.showErrorMessage(e);
-										this.current = null
-									}
-								});
-							})) */
 						}), Styles.defaultb, run(() => { })).fillX().minWidth(400).pad(2).padLeft(4).left().row();
 
 					}))
@@ -236,9 +149,8 @@ exports.constructor = function (mod) {
 						let table = new Table, values = [],
 							selected = 0, type = {};
 						let ok = false, j = 0;
-						let arr = framework[type.value = content.name()] || []
-						for (let i = 0; i < arr.length; i += 2) {
-							if (type.value != content.name()) continue
+						let map = framework[type.value = content.name()] || new Map()
+						map.forEach((value, key) => {
 							if (!ok) {
 								let k = j;
 								table.button("空白模板", Styles.clearTogglet, () => {
@@ -251,17 +163,17 @@ exports.constructor = function (mod) {
 							ok = true
 
 							let k = j
-							table.button(arr[i], Styles.clearTogglet, () => {
+							table.button(key, Styles.clearTogglet, () => {
 								children.get(selected).setChecked(false)
 								children.get(selected = k).setChecked(true)
 							}).size(150, 64)
-							values.push(arr[i + 1])
+							values.push(value)
 							if (j++ % 2) table.row()
-						}
+						})
 						let children = table.children
 						children.get(selected).fireClick()
 						table.defaults().width(300)
-						ui.cont.pane(table).width(300).height(400)
+						ui.cont.pane(table).width(300).height(300)
 
 						ui.buttons.button('$back', () => ui.hide()).size(150, 64);
 						ui.buttons.button('$ok', run(() => {
@@ -271,6 +183,7 @@ exports.constructor = function (mod) {
 							setup(selectedContent)
 							ui.hide();
 						})).size(150, 64);
+						ui.closeOnBack()
 
 						ui.show();
 					})).fillX().minWidth(200).disabled(boolf(() => framework[content.name()] == null)).row();
@@ -288,21 +201,25 @@ exports.constructor = function (mod) {
 
 				let cont = new Table(cons(t => {
 					t.top();
-					let all = mod.spritesAll();
-					for (let f of all) {
-						buildImage(t, f);
+					let all = mod.spritesFi();
+					if (all != null) {
+						all.walk(cons(f => {
+							buildImage(t, f);
+						}))
 					}
 				}));
 				function buildImage(t, file) {
 					if (file.extension() != 'png') return;
 					t.table(cons(t => {
 						t.left();
-						t.field(file.nameWithoutExtension(),
+
+						t.add(file.nameWithoutExtension())
+						/* t.field(file.nameWithoutExtension(),
 							cons(text => {
 								let toFile = file.parent().child(text + '.png');
 								file.moveTo(toFile);
 								file = toFile;
-							})).growX().left().get();
+							})).growX().left().get(); */
 						t.row();
 						t.image().color(Color.gray).minWidth(440).row();
 						t.image(new TextureRegion(new Texture(file))).size(96);
@@ -329,17 +246,21 @@ exports.constructor = function (mod) {
 
 		})),
 		/* bundles */
-		Table(Tex.whiteui.tint(1, .8, 1, .8), cons(t => {
-			bundles.forEach(v => {
-				t.add(Core.bundle.get('bundle.' + v, v)).padLeft(4).width(400).left();
-				t.button(Icon.pencil, Styles.clearTransi, run(() =>
-					Editor.edit(mod.file.child('bundles').child(v + '.properties'), mod)
-				)).growX().right().pad(10).row();
+		new Table(Tex.whiteui.tint(1, .8, 1, .8), cons(t => {
+			t.add("$default").padLeft(4).width(400).left();
+			t.button(Icon.pencil, Styles.clearTransi, () =>
+				Editor.edit(mod.file.child("bundles").child("bundle.properties"), mod)
+			).growX().right().pad(10).row();
+			Vars.locales.forEach(k => {
+				t.add(exports.bundles.get(k + "") || k + "").padLeft(4).width(400).left();
+				t.button(Icon.pencil, Styles.clearTransi, () =>
+					Editor.edit(mod.file.child("bundles").child("bundle_" + k + ".properties"), mod)
+				).growX().right().pad(10).row();
 				// if (Core.graphics.getWidth() > Core.graphics.getHeight() && i % 2 == 1) t.row();
 			});
 		})),
 		/* scripts */
-		Table(Tex.whiteui.tint(.7, .7, 1, .8), cons(t => {
+		new Table(Tex.whiteui.tint(.7, .7, 1, .8), cons(t => {
 			t.add('未完成')
 			return
 			// let scripts = mod.file.child('scripts');

@@ -9,5 +9,10 @@ require("content/settings");
 
 // this.bc = require('func/buildContent')
 
-require('scene/ui/frag')
-require('updateData')
+require('ui/frag')
+
+const IntSettings = require("content/settings");
+if (!IntSettings.getValue("base", "not_show_again")) {
+	Log.info("load updateData")
+	require('updateData')
+}

@@ -1,9 +1,45 @@
 
-exports.mod = Vars.mods.getMod(modName)
+const { MyObject, MyArray } = require('func/constructor')
+
+
+exports.mod = Vars.mods.locateMod(modName)
 
 /* 转换为可用的class */
 exports.toClass = function (_class) {
 	return Seq([_class]).get(0)
+}
+
+exports.toIntObject = function (value) {
+	let obj2 = new MyObject(), arr = []
+	let output = obj2
+	while (true) {
+		for (let child = value.child; child != null; child = child.next) {
+			let result = (() => {
+				if (child.isArray()) {
+					let array = new MyArray()
+					arr.push(child, array);
+					return array
+				}
+				if (child.isObject()) {
+					let obj = new MyObject()
+					arr.push(child, obj);
+					return obj
+				}
+
+				let value = child.asString()
+				if (child.isNumber()) value *= 1
+				if (child.isBoolean()) value = value == 'true'
+				return value
+			})()
+			if (obj2 instanceof Array) obj2.push(result)
+			else obj2.put(child.name, result)
+		}
+		if (arr.length == 0) break
+		value = arr.shift()
+		obj2 = arr.shift()
+	}
+	// Log.info(output + "")
+	return output
 }
 
 /* 一个文本域，可复制粘贴 */
@@ -11,10 +47,9 @@ exports.showTextArea = function (text) {
 	let dialog = new Dialog('');
 	let w = Core.graphics.getWidth(),
 		h = Core.graphics.getHeight();
-	let text1 = text,
-		text2 = dialog.cont.add(new TextArea(text.getText())).size(w * 0.85, h * 0.75).get();
+	let area = dialog.cont.add(new TextArea(text.getText().replace(/\\n/g, '\n'))).size(w * 0.85, h * 0.7).get();
 	dialog.buttons.table(cons(t => {
-		t.button('$back', Icon.left, () => dialog.hide()).size(w / 3 - 25, h * 0.05);
+		t.button('$back', Icon.left, () => dialog.hide()).size(120, 64);
 		t.button('$edit', Icon.edit, () => {
 			let dialog = new Dialog('');
 			dialog.addCloseButton();
@@ -24,31 +59,31 @@ exports.showTextArea = function (text) {
 				t.row();
 				t.button("@schematic.copy.import", Icon.download, style, () => {
 					dialog.hide();
-					text2.setText(Core.app.getClipboardText());
+					area.setText(Core.app.getClipboardText().replace(/\r/g, '\n'));
 				}).marginLeft(12);
 				t.row();
 				t.button("@schematic.copy", Icon.copy, style, () => {
 					dialog.hide();
-					Core.app.setClipboardText(text2.getText()
+					Core.app.setClipboardText(area.getText()
 						.replace(
 							/\r/g, '\n'));
 				}).marginLeft(12);
 			}));
 			dialog.closeOnBack();
 			dialog.show();
-		}).size(w / 3 - 25, h * 0.05);
+		}).size(120, 64);
 		t.button('$ok', Icon.ok, () => {
 			dialog.hide();
-			text1.setText(text2.getText().replace(/\r/g, '\\n'));
-		}).size(w / 3 - 25, h * 0.05);
+			text.setText(area.getText().replace(/\r|\n/g, '\\n'));
+		}).size(120, 64);
 	}));
 	dialog.show();
 }
 
 /* hjson解析 (使用arc的JsonReader) */
-exports.HjsonParse = function (str) {
+exports.hjsonParse = function (str) {
 	if (typeof str !== 'string') return str;
-	if (str.replace(/^\s+/, '')[0] != '{') str = '{' + str + '}'
+	if (str.replace(/^\s+/, '')[0] != '{') str = '{\n' + str + '\n}'
 	try {
 		return (new JsonReader).parse(str)
 		/* let obj1 = (new JsonReader).parse(str), arr = [];
@@ -82,7 +117,7 @@ exports.HjsonParse = function (str) {
 		}
 		return output; */
 	} catch (err) {
-		Vars.ui.showErrorMessage(err);
+		Log.err(err);
 		return null;
 	};
 	// hjson = hjson.replace(/\s/g, '')[0] != '{' ? '{' + hjson + '}' : hjson;
@@ -103,15 +138,25 @@ exports.HjsonParse = function (str) {
 	} */
 }
 
+Events.run(ClientLoadEvent, () => exports.errorRegion = Core.atlas.find("-"))
+
 // 查找图片
 exports.find = function (mod, name) {
-	let error = Core.atlas.find('error');
-	let all = mod.spritesAll();
-	return all.length != 0 && (() => {
-		for (let f of all) {
-			if (f.name() == name + '.png') return new TextureRegion(new Texture(f));
-		}
-	})() || error;
+	let fi = mod.spritesFi();
+	return fi != null ? this.findSprites(fi, name) : this.errorRegion
+}
+exports.findSprites = function (all, name) {
+	let region = this.errorRegion
+	try {
+		all.walk(cons(f => {
+
+			if (f.name() == name + ".png") {
+				region = new TextureRegion(new Texture(f));
+				throw '';
+			}
+		}))
+	} catch (e) { }
+	return region
 }
 
 /* 选择文件 */
@@ -163,8 +208,10 @@ exports.searchTable = function (t, fun) {
 		let text;
 		t.add(text = new TextField).fillX();
 		text.changed(() => fun(p, text.getText()));
-		// /* 自动聚焦到搜索框 */
-		// text.fireClick();
+		/* 自动聚焦到搜索框 */
+		if (Core.app.isDesktop() && text != null) {
+			Core.scene.setKeyboardFocus(text);
+		}
 	})).padRight(8).fillX().fill().top().row();
 
 	let pane = t.top().pane(cons(p => fun(p.top(), ''))).pad(0).top().get();
@@ -238,8 +285,10 @@ exports.showSelectTable = function (button, fun, searchable) {
 			let text;
 			t.add(text = new TextField).fillX();
 			text.changed(() => fun(p, hide, text.getText()));
-			// /* 自动聚焦到搜索框 */
-			// text.fireClick();
+			/* 自动聚焦到搜索框 */
+			if (Core.app.isDesktop() && text != null) {
+				Core.scene.setKeyboardFocus(text);
+			}
 		})).padRight(8).fillX().fill().top().row();
 	}
 

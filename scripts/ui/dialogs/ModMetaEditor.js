@@ -1,6 +1,6 @@
 
 const IntFunc = require('func/index')
-const IntModsDialog = require('scene/ui/dialogs/ModsDialog');
+const IntModsDialog = require('ui/dialogs/ModsDialog');
 const modsDirectory = Vars.dataDirectory.child('mods(I hope...)').child('mods');
 
 const write = mod => {
@@ -13,7 +13,7 @@ const write = mod => {
 		str.push(item + ': ' + (text.replace(/\s+/, '') == '' ? '""' : text))
 	}
 	mod.child(isNull ? 'mod.json' : 'mod.' + file.extension()).writeString(str.join('\n'));
-	IntModsDialog.constructor()
+	IntModsDialog.show()
 
 	ui.hide();
 }
@@ -89,7 +89,7 @@ exports.constructor = function (f) {
 	file = f;
 	isNull = !f.exists()
 	if (isNull) file.writeString('')
-	obj = IntFunc.HjsonParse(file.readString());
+	obj = IntFunc.hjsonParse(file.readString());
 	ui.title.setText(isNull ? '$mod.create' : '$edit');
 
 	Fields.fileName.setText(isNull ? '' : f.parent().name())
