@@ -59,18 +59,21 @@ caches.framework = (() => {
 
 caches.types = (() => {
 	let fi = data.child("types").child("default.ini")
-	let obj = {}
-	let all = fi.readString().match(/\w+?\s=\s\w+/g) || [];
+	let map = new Map()
+	// [\u4e00-\u9fa5]为中文
+	let all = fi.readString().match(/\w+?\s*=\s*[\w\u4e00-\u9fa5]+/g) || [];
 	all.forEach(type => {
-		let [key, value] = type.split('\s=\s');
-		obj[key] = value
+		let [key, value] = type.split(/\s*=\s*/g);
+		map.set(key, value)
 	})
-	return obj
+	return map
 })();
 
 caches.content = new Map()
 Events.run(ClientLoadEvent, () => {
 	let file = data.child("content").child(Vars.ui.language.getLocale() + ".ini");
-	iniParse(caches.content, file.readString())
+	if (file.exists()) {
+		iniParse(caches.content, file.readString())
+	}
 })
 

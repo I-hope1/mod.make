@@ -1,6 +1,8 @@
 const IntFunc = require('func/index');
 const IntStyles = require('ui/styles');
 
+const { caches: { types: typesIni } } = require('func/IniHandle');
+
 exports.constructor = function (type, typeName, types, other) {
 	this.table = new Table(Tex.clear, cons(t => {
 		t.defaults().fillX()
@@ -8,16 +10,16 @@ exports.constructor = function (type, typeName, types, other) {
 		let button = new Button(IntStyles.clearb);
 		t.add(button).height(40);
 		button.table(cons(l => {
-			l.label(() => Core.bundle.get("type." + typeName, typeName))
+			l.label(() => typesIni.get(typeName) || typeName)
 		})).padLeft(4).padRight(4).grow().row();
 		button.image().color(Color.gray).fillX();
-		button.clicked(run(() => IntFunc.showSelectTable(button, (p, hide, v) => {
+		button.clicked(() => IntFunc.showSelectTable(button, (p, hide, v) => {
 			p.clearChildren()
 			let reg = RegExp('' + v, 'i')
 
 			types.forEach(t => {
-				if (v != '' && !reg.test(t.getSimpleName()) && !reg.test(Core.bundle.get("type." + t.getSimpleName()))) return;
-				p.button(Core.bundle.get("type." + t.getSimpleName(), t.getSimpleName()), Styles.cleart, run(() => {
+				if (v != '' && !reg.test(t.getSimpleName()) && !reg.test(typesIni.get(t.getSimpleName()) || '')) return;
+				p.button(typesIni.get(t.getSimpleName()) || t.getSimpleName(), Styles.cleart, run(() => {
 					type = t
 					typeName = t.getSimpleName();
 					hide.run();
@@ -32,7 +34,7 @@ exports.constructor = function (type, typeName, types, other) {
 				typeName = 'none';
 				hide.run();
 			})).pad(5).size(200, 65).disabled(typeName == 'none').row()
-		}, true)));
+		}, true));
 	}))
 	Object.defineProperty(this, 'type', { get: () => type })
 	Object.defineProperty(this, 'typeName', { get: () => typeName })
