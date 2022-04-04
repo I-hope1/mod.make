@@ -1,9 +1,7 @@
 
 const { MyObject, MyArray } = require('func/constructor')
 
-
 exports.mod = Vars.mods.locateMod(modName)
-
 /* 转换为可用的class */
 exports.toClass = function (_class) {
 	return Seq([_class]).get(0)
@@ -44,39 +42,43 @@ exports.toIntObject = function (value) {
 
 /* 一个文本域，可复制粘贴 */
 exports.showTextArea = function (text) {
-	let dialog = new Dialog('');
-	let w = Core.graphics.getWidth(),
-		h = Core.graphics.getHeight();
-	let area = dialog.cont.add(new TextArea(text.getText().replace(/\\n/g, '\n'))).size(w * 0.85, h * 0.7).get();
-	dialog.buttons.table(cons(t => {
-		t.button('$back', Icon.left, () => dialog.hide()).size(120, 64);
-		t.button('$edit', Icon.edit, () => {
-			let dialog = new Dialog('');
-			dialog.addCloseButton();
-			dialog.table(Tex.button, cons(t => {
-				let style = Styles.cleart;
-				t.defaults().size(280, 60).left();
-				t.row();
-				t.button("@schematic.copy.import", Icon.download, style, () => {
-					dialog.hide();
-					area.setText(Core.app.getClipboardText().replace(/\r/g, '\n'));
-				}).marginLeft(12);
-				t.row();
-				t.button("@schematic.copy", Icon.copy, style, () => {
-					dialog.hide();
-					Core.app.setClipboardText(area.getText()
-						.replace(
-							/\r/g, '\n'));
-				}).marginLeft(12);
-			}));
-			dialog.closeOnBack();
-			dialog.show();
-		}).size(120, 64);
-		t.button('$ok', Icon.ok, () => {
-			dialog.hide();
-			text.setText(area.getText().replace(/\r|\n/g, '\\n'));
-		}).size(120, 64);
-	}));
+	let dialog = new BaseDialog('');
+	dialog.title.remove()
+	let area
+	dialog.cont.add(area = new TextArea(text.getText().replace(/\\n/g, '\n'))).grow();
+	if (Vars.mobile) area.removeInputDialog()
+
+	dialog.addCloseListener();
+	dialog.buttons.defaults().growX()
+	dialog.buttons.button("@back", Icon.left, () => dialog.hide()).grow()
+
+	dialog.buttons.button("@edit", Icon.edit, () => {
+		let dialog = new Dialog('');
+		dialog.addCloseButton();
+		dialog.table(Tex.button, cons(t => {
+			let style = Styles.cleart;
+			t.defaults().size(280, 60).left();
+			t.row();
+			t.button("@schematic.copy.import", Icon.download, style, () => {
+				dialog.hide();
+				area.setText(Core.app.getClipboardText().replace(/\r/g, '\n'));
+			}).marginLeft(12);
+			t.row();
+			t.button("@schematic.copy", Icon.copy, style, () => {
+				dialog.hide();
+				Core.app.setClipboardText(area.getText()
+					.replace(
+						/\r/g, '\n'));
+			}).marginLeft(12);
+		}));
+		dialog.closeOnBack();
+		dialog.show();
+	}).grow();
+	dialog.buttons.button("@ok", Icon.ok, () => {
+		dialog.hide();
+		text.setText(area.getText().replace(/\r|\n/g, '\\n'));
+	}).grow();
+
 	dialog.show();
 }
 
@@ -86,59 +88,35 @@ exports.hjsonParse = function (str) {
 	if (str.replace(/^\s+/, '')[0] != '{') str = '{\n' + str + '\n}'
 	try {
 		return (new JsonReader).parse(str)
-		/* let obj1 = (new JsonReader).parse(str), arr = [];
-		let output, obj2 = output = new MyObject();
-		while (true) {
-			for (let child = obj1.child; child != null; child = child.next) {
-				if (child.isArray()) {
-					let array = new MyArray()
-					if (obj2 instanceof Array) obj2.push(array)
-					else obj2.put(child.name, array)
-					arr.push(child, array);
-					continue
-				}
-				if (child.isObject()) {
-					let obj = new MyObject()
-					if (obj2 instanceof Array) obj2.push(obj)
-					else obj2.put(child.name, obj)
-					arr.push(child, obj);
-					continue
-				}
-
-				let value = child.asString()
-				if (child.isNumber()) value *= 1
-				if (child.isBoolean()) value = value == 'true'
-				if (obj2 instanceof Array) obj2.push(value)
-				else obj2.put(child.name, value)
-			}
-			if (arr.length == 0) break
-			obj1 = arr.shift()
-			obj2 = arr.shift()
-		}
-		return output; */
 	} catch (err) {
 		Log.err(err);
 		return null;
-	};
-	// hjson = hjson.replace(/\s/g, '')[0] != '{' ? '{' + hjson + '}' : hjson;
-	/* try {
-		let string = (new Packages.arc.util.serialization.JsonReader).parse(str.replace(/\s/g, '')[0] != '{' ?
-			'{\n' +
-			str + '}' : str);
-		let obj = {};
-		for (let i = 0; i < string.size; i++) {
-			let arr = ('' + string.get(i)).split(': ');
-			let value = arr.join('');
-			obj[arr.splice(0, i)] = value;
-		}
-		return obj;
-	} catch (e) {
-		Vars.ui.showErrorMessage(e);
-		return {};
-	} */
+	}
 }
 
-Events.run(ClientLoadEvent, () => exports.errorRegion = Core.atlas.find("-"))
+exports.async = function (text, generator, callback) {
+	Vars.ui.loadfrag.show(text);
+	let ui = new Element()
+	let v, t = 0;
+	ui.update(() => {
+		if (++t < 2) return;
+		t = 0
+		try {
+			v = generator.next()
+		} catch (err) {
+			Vars.ui.showErrorMessage(err)
+			v = null;
+		}
+		if (v == null || v.done) {
+			ui.update(null)
+			Vars.ui.loadfrag.hide()
+			callback(v)
+		}
+	})
+	Core.scene.add(ui);
+}
+
+Events.run(ClientLoadEvent, () => exports.errorRegion = Core.atlas.find("error"))
 
 // 查找图片
 exports.find = function (mod, name) {
@@ -251,11 +229,6 @@ exports.showSelectTable = function (button, fun, searchable) {
 		t.actions(Actions.fadeOut(0.3, Interp.fade), Actions.remove())
 	});
 	hitter.fillParent = true;
-	/* 	hitter.keyDown(cons(key => {
-		if (key == "escape" || key == "back") {
-			Core.app.post(hide);
-		}
-	})); */
 	hitter.clicked(hide);
 
 	Core.scene.add(hitter);

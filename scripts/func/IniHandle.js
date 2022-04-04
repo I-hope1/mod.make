@@ -77,3 +77,24 @@ Events.run(ClientLoadEvent, () => {
 	}
 })
 
+caches.settings = (() => {
+	const settings = Vars.dataDirectory.child("mods(I hope...)").child("settings.txt")
+	if (!settings.exists()) settings.writeString('')
+	let map = new Map()
+	let all = settings.readString().match(/[\w-]+?\s*:\s*\w+/g) || [];
+	all.forEach(type => {
+		let [key, value] = type.split(/\s*:\s*/g);
+		map.set(key, value)
+	})
+	return {
+		get: k => map.get(k),
+		set(k, v) {
+			map.set(k, v)
+			let str = []
+			for (let [key, value] of map.entries()) {
+				str.push(key + ":" + value);
+			}
+			settings.writeString(str.join('\n'))
+		}
+	}
+})()

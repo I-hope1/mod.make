@@ -27,9 +27,7 @@ function MyArray(arr) {
 		}
 	})
 }
-var F = function () { };
-F.prototype = Array.prototype
-MyArray.prototype = new F();
+MyArray.prototype = Array.prototype;
 MyArray.prototype.constructor = MyArray;
 
 exports.MyArray = MyArray

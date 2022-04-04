@@ -40,8 +40,6 @@ Events.run(ClientLoadEvent, () => {
 	frag.lastx = frag.x;
 	frag.lasty = frag.y;
 	frag.update(() => {
-		/* frag.color.a = +Vars.state.isMenu() ^ 1;
-		frag.touchable = Vars.state.isMenu() ? Touchable.disabled : Touchable.enabled; */
 
 		frag.setPosition(
 			Mathf.clamp(frag.lastx, 0, Core.graphics.getWidth() - frag.getPrefWidth()),

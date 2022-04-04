@@ -1,12 +1,15 @@
 
 const buildContent = require('func/buildContent');
 const IntFunc = require('func/index');
+const IntSettings = require("content/settings");
 const { MyObject, MyArray } = require('func/constructor');
 const { caches: { content: contentIni } } = require('func/IniHandle')
 
-const json = new Json();
+const json = exports.json = new Json();
 
 exports.filter = function (field) {
+	if (!IntSettings.getValue("base", "display_deprecated") && field.isAnnotationPresent(java.lang.Deprecated)) return false;
+
 	let type = field.type, name = field.name
 	while (type.isArray() || type == Seq) {
 		type = type == Seq ? buildContent.getGenericType(field)[0] : type.getComponentType()
@@ -60,7 +63,7 @@ exports.constructor = function (obj, Fields, prov) {
 							let type = field.type
 							Fields.add(null, name,
 								type.isArray() || type == Seq ? new MyArray() :
-									/^(int|double|float|long|short|byte|char)$/.test(type.getSimpleName()) ? 0 :
+									IntFunc.toClass(java.lang.Number).isAssignableFrom(type) ? 0 :
 										type.getSimpleName() == 'boolean' ? false :
 											type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */
 												buildContent.defaultClass.containsKey(type) ? buildContent.defaultClass.get(type) : new MyObject()

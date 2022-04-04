@@ -1,8 +1,9 @@
 const IntFunc = require('func/index');
 const Fields = require('ui/components/Fields');
-const scripts = require('ui/scripts');
+// const scripts = require('ui/scripts');
 const addBtn = require('ui/components/addFieldBtn');
 const typeSelection = require('ui/components/typeSelection');
+const IntSettings = require("content/settings");
 
 const Classes = Packages.mindustry.mod.ClassMap.classes;
 
@@ -14,6 +15,7 @@ const ContentTypes = exports.ContentTypes = new ObjectMap();
 exports.otherTypes = ObjectMap.of(
 	BulletType, [],
 	DrawBlock, [],
+	Ability, []
 )
 const types = exports.types = {};
 
@@ -29,7 +31,7 @@ exports.load = function () {
 		if (!arr.isEmpty()) {
 			let c = arr.first().getClass();
 			//get base content class, skipping intermediates
-			while (!(c.getSuperclass() == Content || c.getSuperclass() == UnlockableContent || Packages.java.lang.reflect.Modifier.isAbstract(c.getSuperclass().getModifiers()))) {
+			while (!(c.getSuperclass() == Content || c.getSuperclass() == UnlockableContent || java.lang.reflect.Modifier.isAbstract(c.getSuperclass().getModifiers()))) {
 				c = c.getSuperclass();
 			}
 			if (parsers.containsKey(type)) {
@@ -50,6 +52,7 @@ exports.load = function () {
 
 	Classes.each(new Cons2({
 		get: (k, type) => {
+			if (!IntSettings.getValue("base", "display_deprecated") && type.isAnnotationPresent(java.lang.Deprecated)) return;
 			for (let i = 0; i < this.contentTypes.size; i += 2) {
 				if (this.contentTypes.get(i).isAssignableFrom(type)) {
 					let key = this.contentTypes.get(i + 1)
@@ -59,7 +62,7 @@ exports.load = function () {
 			}
 			this.otherTypes.each(new Cons2({
 				get: (k, arr) => {
-					if (k.isAssignableFrom(type)) {
+					if (k.isAssignableFrom(type) && !java.lang.reflect.Modifier.isAbstract(type.getModifiers())) {
 						arr.push(type)
 					}
 				}
@@ -86,11 +89,7 @@ exports.load = function () {
 	Editor.buttons.button('$back', Icon.left, run(() => Editor.hide())).size(220, 70);
 
 	Editor.buttons.button('$ok', Icon.ok, run(() => {
-		// try {
 		this.parse()
-		/* } catch (e) {
-			Vars.ui.showErrorMessage(e);
-		} */
 		if (fileNameTable.children.size > 0) {
 			let toFile = this.file.parent().child(fileName.getText() + '.' + this.file.extension());
 			this.file.moveTo(toFile);
@@ -107,9 +106,8 @@ exports.edit = function (file, mod) {
 	file.exists() || file.writeString('');
 
 	this.file = file, this.mod = mod;
-	let ext = file.extension();
 
-	if (ext != 'properties') {
+	if (file.extension() != 'properties') {
 		if (fileNameTable.children.size == 0) {
 			fileNameTable.add('$fileName')
 			fileNameTable.add(fileName)
@@ -163,19 +161,6 @@ exports.build = function () {
 			t.add(addBtn.constructor(result.value, fields, prov(() => Classes.get(selection.typeName)))).fillX().growX()
 			t.row();
 			t.table(cons(t => {
-				/* if (result.type instanceof UnitType) {
-					var k = 'constructor';
-					t.add(Core.bundle.get(k, k));
-					t.add(':');
-
-					let btn = t.button(obj[k] != '' && obj[k] != null ? obj[k] : Core.bundle.get('none', 'none'), Styles.cleart, () => IntFunc.showSelectTable(btn, (p, hide, v) => {
-						p.clearChildren();
-						
-						IntVars.unitConstructor.forEach(val =>
-							p.button(Core.bundle.get(val, val), Styles.cleart, () => obj[k] = val)
-						})
-					})
-				} */
 				// 研究
 				var k = 'research';
 				let value = obj.getDefault(k, "core-shard")
@@ -235,9 +220,8 @@ exports.build = function () {
 		})).fillX().row();
 		fields.map.each((k, v) => {
 			if (k == 'research') return;
-			// try {
+
 			fields.add(null, k);
-			// } catch(e) { return; }
 		})
 	}
 
@@ -298,46 +282,20 @@ exports.build = function () {
 	}
 
 
-	else if (ext == 'js') {
-		pane.top().defaults().top().grow();
-
-		let cont = pane.table().get();
-		pane.row();
-		let btn = pane.button('$add', Icon.add, run(() => IntFunc.showSelectTable(btn, (p, hide) => {
-			let cols = 2, c = 0;
-			p.left();
-			Object.keys(scripts).forEach(k => {
-				if (k == 'build') return;
-
-				p.button('$scripts.' + k, Styles.cleart, run(() => {
-					cont.add((new scripts[k]).build()).row();
-				})).size(440 / 2, 60);
-				if (++c % cols == 0) p.row();
-			});
-		}))).size(220, 75).bottom().get();
-		pane.row();
-	}
-
-
 	else {
 		let area = result.value = pane.area(file.readString(), cons(t => {
 
-		})).size(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) - 200)
-			.get();
-		/*area.changed(run(() => {
-			nums
-		}));*/
-		//area.clicked(run(() => IntFunc.showTextArea(result.value)));
+		})).size(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) - 200).get();
 	}
 
-	// 为了不阻挡最低下的部分
+	// 为了不阻挡最底下的部分
 	pane.image().color(Color.clear).height(74)
 }
 // 编译代码
 exports.parse = function () {
 	let file = this.file
 	let ext = file.extension()
-	if (ext == 'json' || ext == 'hjson') {
+	if (/^h?json$/.test(ext)) {
 		let obj = result.value;
 		let toClass = IntFunc.toClass, typeName = result.typeName, type = result.type
 		if (type != null) {
@@ -361,12 +319,6 @@ exports.parse = function () {
 		);
 		this.file = dir.child(file.name());
 		file.moveTo(this.file)
-
-		/* let strs = [], obj = result.value;
-		for(let k in obj){
-			strs.push('\t"' + k + '": "' + obj[k] + '"');
-		}
-		file.writeString('{\n' + strs.join(',\n') + '\n}'); */
 	}
 	else if (ext == 'properties') {
 		let arr = result.value;

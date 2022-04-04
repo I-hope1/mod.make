@@ -3,24 +3,15 @@ const buildContent = require('func/buildContent')
 const { MyObject, MyArray } = require('func/constructor')
 
 exports.colorfulTable = (i, cons) => {
-	return new Table(i % 3 == 0 ? Tex.whiteui.tint(0, .8, .8, .7) :
-		i % 3 == 1 ? Tex.whiteui.tint(.8, .8, 0, .7) :
-			Tex.whiteui.tint(.8, 0, .8, .7), cons)
+	return new Table(i % 3 == 0 ? Tex.whiteui.tint(0, .8, .8, .6) :
+		i % 3 == 1 ? Tex.whiteui.tint(.8, .8, 0, .6) :
+			Tex.whiteui.tint(.8, 0, .8, .6), cons)
 }
 
 exports.json = function (fields, i, key) {
 	return this.colorfulTable(i, table => {
-		// 不行，不能定义变量
-		/* // 让函数拥有变量
-		eval(('' + IntFunc.buildContent).replace(/function\s*\(\)\s*\{([^]+)\}/, '$1')); */
-
 		table.left().defaults().left();
-		// try {
-		buildContent.build(fields.type, fields, table, key, fields.map.get(key));
-		/* } catch (e) {
-			Vars.ui.showErrorMessage(e)
-			return
-		} */
+		buildContent.build(fields.type, fields, table, key, fields.map.get(key))
 	})
 }
 
@@ -45,8 +36,5 @@ exports.constructor = function (value, type, table) {
 		this.map.remove(key)
 		if (item != null) item.remove()
 		else Log.err("can't remove key: " + key)
-	}/* 
-	this.init = function(){
-		
-	} */
+	}
 }

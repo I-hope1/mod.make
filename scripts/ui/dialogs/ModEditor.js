@@ -42,7 +42,7 @@ exports.constructor = function (mod) {
 	}
 
 	let logo = mod.logo();
-	if (logo != 'error') desc.add(logo).row();
+	if (logo != 'error' && IntSettings.getValue("base", "display_mod_logo")) desc.image(logo).row();
 
 	desc.add('$editor.name', Color.gray).padRight(10).padTop(0).row();
 	desc.add(displayName).growX().wrap().padTop(2).row();
@@ -80,9 +80,13 @@ exports.constructor = function (mod) {
 			body.defaults().padTop(2).top().left();
 			cont.pane(cons(p => p.add(body).left().grow().get().left())).fillX().minWidth(450).row();
 
+			let displayContentSprite;
+
 			let setup = content => {
 				selectedContent = content
 				body.clearChildren();
+
+				displayContentSprite = IntSettings.getValue("base", "display-content-sprite");
 
 				if (content == contentDir) {
 					let cTypes = Editor.ContentTypes
@@ -98,48 +102,59 @@ exports.constructor = function (mod) {
 					}))
 					return
 				}
+
+				body.add('$content.info').row();
 				IntFunc.searchTable(body, (p, text) => {
 					p.clearChildren()
-					content.walk(cons(json => {
-						try {
-							if (!/^h?json$/.test(json.extension())) return;
-							if (text != '' && !RegExp(text, 'i').test(json.nameWithoutExtension())) return
-						} catch (e) { return }
-						p.button(cons(b => {
-							b.left()
-							b.table(cons(t => {
-								t.left()
-								if (IntSettings.getValue("base", "display-content-sprite")) {
-									let image = t.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
-									if (!Vars.mobile) image.addListener(new HandCursorListener());
-								}
+					let generator = function* () {
+						let count = 0
+						let all = content.findAll();
+						for (let i = 0; i < all.size; i++) {
+							let json = all.get(i)
+							try {
+								if (!/^h?json$/.test(json.extension())) continue
+								if (text != '' && !RegExp(text, 'i').test(json.nameWithoutExtension())) continue
+							} catch (e) { continue }
+							if (count++ > 10) yield;
+							p.button(cons(b => {
+								b.left()
+								b.table(cons(t => {
+									t.left()
+									if (displayContentSprite) {
+										let image = t.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
+										if (!Vars.mobile) image.addListener(new HandCursorListener());
+									}
 
-								t.add(json.name()).top();
-							})).growX().left().get()
-							IntFunc.longPress(b, 600, longPress => {
-								if (longPress) {
-									Vars.ui.showConfirm('$confirm',
-										Core.bundle.format('confirm.remove', json.nameWithoutExtension()),
-										run(() => {
-											json.delete();
-											setup(selectedContent);
-										})
-									);
-								}
-								else {
-									JsonDialog.constructor(json, mod);
-								}
-							});
-						}), Styles.defaultb, run(() => { })).fillX().minWidth(400).pad(2).padLeft(4).left().row();
+									t.add(json.name()).top();
+								})).growX().left().get()
+								IntFunc.longPress(b, 600, longPress => {
+									if (longPress) {
+										Vars.ui.showConfirm('$confirm',
+											Core.bundle.format('confirm.remove', json.nameWithoutExtension()),
+											run(() => {
+												json.delete();
+												setup(selectedContent);
+											})
+										);
+									}
+									else {
+										JsonDialog.constructor(json, mod);
+									}
+								});
+							}), Styles.defaultb, () => { }).fillX().minWidth(400).pad(2).padLeft(4).left().row();
 
-					}))
-
+						}
+					}
+					let g = generator()
+					IntFunc.async("加载content", g, () => { });
 				})
 				body.row()
+
+				// buttons
 				body.table(cons(t => {
 					t.defaults().fillX()
 					t.button("$back", Icon.left, () => setup(contentDir)).fillX().minWidth(200);
-					t.button('$add', Icon.add, run(() => {
+					t.button('$add', Icon.add, () => {
 						let ui = new Dialog('');
 						let name = new TextField;
 						ui.cont.table(cons(t => {
@@ -186,13 +201,12 @@ exports.constructor = function (mod) {
 						ui.closeOnBack()
 
 						ui.show();
-					})).fillX().minWidth(200).disabled(boolf(() => framework[content.name()] == null)).row();
+					}).fillX().minWidth(200).disabled(boolf(() => framework[content.name()] == null)).row();
 				})).fillX().growX()
 
 			}
 			setup(contentDir);
 
-			t.add('$content.info').row();
 			t.add(cont).growX().width(w).row();
 
 			let spritesDirectory = mod.file.child('sprites');
@@ -214,12 +228,6 @@ exports.constructor = function (mod) {
 						t.left();
 
 						t.add(file.nameWithoutExtension())
-						/* t.field(file.nameWithoutExtension(),
-							cons(text => {
-								let toFile = file.parent().child(text + '.png');
-								file.moveTo(toFile);
-								file = toFile;
-							})).growX().left().get(); */
 						t.row();
 						t.image().color(Color.gray).minWidth(440).row();
 						t.image(new TextureRegion(new Texture(file))).size(96);
@@ -263,71 +271,6 @@ exports.constructor = function (mod) {
 		new Table(Tex.whiteui.tint(.7, .7, 1, .8), cons(t => {
 			t.add('未完成')
 			return
-			// let scripts = mod.file.child('scripts');
-			// let main = scripts.child('main.js');
-			// main.exists() || main.writeString('');
-			// let cont = new Table;
-
-			// let all = scripts.findAll().toArray();
-			// let buttons = [];
-
-			// let buildButton = (cont, i, f) => cont.button(cons(b => {
-			// 	b.top().left();
-			// 	b.margin(12);
-			// 	b.defaults().left().top();
-			// 	b.table(cons(title => {
-			// 		title.left();
-			// 		title.image(Core.atlas.find(modName + '-js.file', Tex.clear)).size(64).padTop(8).padLeft(-8).padRight(8);
-			// 		title.add(f.nameWithoutExtension(), f.name() == 'main.js' ? Color.gold : Color.white).wrap().width(170).growX().left()/* .get().clicked(run(() => {
-
-			// 		})); */
-			// 		title.add().growX().left();
-			// 	}));
-			// 	b.table(cons(right => {
-			// 		right.right();
-			// 		right.button(Icon.trash, Styles.clearPartiali, run(() => Vars.ui.showConfirm('$confirm', Core.bundle.format('confirm.remove', f.name()), run(() => {
-			// 			f.delete();
-			// 			buttons.splice(i, 1).clear();
-			// 		})))).size(50);
-			// 	})).grow();
-			// }), IntStyles.clearb, run(() => Editor.edit(f, mod))).width(w - 20).get()
-
-			// for (let i = 0; i < all.length; i++) {
-			// 	buttons.push(buildButton(cont, i, all[i]));
-			// 	cont.row();
-			// }
-
-			// cont.table(cons(t => {
-			// 	t.button('$add', Icon.add, run(() => {
-			// 		let dialog = new Dialog('$add');
-			// 		dialog.cont.add('$fileName');
-			// 		let name = dialog.cont.add(new TextField('')).get();
-			// 		dialog.cont.row();
-			// 		let table = dialog.buttons;
-			// 		table.button('$back', Icon.left, run(() => dialog.hide()));
-			// 		table.button('$ok', Icon.ok, run(() => {
-			// 			if (name.getText() == 'main') return Vars.ui.showErrorMessage('文件名不能为[orange]main[]。');
-			// 			let toFile = scripts.child(name.getText() + '.js');
-			// 			function go() {
-			// 				toFile.writeString('');
-			// 				dialog.hide();
-			// 				build(cont, buttons.length - 1, toFile);
-			// 			}
-			// 			if (toFile.exists()) {
-			// 				Vars.ui.showConfirm('覆盖', '同名文件已存在\n是否要覆盖', run(() => go()));
-			// 			} else go();
-			// 		}));
-			// 		dialog.show();
-			// 	})).size(120, 64);
-			// 	// t.button('导入插件', Icon.download, run(() => {})).fillX();
-			// 	t.button('test', run(() => {
-			// 		// let o = Vars.mods.scripts.runConsole(main.readString());
-			// 		// if(o != null) Vars.ui.showInfo('' + o);
-			// 		Vars.mods.scripts.run(Vars.mods.locateMod(modName), main.readString());
-			// 	})).size(120, 64);
-			// })).name('buttons').fillX();
-
-			// t.add(cont);
 		}))
 	];
 

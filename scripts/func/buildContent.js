@@ -1,5 +1,6 @@
 
 const IntFunc = require('func/index');
+const IntSettings = require("content/settings");
 const { otherTypes } = require('ui/dialogs/Editor');
 const add = require('ui/components/addFieldBtn');
 const typeSelection = require('ui/components/typeSelection');
@@ -7,8 +8,9 @@ const Fields = require('ui/components/Fields');
 const { MyObject, MyArray } = require('func/constructor');
 const Classes = exports.classes = Packages.mindustry.mod.ClassMap.classes;
 const { caches: { content: contentIni } } = require('func/IniHandle')
+const mod_Name = modName
 
-const lang = Packages.java.lang
+const lang = java.lang
 
 const defaultClass = exports.defaultClass = ObjectMap.of(
 	Effect, 'none',
@@ -16,7 +18,9 @@ const defaultClass = exports.defaultClass = ObjectMap.of(
 	Item, 'copper',
 	Liquid, 'water',
 	ItemStack, 'copper/0',
-	LiquidStack, 'water/0'
+	LiquidStack, 'water/0',
+	Attribute, Attribute.all[0],
+	BulletType, BasicBulletType
 )
 
 const effects = new Seq()
@@ -27,7 +31,14 @@ for (let i = 0; i < fs.length; i++) {
 const UnitPlan = UnitFactory.UnitPlan
 
 exports.filterClass = ObjectMap.of(
-	// Attribute, (table, value) => {},
+	Attribute, (table, value) => {
+		value = '' + value || defaultClass.get(Attribute);
+		let btn = table.button(val, Styles.cleart, () => {
+			IntFunc.showSelectListTable(btn, unitType, val, 130, 50, cons(type => btn.setText(val = type)), false);
+		}).minWidth(100).height(45).get();
+
+		return prov(() => value)
+	},
 	Color, (table, value) => {
 		let color
 		try {
@@ -50,7 +61,7 @@ exports.filterClass = ObjectMap.of(
 	BulletType, (table, value) => {
 		table = table.table().get()
 		value = value || new MyObject();
-		let typeName = value.remove('type') || 'BulletType'
+		let typeName = value.remove('type') || 'BasicBulletType'
 		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(BulletType));
 		table.add(selection.table).padBottom(4).row()
 		let cont = table.table().name('cont').get()
@@ -75,7 +86,16 @@ exports.filterClass = ObjectMap.of(
 		let map = fObject(cont, prov(() => selection.type), value)
 		return map
 	},
-	// Ability, (table, value) => {},
+	Ability, (table, value) => {
+		table = table.table().get()
+		value = value || new MyObject();
+		let typeName = value.remove('type') || 'Ability';
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(Ability));
+		table.add(selection.table).padBottom(4).row()
+		let cont = table.table().name('cont').get()
+		let map = fObject(cont, prov(() => selection.type), value, Seq())
+		return map
+	},
 	Weapon, (table, value) => {
 		table = table.table().get()
 		value = value || new MyObject()
@@ -83,12 +103,6 @@ exports.filterClass = ObjectMap.of(
 		let map = fObject(cont, prov(() => Weapon), value, Seq([Weapon]))
 		return map
 	},
-	/* 	UnitPlan, (table, value) => {
-			table = table.table().get()
-			value = value || new MyObject();
-			let cont = table.table().name('cont').get()
-	
-		}, */
 
 	ItemStack, (table, value) => {
 		let [item, amount] =
@@ -146,9 +160,11 @@ exports.filterClass = ObjectMap.of(
 		let i = 0
 		function add(k, v) {
 			children.add(Fields.colorfulTable(i++, cons(t => {
+				let key = exports.filterClass.get(classes[0])(t, k);
+				let foldt = foldTable()
+				t.add(foldt[0])
 				map.put(
-					exports.filterClass.get(classes[0])(t, k),
-					exports.filterClass.get(BulletType)(t, v)
+					key, exports.filterClass.get(classes[1])(foldt[1], v)
 				)
 				t.table(cons(right => {
 					right.button('', Icon.trash, Styles.cleart, () => {
@@ -156,12 +172,32 @@ exports.filterClass = ObjectMap.of(
 						if (t != null) t.remove()
 					});
 				})).right().growX().right();
-			}))).row()
+			}))).growX().row()
 		}
 		value = value || new MyObject()
 		value.each(add)
 
 		cont.button('$add', Icon.add, () => add(defaultClass.get(classes[0]), new MyObject())).fillX()
+
+		return prov(() => map)
+	},
+
+	UnitPlan, (table, value) => {
+		let map = value || new MyObject()
+		let cont = new Table(Tex.button)
+		table.add(cont).fillX()
+		cont.add(Core.bundle.get('unit', 'unit'));
+		map.put("unit", exports.filterClass.get(UnitType)(cont, map.get("unit")));
+		cont.row()
+		cont.add(Core.bundle.get('time', 'time'));
+		map.put("time", fail(cont, map.getDefault("time", 0)));
+		cont.row()
+		cont.add(Core.bundle.get("requirements"))
+		let foldt = foldTable()
+		cont.add(foldt[0]).row()
+		map.put(
+			"requirements", fArray(foldt[1], IntFunc.toClass(ItemStack), map.getDefault("requirements", new MyArray()))
+		);
 
 		return prov(() => map)
 	}
@@ -223,8 +259,8 @@ exports.filterKey = ObjectMap.of(
 				obj.put('items', fArray(t, Classes.get('ItemStack'), obj.getDefault('items', new MyArray())))
 				t.row()
 				t.table(cons(t => {
-					t.check(Core.bundle.get('ModMake.consumes-optional', 'optional'), obj.getDefault('optional', false), boolc(b => obj.put('optional', b)))
-					t.check(Core.bundle.get('ModMake.consumes-booster', 'booster'), obj.getDefault('booster', false), boolc(b => obj.put('booster', b)))
+					t.check(Core.bundle.get(mod_Name + '.consumes-optional', 'optional'), obj.getDefault('optional', false), boolc(b => obj.put('optional', b)))
+					t.check(Core.bundle.get(mod_Name + '.consumes-booster', 'booster'), obj.getDefault('booster', false), boolc(b => obj.put('booster', b)))
 				})).fillX().row()
 				t.image().fillX().color(Pal.accent)
 
@@ -237,8 +273,8 @@ exports.filterKey = ObjectMap.of(
 				let v = p.get()
 				t.row()
 				t.table(cons(t => {
-					t.check(Core.bundle.get(modName + '.consumes-optional', 'optional'), obj.getDefault('optional', false), boolc(b => v.put('optional', b)))
-					t.check(Core.bundle.get(modName + '.consumes-booster', 'booster'), obj.getDefault('booster', false), boolc(b => v.put('booster', b)))
+					t.check(Core.bundle.get(mod_Name + '.consumes-optional', 'optional'), obj.getDefault('optional', false), boolc(b => v.put('optional', b)))
+					t.check(Core.bundle.get(mod_Name + '.consumes-booster', 'booster'), obj.getDefault('booster', false), boolc(b => v.put('booster', b)))
 				})).fillX().row()
 				return v
 			}
@@ -248,15 +284,15 @@ exports.filterKey = ObjectMap.of(
 			this.name = name
 			let table = new Table()
 			let t = this.table = new Table()
-			t.left().defaults().fillX().left()
+			t.left().defaults().growX().left()
 
 			cont.check(Core.bundle.get("consumes." + name, name), this.enable, boolc(b => this.setup(b))).row()
-			cont.add(table).fillX().left().padLeft(10).row()
+			cont.add(table).growX().left().padLeft(10).row()
 			value.put(key, content[name](t, obj));
 			cont.row()
 			this.setup = function (b) {
 				if (this.enable = b) {
-					table.add(this.table).fillX()
+					table.add(this.table).growX()
 				} else this.table.remove()
 			}
 			this.setup(this.enable)
@@ -363,9 +399,26 @@ function fArray(t, vType, v) {
 	})
 	table.button('$add', () => {
 		addItem(vType, fields, v.length, defaultClass.get(vType) || new MyObject())
-	}).fillX()
+	}).growX()
 	return prov(() => v)
 }
+
+function foldTable() {
+	let folded = false;
+	let table = new Table();
+	let content = new Table();
+	let btn = table.button(Icon.rightOpen, Styles.clearTogglei, () => {
+		folded = !folded
+		folded ? content.remove() : table.add(content)
+		btn.getStyle().imageUp = folded ? Icon.rightOpen : Icon.downOpen
+	}).padTop(1).padBottom(1).growY().width(32).get()
+	table.add(content).growX().left()
+	if (IntSettings.getValue("base", "auto_fold_code")) {
+		btn.fireClick()
+	}
+	return [table, content]
+}
+
 
 let cont = Packages.mindustry.ctype.UnlockableContent
 function buildOneStack(t, type, stack, content, amount) {
@@ -383,40 +436,73 @@ function buildOneStack(t, type, stack, content, amount) {
 	return prov(() => output);
 }
 
-let _class = Seq([Seq]).get(0);
 exports.getGenericType = function (field) {
-	let method = IntFunc.toClass(Json).getDeclaredMethod("getElementType", java.lang.reflect.Field, java.lang.Integer.TYPE);
+	let method = IntFunc.toClass(Json).getDeclaredMethod("getElementType", lang.reflect.Field, lang.Integer.TYPE);
 	method.setAccessible(true);
 	let arr = [], val, i = 0;
 	do {
-		val = method.invoke(null, field, new java.lang.Integer(i++))
+		val = method.invoke(null, field, new lang.Integer(i++))
 		if (val != null) arr.push(val)
 	} while (val != null);
 
 	return arr;
 }
 
+function getType(type, k, isArray) {
+	try {
+		let field = isArray ? null : type.getField(k)
+		let vType = isArray ? type : field.type
+		return [field, vType];
+	} catch (e) {
+		return []
+	}
+
+}
+
 const lstr = lang.String
+// 折叠黑名单
+const foldBlackList = Seq.with(lstr, Color, Category, ItemStack, LiquidStack, UnitType, Item, Liquid)
+// 单位额外字段
+const UnitTypeExFields = Seq.with("requirements", "waves", "controller", "type")
+const json = add.json;
+
+function fail(t, v) {
+	let field = new TextField(('' + v).replace(/\n|\r/g, '\\n'))
+	if (typeof v == "string") IntFunc.longPress(field, 600, longPress => longPress && IntFunc.showTextArea(field))
+	if (Vars.mobile) field.removeInputDialog()
+	t.add(field).growX();
+	return prov(() => field.getText().replace(/\s*/, '') != '' ? field.getText() : '')
+}
 /* 构建table */
 exports.build = function (type, fields, t, k, v, isArray) {
 	if (type == null) return;
-	function fail() {
-		let field = new TextField(('' + v).replace(/\n|\r/g, '\\n'))
-		IntFunc.longPress(field, 600, longPress => longPress && IntFunc.showTextArea(field))
-		t.add(field);
-		return prov(() => field.getText().replace(/\s*/, '') != '' ? field.getText() : '')
+	let unknown = false;
+	if (!isArray && (type != UnitType || !UnitTypeExFields.contains(k)) && IntSettings.getValue("base", "point_out_unknown_field") && !json.getFields(type).containsKey(k)) {
+		t.table(Tex.pane, cons(t => t.add('unknown', Color.yellow))).padRight(5)
+		unknown = true
 	}
+
 	let map = fields.map
 
-	if (!isArray) t.add((contentIni.get(k) || k) + ':').fillX().left().padLeft(2).padRight(6);
+	let [field, vType] = getType(type, k, isArray);
 
+	// 折叠代码
+	let foldt, tmp
+	if (vType != null && !vType.isPrimitive() && !foldBlackList.contains(vType)) {
+		tmp = t
+		foldt = foldTable()
+	}
+	if (!isArray) t.add((unknown ? k : (contentIni.get(k) || k)) + ':').fillX().left().padLeft(2).padRight(6);
+
+	if (foldt != null) {
+		t.add(foldt[0])
+		t = foldt[1]
+	}
 	let output = (() => {
 
 		if (type == null) return
 
 		try {
-			let field = isArray ? null : type.getField(k)
-			let vType = isArray ? type : field.type
 			if (vType == null || vType == lstr) {
 				return
 			}
@@ -454,12 +540,12 @@ exports.build = function (type, fields, t, k, v, isArray) {
 		}
 		return
 	})();
-	map.put(k, output || fail())
-
+	map.put(k, output || fail(t, v))
+	if (tmp != null) t = tmp;
 
 	t.table(cons(right => {
 		right.right().defaults().right()
-		if (!isArray && contentIni.has(k + '.help')) {
+		if (!isArray && !unknown && contentIni.has(k + '.help')) {
 			let btn = right.button('?', Styles.clearPartialt, () => IntFunc.showSelectTable(btn, (p, hide) => {
 				p.pane(p => p.add(contentIni.get(k + '.help'), 1.3)).pad(4, 8, 4, 8)
 			}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();

@@ -3,6 +3,7 @@ const IntFunc = require('func/index')
 const ModEditor = require('ui/dialogs/ModEditor')
 const ModMetaEditor = require('ui/dialogs/ModMetaEditor')
 const IntSettings = require('content/settings');
+const IntStyles = require('ui/styles');
 
 const lastAtlats = [];
 
@@ -22,11 +23,16 @@ function newMod(file) {
 			return meta.getString('displayName', meta.getString("name"));
 		},
 		logo() {
+			let region = Core.atlas.find("error")
 			try {
-				return TextureRegion(Texture(this.file.child('sprites-override').child('logo.png')));
-			} catch (err) {
-				return Core.atlas.find('error');
-			}
+				this.file.child('sprites-override').walk(cons(f => {
+					if (f.name() == "logo.png") {
+						region = new TextureRegion(new Texture(f))
+						throw ''
+					}
+				}))
+			} catch (e) { }
+			return region
 		}
 	};
 }
@@ -66,10 +72,12 @@ exports.load = function (name) {
 
 				Vars.platform.showMultiFileChooser(file => {
 					this.import(file);
+					this.setup()
 				}, 'zip', 'jar');
 			}).margin(12).row();
 			t.button('$mod.add', Icon.add, bstyle, () => {
 				ModMetaEditor.constructor(modsDirectory.child('tmp').child('mod.hjson'));
+				this.setup()
 			}).margin(12);
 		}));
 		dialog.addCloseButton();
@@ -80,27 +88,37 @@ exports.load = function (name) {
 		Core.app.openFolder(dataDirectory.absolutePath())
 	}).margin(margin).size(210, 64);
 	buttons.button('$quit', Icon.exit, style, () => Core.app.exit()).margin(margin).size(210, 64);
+
+	this.setup()
 }
 
 exports.import = function (file) {
+	let root, curretFile;
 	try {
 		let toFile = modsDirectory.child(file.nameWithoutExtension())
-		let zipFile = new ZipFi(file), dirs = [];
-		if (!zipFile.child('mod.json').exists() && !zipFile.child('mod.hjson').exists()) throw Error('请导入合法的mod')
-		while (true) {
-			zipFile.list().forEach(f => {
-				if (f.isDirectory()) dirs.push(f)
-				else toFile.child(f.name()).writeString(f.readString())
-			})
-			if (dirs.length == 0) break
-			zipFile = dirs.shift()
-			toFile = toFile.child(zipFile.name())
-		}
+		if (!toFile.isDirectory()) toFile.delete()
 
-		this.constructor();
+		root = new ZipFi(file)
+		let list = root.list()
+		if (list.length == 1) {
+			if (list[0].isDirectory()) {
+				curretFile = list[0]
+			} else {
+				throw new Error('文件内容不合法')
+			}
+		} else {
+			curretFile = root
+		}
+		list = null
+		if (!curretFile.child('mod.json').exists() && !curretFile.child('mod.hjson').exists()) {
+			throw Error('没有mod.(h)json')
+		}
+		curretFile.copyTo(toFile.parent())
 	} catch (e) {
 		let err = '[red][' + Core.bundle.get(e.name, e.name) + '][]' + e.message;
 		Vars.ui.showErrorMessage(err);
+	} finally {
+		if (root != null) root.delete()
 	}
 }
 
@@ -108,11 +126,6 @@ const dataDirectory = Vars.dataDirectory.child('mods(I hope...)')
 const modsDirectory = dataDirectory.child('mods')
 let style, margin, buttons;
 exports.show = function () {
-	Vars.ui.loadfrag.show()
-	this.setup();
-
-	Vars.ui.loadfrag.hide()
-
 	dialog.show()
 }
 
@@ -125,79 +138,92 @@ const loadMod = (() => {
 	field.setAccessible(true)
 	let mods = field.get(Vars.mods);
 
-	return function (mod) {
-		try {
-			let fi = mod.file
-			Vars.content.clear()
-			Vars.content.createBaseContent()
-			let _mod = method.invoke(Vars.mods, fi, true)
-			mods.add(_mod)
-			_mod.state = Packages.mindustry.mod.Mods.ModState.enabled;
-			if (IntSettings.getValue("loadMod", "load_sprites")) {
-				let shadow = lastAtlats[0], spritesFi = mod.spritesFi();
+	let AtlasRegion = TextureAtlas.AtlasRegion
 
-				let AtlasRegion = TextureAtlas.AtlasRegion
-				let map = new Map()
-				spritesFi.walk(cons(f => {
+	function loadSprites(map) {
+		let shadow = lastAtlats[0];
+
+		let atlas = Core.atlas = extend(TextureAtlas, {
+			find(name) {
+				var base = map.has(name) ? map.get(name) : shadow.find(name);
+
+				if (base == this.error) {
+					if (typeof arguments[1] == "string") return this.find(arguments[1])
+					if (arguments[1] instanceof TextureRegion) return arguments[1]
+				}
+				return base;
+			},
+
+			isFound(region) {
+				return region != this.error;
+			},
+
+			has(s) {
+				return shadow.has(s) || this.isFound(IntFunc.findSprites(s))
+			},
+
+			//return the *actual* pixmap regions, not the disposed ones.
+			getPixmap(region) {
+				let out = find(region.name)
+				//this should not happen in normal situations
+				if (out == null) return this.error;
+				return out;
+			},
+
+			__load() {
+				this.error = shadow.find("error")
+			}
+		})
+		atlas.__load()
+	}
+
+	function* gen(mod) {
+		let fi = mod.file
+
+		let _mod = method.invoke(Vars.mods, fi, true)
+		mods.add(_mod)
+		_mod.state = Packages.mindustry.mod.Mods.ModState.enabled;
+
+		Vars.content.clear()
+		Vars.content.createBaseContent()
+		yield;
+		Vars.content.createModContent()
+		yield;
+		mods.remove(_mod)
+		let wrong = _mod.hasContentErrors()
+
+		if (IntSettings.getValue("loadMod", "load_sprites") && mod.spritesFi() != null) {
+			let spritesFi = mod.spritesFi();
+
+			let map = new Map()
+			spritesFi.walk(cons(f => {
+				try {
 					let region = new AtlasRegion(new TextureRegion(new Texture(f)))
 					region.name = _mod.meta.name + "-" + f.nameWithoutExtension()
 					map.set(region.name, region);
-				}))
-
-				let atlas = Core.atlas = extend(TextureAtlas, {
-					find(name) {
-						// var base = IntFunc.findSprites(spritesFi, name)
-						var base = map.get(name)
-						// var base = this.error
-						/* if (base != "error") {
-							var reg = new AtlasRegion(base);
-							reg.name = name;
-							reg.pixmapRegion = base;
-							return reg;
-						} */
-
-						if (base == null) base = shadow.find(name);
-
-						if (base == this.error) {
-							if (typeof arguments[1] == "string") return this.find(arguments[1])
-							if (arguments[1] instanceof TextureRegion) return arguments[1]
-						}
-						return base;
-					},
-
-					isFound(region) {
-						return region != "error"
-					},
-
-					has(s) {
-						return shadow.has(s) || this.isFound(IntFunc.findSprites(s))
-					},
-
-					//return the *actual* pixmap regions, not the disposed ones.
-					getPixmap(region) {
-						let out = find(region.name)
-						//this should not happen in normal situations
-						if (out == null) return this.error;
-						return out;
-					},
-
-					__load() {
-						this.error = shadow.find("error")
-					}
-				})
-				atlas.__load()
-			}
-			let wrong = _mod.hasContentErrors()
-			Vars.content.createModContent()
-			mods.remove(_mod)
-			Vars.content.init()
-			Vars.content.load()
-			Vars.content.loadColors()
-			return !wrong
-		} catch (e) {
-			Vars.ui.showErrorMessage(e)
-			return false;
+				} catch (err) {
+					Log.err(err)
+				}
+			}))
+			yield;
+			loadSprites(map)
 		}
+		yield;
+
+		// 加载content
+		Vars.content.init()
+		yield;
+		Vars.content.load()
+		yield;
+		Vars.content.loadColors()
+		return !wrong;
+	}
+	return function (mod) {
+		let g = gen(mod);
+		IntFunc.async("加载mod", g, v => {
+			Vars.ui.showInfo("加载" + (v != null && v.value ? "成功" : "失败"))
+		})
+		return true;
 	}
 })()
 
@@ -240,7 +266,7 @@ exports.setup = function () {
 				title.add(image).size(h - 8).padTop(-8).padLeft(-8).padRight(8);
 
 				title.table(cons(text => {
-					text.add('[accent]' + /*Strings.stripColors*/mod.displayName() + '\n[lightgray]v' +
+					text.add('[accent]' + mod.displayName() + '\n[lightgray]v' +
 						mod.meta.getString('version', '???')).wrap().width(300).growX().left();
 
 				})).top().growX();
@@ -249,13 +275,13 @@ exports.setup = function () {
 			}));
 			b.table(cons(right => {
 				right.right();
-				right.button(Icon.edit, Styles.clearPartiali, () =>
+				right.button(Icon.edit, Styles.clearPartiali, () => {
 					ModMetaEditor.constructor(mod.file.child('mod.json').exists() ? mod.file.child('mod.json') : mod.file.child('mod.hjson'))
-				).size(50);
+				}).size(50);
 				right.button(Icon.trash, Styles.clearPartiali, () =>
 					Vars.ui.showConfirm('$confirm', '$mod.remove.confirm', () => {
 						file.deleteDirectory();
-						this.constructor();
+						this.setup();
 					})
 				).size(50).row();
 				right.button(Icon.upload, Styles.clearPartiali, () => {
@@ -280,7 +306,7 @@ exports.setup = function () {
 				}).size(50).disabled(boolf(() => Vars.state.isGame() && IntSettings.getValue("base", "auto_load_mod")));
 				right.button(Icon.link, Styles.clearPartiali, () => Core.app.openFolder(mod.file.absolutePath())).size(50);
 			})).growX().right().padRight(-8).padTop(-8);
-		}), new Button.ButtonStyle(Styles.clearPartialt), () => {
+		}), IntStyles.clearpb, () => {
 			ModEditor.constructor(mod);
 		}).size(w, h).growX().pad(4).row();
 	});
