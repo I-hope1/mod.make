@@ -63,8 +63,8 @@ exports.constructor = function (obj, Fields, prov) {
 							let type = field.type
 							Fields.add(null, name,
 								type.isArray() || type == Seq ? new MyArray() :
-									IntFunc.toClass(java.lang.Number).isAssignableFrom(type) ? 0 :
-										type.getSimpleName() == 'boolean' ? false :
+									type.getSimpleName() == 'boolean' ? false :
+										type.isPrimitive() ? 0 :
 											type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */
 												buildContent.defaultClass.containsKey(type) ? buildContent.defaultClass.get(type) : new MyObject()
 							);
