@@ -3,7 +3,8 @@ importPackage(Packages.arc.files);
 
 this.boolc = method => new Boolc({ get: method })
 
-this.contArr = []
+this[modName + "-contArr"] = [];
+
 require("func/IniHandle");
 require("content/makeMod");
 require("content/settings");

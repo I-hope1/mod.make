@@ -8,7 +8,7 @@ const typeSelection = require('ui/components/typeSelection');
 const Fields = require('ui/components/Fields');
 const { MyObject, MyArray } = require('func/constructor');
 const Classes = exports.classes = Packages.mindustry.mod.ClassMap.classes;
-const { caches: { content: contentIni } } = require('func/IniHandle')
+const { caches: { content: contentIni, types: typesIni } } = require('func/IniHandle')
 const mod_Name = modName
 
 const lang = java.lang
@@ -35,17 +35,13 @@ function genericSeqByClass(clazz, _func) {
 }
 const effects = genericSeqByClass(Fx, func(field => field.name))
 const bullets = genericSeqByClass(Bullets, func(field => field.name))
+const attributes = Seq(Attribute.all)
 
 const UnitPlan = UnitFactory.UnitPlan
 
 exports.filterClass = ObjectMap.of(
 	Attribute, (table, value) => {
-		value = '' + (value || defaultClass.get(Attribute));
-		let btn = table.button(val, IntStyles.cleart, () => {
-			IntFunc.showSelectListTable(btn, unitType, val, 130, 50, cons(type => btn.setText(val = type)), false);
-		}).minWidth(100).height(45).get();
-
-		return prov(() => value)
+		return tableWithListSelection(table, value, attributes, defaultClass.get(Attribute), false)
 	},
 	Color, (table, value) => {
 		let color
@@ -73,25 +69,11 @@ exports.filterClass = ObjectMap.of(
 		return listWithType(table, value, StatusEffect, "StatusEffect", Vars.content.statusEffects());
 	},
 	// AmmoType, (table, value) => {},
-	DrawBlock, (table, value) => {
-		table = table.table().get()
-		value = value || new MyObject();
-		let typeName = value.remove('type') || 'DrawBlock'
-		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(DrawBlock));
-		table.add(selection.table).padBottom(4).row()
-		let cont = table.table().name('cont').get()
-		let map = fObject(cont, prov(() => selection.type), value)
-		return map
+	DrawBlock, (table, value, vType) => {
+		return tableWithTypeSelection(table, value, vType, "DrawBlock")
 	},
-	Ability, (table, value) => {
-		table = table.table().get()
-		value = value || new MyObject();
-		let typeName = value.remove('type') || 'Ability';
-		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(Ability));
-		table.add(selection.table).padBottom(4).row()
-		let cont = table.table().name('cont').get()
-		let map = fObject(cont, prov(() => selection.type), value, Seq())
-		return map
+	Ability, (table, value, vType) => {
+		return tableWithTypeSelection(table, value, vType, "Ability")
 	},
 	Weapon, (table, value) => {
 		table = table.table().get()
@@ -230,15 +212,10 @@ exports.filterKey = ObjectMap.of(
 		return prov(() => val)
 	},
 	'type', (table, value, type) => {
-		let val;
 		if (type == UnitType) {
-			val = value || 'none';
-			let btn = table.button(val, IntStyles.cleart, () => {
-				IntFunc.showSelectListTable(btn, unitType, val, 130, 50, cons(type => btn.setText(val = type)), false);
-			}).minWidth(100).height(45).get();
+			return tableWithListSelection(table, value, unitType, "none", false)
 		}
-
-		return prov(() => val)
+		return null;
 	},
 	'consumes', (table, value) => {
 		value = value || new MyObject()
@@ -346,21 +323,16 @@ exports.filterKey = ObjectMap.of(
 	},
 
 	'controller', (table, value, type) => {
-		let val;
 		if (type == UnitType) {
-			val = value || 'FlyingAI';
-			let btn = table.button(val, IntStyles.cleart, () => {
-				IntFunc.showSelectListTable(btn, AISeq, val, 130, 50, cons(type => btn.setText(val = type)), false);
-			}).minWidth(100).height(45).get();
+			return tableWithListSelection(table, value, otherTypes.get(AIController), "mono", false)
 		}
-
-		return prov(() => val)
+		return null;
 	}
 )
 
 exports.make = function (type) {
 	try {
-		let cons = Seq([type]).get(0).getDeclaredConstructor();
+		let cons = IntFunc.toClass(type).getDeclaredConstructor();
 		cons.setAccessible(true);
 		return cons.newInstance();
 	} catch (e) {
@@ -428,6 +400,25 @@ function foldTable() {
 		btn.fireClick()
 	}
 	return [table, content]
+}
+
+function tableWithListSelection(table, value, seq, defaultValue, searchable) {
+	let val = '' + (value || defaultValue);
+	let btn = table.button(typesIni.get(val) || val, IntStyles.cleart, () => {
+		IntFunc.showSelectListTable(btn, seq, val, 130, 50, cons(type => btn.setText(val = type)), searchable);
+	}).minWidth(100).height(45).get();
+	return prov(() => val)
+}
+
+function tableWithTypeSelection(table, value, vType, defaultValue) {
+	table = table.table().get()
+	value = value || new MyObject();
+	let typeName = value.remove('type') || defaultValue
+	let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(vType));
+	table.add(selection.table).padBottom(4).row()
+	let cont = table.table().name('cont').get()
+	let map = fObject(cont, prov(() => selection.type), value)
+	return map
 }
 
 function listWithType(table, value, vType, defaultValue, list) {

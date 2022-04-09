@@ -6,7 +6,7 @@ const Fields = require('ui/components/Fields');
 
 // const Contents = Vars.content.blocks().toArray().concat(Vars.content.liquids().toArray()).concat(Vars.content.items());
 
-contArr.push({
+this[modName + "-contArr"].push({
 	name: 'makeMod', needFi: true,
 
 	load() {

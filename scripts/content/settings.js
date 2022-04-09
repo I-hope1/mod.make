@@ -74,7 +74,7 @@ Object.defineProperty(object.obj_loadMod, 'disabled', {
 	get: () => !getValue("base", "auto_load_mod")
 })
 
-contArr.push(object)
+this[modName + "-contArr"].push(object)
 
 exports.setValue = (name, key, value) => setValue(name, key, value);
 exports.getValue = (name, key) => getValue(name, key);

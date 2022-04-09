@@ -233,6 +233,7 @@ exports.showSelectTable = function (button, fun, searchable) {
 
 
 exports.showSelectListTable = function (button, list, current, width, height, _cons, searchable) {
+	if (!(list instanceof Seq)) throw TypeError("'" + list + "' isn't instanceof Seq")
 	this.showSelectTable(button, (p, hide, text) => {
 		p.clearChildren();
 
@@ -289,6 +290,8 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 
 // 弹出一个可以选择内容的窗口（无需你提供图标）
 exports.showSelectImageTable = function (button, items, current, size, imageSize, _cons, cols, searchable) {
+	if (!(items instanceof Seq)) throw TypeError("'" + items + "' isn't a Seq")
+
 	let icons = []
 	items.each(cons(item => {
 		icons.push(new TextureRegionDrawable(item.uiIcon))

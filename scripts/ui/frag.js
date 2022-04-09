@@ -1,4 +1,5 @@
 
+const contArr = this[modName + "-contArr"];
 Events.run(ClientLoadEvent, () => {
 	/* 浮窗 */
 	const frag = extend(Table, {
