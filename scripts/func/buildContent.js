@@ -161,7 +161,7 @@ exports.filterClass = ObjectMap.of(
 				)
 				t.table(cons(right => {
 					right.button('', Icon.trash, IntStyles.cleart, () => {
-						map.remove(k)
+						map.remove(key)
 						if (t != null) t.remove()
 					});
 				})).right().growX().right();
