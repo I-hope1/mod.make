@@ -1,11 +1,25 @@
 
 const buildContent = require('func/buildContent')
+const IntSettings = require("content/settings");
 const { MyObject, MyArray } = require('func/constructor')
 
-exports.colorfulTable = (i, cons) => {
-	return new Table(i % 3 == 0 ? Tex.whiteui.tint(0, .8, .8, .6) :
-		i % 3 == 1 ? Tex.whiteui.tint(.8, .8, 0, .6) :
-			Tex.whiteui.tint(.8, 0, .8, .6), cons)
+let backgrounds;
+exports.load = function () {
+	backgrounds = [
+		Tex.whiteui.tint(.6, .8, .6, .6),
+		Tex.whiteui.tint(.8, .6, .8, .6),
+		Tex.whiteui.tint(.8, .8, .6, .6),
+		Tex.whiteui.tint(.6, .8, .8, .6),
+	]
+}
+exports.colorfulTable = (i, _cons) => {
+	let bg;
+	if (IntSettings.getValue("editor", "colorful_table")) {
+		bg = backgrounds[++i % 4]
+	} else {
+		bg = Tex.pane;
+	}
+	return new Table(bg, _cons)
 }
 
 exports.json = function (fields, i, key) {

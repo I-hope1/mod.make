@@ -1,43 +1,11 @@
 
-const { MyObject, MyArray } = require('func/constructor')
+const { caches: { types: typesIni } } = require('func/IniHandle')
+
 
 exports.mod = Vars.mods.locateMod(modName)
 /* 转换为可用的class */
 exports.toClass = function (_class) {
 	return Seq([_class]).get(0)
-}
-
-exports.toIntObject = function (value) {
-	let obj2 = new MyObject(), arr = []
-	let output = obj2
-	while (true) {
-		for (let child = value.child; child != null; child = child.next) {
-			let result = (() => {
-				if (child.isArray()) {
-					let array = new MyArray()
-					arr.push(child, array);
-					return array
-				}
-				if (child.isObject()) {
-					let obj = new MyObject()
-					arr.push(child, obj);
-					return obj
-				}
-
-				let value = child.asString()
-				if (child.isNumber()) value *= 1
-				if (child.isBoolean()) value = value == 'true'
-				return value
-			})()
-			if (obj2 instanceof Array) obj2.push(result)
-			else obj2.put(child.name, result)
-		}
-		if (arr.length == 0) break
-		value = arr.shift()
-		obj2 = arr.shift()
-	}
-	// Log.info(output + "")
-	return output
 }
 
 /* 一个文本域，可复制粘贴 */
@@ -80,18 +48,6 @@ exports.showTextArea = function (text) {
 	}).grow();
 
 	dialog.show();
-}
-
-/* hjson解析 (使用arc的JsonReader) */
-exports.hjsonParse = function (str) {
-	if (typeof str !== 'string') return str;
-	if (str.replace(/^\s+/, '')[0] != '{') str = '{\n' + str + '\n}'
-	try {
-		return (new JsonReader).parse(str)
-	} catch (err) {
-		Log.err(err);
-		return null;
-	}
 }
 
 exports.async = function (text, generator, callback) {
@@ -276,18 +232,16 @@ exports.showSelectTable = function (button, fun, searchable) {
 }
 
 
-exports.showSelectListTable = function (button, list, current, width, height, cons, searchable) {
+exports.showSelectListTable = function (button, list, current, width, height, _cons, searchable) {
 	this.showSelectTable(button, (p, hide, text) => {
 		p.clearChildren();
 
 		let reg = new RegExp(text, 'i')
-		list.each(boolf(item => reg.test(item)), new Cons({
-			get: item => {
-				p.button('' + item, Styles.cleart, () => {
-					cons.get(item)
-					hide.run();
-				}).size(width, height).disabled(current == item).row();
-			}
+		list.each(boolf(item => reg.test(item)), cons(item => {
+			p.button(typesIni.get(item + '') || item + '', Styles.cleart, () => {
+				_cons.get(item)
+				hide.run();
+			}).size(width, height).disabled(current == item).row();
 		}))
 	}, searchable);
 }

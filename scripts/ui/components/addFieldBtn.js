@@ -8,7 +8,7 @@ const { caches: { content: contentIni } } = require('func/IniHandle')
 const json = exports.json = new Json();
 
 exports.filter = function (field) {
-	if (!IntSettings.getValue("base", "display_deprecated") && field.isAnnotationPresent(java.lang.Deprecated)) return false;
+	if (!IntSettings.getValue("editor", "display_deprecated") && field.isAnnotationPresent(java.lang.Deprecated)) return false;
 
 	let type = field.type, name = field.name
 	while (type.isArray() || type == Seq) {
@@ -32,34 +32,48 @@ exports.filter = function (field) {
 	return false
 }
 
-
+const caches = new Map();
 exports.constructor = function (obj, Fields, prov) {
 	let btn = new TextButton('$add');
 	btn.add(new Image(Icon.add))
 	btn.getCells().reverse()
 	btn.clicked(() => {
-		let cont = prov.get(), fields = json.getFields(cont);
+		let cont = prov.get();
+		let fields;
+		if (caches.has(cont)) {
+			fields = caches.get(cont)
+		} else {
+			let m = OrderedMap(json.getFields(cont));
+			if (cont == UnitType) {
+				m.put('type', Label)
+				m.put('controller', Label)
+			}
+			caches.set(cont, fields = m);
+		}
 
 		let table = new Table();
 		let reg, hide;
 		function eachFields() {
 			table.clearChildren()
-			if (cont == UnitType) table.button('type', Styles.cleart, run(() => {
-				Fields.add(null, 'type', 'none');
-
-				hide.run();
-			})).size(Core.graphics.getWidth() * .2, 45)
-				.disabled(obj.has('type')).row();
 
 			fields.each(new Cons2({
 				get: (key, meta) => {
-					let field = meta.field
-					if (!exports.filter(field)) return
+					let field
+					if (meta != Label) {
+						field = meta.field
+						if (!exports.filter(field)) return
+					}
 					let name = key
 					let displayName = contentIni.get(name) || name
 					if (reg != null && !reg.test(name) && !reg.test(displayName)) return
+
 					table.table(cons(t => {
-						t.button(displayName, Styles.cleart, run(() => {
+						t.button(displayName, Styles.cleart, () => {
+							if (field == null) {
+								Fields.add(null, name, null)
+								hide.run();
+								return
+							}
 							let type = field.type
 							Fields.add(null, name,
 								type.isArray() || type == Seq ? new MyArray() :
@@ -70,7 +84,7 @@ exports.constructor = function (obj, Fields, prov) {
 							);
 
 							hide.run();
-						})).size(Core.graphics.getWidth() * .2, 45)
+						}).size(Core.graphics.getWidth() * .2, 45)
 							.disabled(obj.has(name))
 						let help = contentIni.get(name + '.help')
 						if (help != null) {

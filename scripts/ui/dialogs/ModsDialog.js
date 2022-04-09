@@ -4,11 +4,12 @@ const ModEditor = require('ui/dialogs/ModEditor')
 const ModMetaEditor = require('ui/dialogs/ModMetaEditor')
 const IntSettings = require('content/settings');
 const IntStyles = require('ui/styles');
+const IniHandle = require('func/IniHandle')
 
 const lastAtlats = [];
 
 function newMod(file) {
-	let meta = IntFunc.hjsonParse(
+	let meta = IniHandle.hjsonParse(
 		file.child('mod.json').exists() ? file.child('mod.json').readString() :
 			file.child('mod.hjson').exists() ? file.child('mod.hjson').readString() : null);
 	if (meta == null) return null;

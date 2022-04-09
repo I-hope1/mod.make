@@ -1,5 +1,6 @@
 
 const IntFunc = require('func/index')
+const IniHandle = require('func/IniHandle')
 const IntModsDialog = require('ui/dialogs/ModsDialog');
 const modsDirectory = Vars.dataDirectory.child('mods(I hope...)').child('mods');
 
@@ -29,11 +30,10 @@ function MyTextField(name) {
 let ui, cont, buttons
 let isNull, obj, file
 exports.load = function () {
-	ui = new Dialog;
+	ui = new BaseDialog("");
 	cont = ui.cont
+	cont.pane(cons(p => cont = p)).growY()
 	buttons = ui.buttons
-	let w = Core.graphics.getWidth(),
-		h = Core.graphics.getHeight();
 	let FieldArray = []
 
 	let errorText = '';
@@ -42,7 +42,7 @@ exports.load = function () {
 	})).row()
 	buttons.table(cons(b => {
 		b.button('$back', Icon.left, run(() => ui.hide()))
-			.size(Math.max(w, h) * 0.1, Math.min(w, h) * 0.1);
+			.size(210, 64);
 		b.button('$ok', Icon.ok, run(() => {
 			let mod = modsDirectory.child(Fields['fileName'].getText());
 			if (mod.path() != file.parent().path() && mod.exists()) {
@@ -52,7 +52,7 @@ exports.load = function () {
 				}));
 			}
 			else write(mod);
-		})).size(Math.max(w, h) * 0.1, Math.min(w, h) * 0.1).disabled(boolf(() => {
+		})).size(210, 64).disabled(boolf(() => {
 			for (let f of FieldArray) {
 				if (!f.isValid()) return true
 			}
@@ -116,7 +116,7 @@ exports.constructor = function (f) {
 	file = f;
 	isNull = !f.exists()
 	if (isNull) file.writeString('')
-	obj = IntFunc.hjsonParse(file.readString());
+	obj = IniHandle.hjsonParse(file.readString());
 	ui.title.setText(isNull ? '$mod.create' : '$edit');
 
 	Fields.fileName.setText(isNull ? '' : f.parent().name())

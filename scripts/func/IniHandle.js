@@ -1,7 +1,7 @@
 
-const IntFunc = require("func/index")
+const { MyObject, MyArray } = require('func/constructor')
 
-const data = IntFunc.mod.root.child("data")
+const data = Vars.mods.locateMod(modName).root.child("data")
 const caches = {}
 exports.caches = caches
 
@@ -34,7 +34,7 @@ caches.framework = (() => {
 		list.findAll().each(cons(f => {
 			let str = f.readString()
 			let parent = getParent(str)
-			let obj = { value: IntFunc.toIntObject(IntFunc.hjsonParse(str)) };
+			let obj = { value: toIntObject(hjsonParse(str)) };
 			map.set(f.nameWithoutExtension(), () => {
 				let func = map.get(parent)
 				if (func != null && !obj.ok) {
@@ -87,14 +87,65 @@ caches.settings = (() => {
 		map.set(key, value)
 	})
 	return {
-		get: k => map.get(k),
+		get(k) {
+			let v = map.get(k)
+			return v == null ? null : v == "true"
+		},
 		set(k, v) {
 			map.set(k, v)
 			let str = []
-			for (let [key, value] of map.entries()) {
+			for (let [key, value] of map) {
 				str.push(key + ":" + value);
 			}
 			settings.writeString(str.join('\n'))
 		}
 	}
 })()
+
+/* hjson解析 (使用arc的JsonReader) */
+function hjsonParse(str) {
+	if (typeof str !== 'string') return str;
+	if (str.replace(/^\s+/, '')[0] != '{') str = '{\n' + str + '\n}'
+	try {
+		return (new JsonReader).parse(str)
+	} catch (err) {
+		Log.err(err);
+		return null;
+	}
+}
+
+function toIntObject(value) {
+	let obj2 = new MyObject(), arr = []
+	let output = obj2
+	while (true) {
+		for (let child = value.child; child != null; child = child.next) {
+			let result = (() => {
+				if (child.isArray()) {
+					let array = new MyArray()
+					arr.push(child, array);
+					return array
+				}
+				if (child.isObject()) {
+					let obj = new MyObject()
+					arr.push(child, obj);
+					return obj
+				}
+
+				let value = child.asString()
+				if (child.isNumber()) value *= 1
+				if (child.isBoolean()) value = value == 'true'
+				return value
+			})()
+			if (obj2 instanceof Array) obj2.push(result)
+			else obj2.put(child.name, result)
+		}
+		if (arr.length == 0) break
+		value = arr.shift()
+		obj2 = arr.shift()
+	}
+	// Log.info(output + "")
+	return output
+}
+
+exports.hjsonParse = hjsonParse;
+exports.toIntObject = toIntObject;

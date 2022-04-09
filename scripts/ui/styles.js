@@ -1,4 +1,4 @@
-exports.clearb = exports.nonePane = {};
+exports.clearb = {};
 Events.run(ClientLoadEvent, () => {
 	exports.nonePane = new ScrollPane.ScrollPaneStyle;
 
@@ -7,4 +7,7 @@ Events.run(ClientLoadEvent, () => {
 	exports.clearb.down = exports.clearb.over = Styles.flatOver;
 
 	exports.clearpb = new Button.ButtonStyle(Styles.clearPartialt);
+
+	exports.cleart = new TextButton.TextButtonStyle(Styles.cleart)
+	exports.cleart.up = Tex.whiteui.tint(0.5, 0.5, 0.3, 1)
 })

@@ -4,6 +4,7 @@ const Fields = require('ui/components/Fields');
 const addBtn = require('ui/components/addFieldBtn');
 const typeSelection = require('ui/components/typeSelection');
 const IntSettings = require("content/settings");
+const IniHandle = require('func/IniHandle')
 
 const Classes = Packages.mindustry.mod.ClassMap.classes;
 
@@ -15,7 +16,9 @@ const ContentTypes = exports.ContentTypes = new ObjectMap();
 exports.otherTypes = ObjectMap.of(
 	BulletType, [],
 	DrawBlock, [],
-	Ability, []
+	Ability, [],
+	Effect, [],
+	AIController, []
 )
 const types = exports.types = {};
 
@@ -52,7 +55,7 @@ exports.load = function () {
 
 	Classes.each(new Cons2({
 		get: (k, type) => {
-			if (!IntSettings.getValue("base", "display_deprecated") && type.isAnnotationPresent(java.lang.Deprecated)) return;
+			if (!IntSettings.getValue("editor", "display_deprecated") && type.isAnnotationPresent(java.lang.Deprecated)) return;
 			for (let i = 0; i < this.contentTypes.size; i += 2) {
 				if (this.contentTypes.get(i).isAssignableFrom(type)) {
 					let key = this.contentTypes.get(i + 1)
@@ -127,7 +130,7 @@ exports.build = function () {
 	let file = this.file
 	let ext = file.extension();
 	if (/^h?json$/.test(ext)) {
-		let obj = result.value = IntFunc.toIntObject(IntFunc.hjsonParse(file.readString()))
+		let obj = result.value = IniHandle.toIntObject(IniHandle.hjsonParse(file.readString()))
 
 		let parentName = (() => {
 			let content = this.mod.file.child("content")

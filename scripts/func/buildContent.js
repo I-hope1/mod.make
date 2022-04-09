@@ -1,6 +1,7 @@
 
 const IntFunc = require('func/index');
 const IntSettings = require("content/settings");
+const IntStyles = require('ui/styles');
 const { otherTypes } = require('ui/dialogs/Editor');
 const add = require('ui/components/addFieldBtn');
 const typeSelection = require('ui/components/typeSelection');
@@ -28,12 +29,13 @@ let fs = IntFunc.toClass(Fx).getFields()
 for (let i = 0; i < fs.length; i++) {
 	effects.add(fs[i].name)
 }
+effects.add("自定义")
 const UnitPlan = UnitFactory.UnitPlan
 
 exports.filterClass = ObjectMap.of(
 	Attribute, (table, value) => {
-		value = '' + value || defaultClass.get(Attribute);
-		let btn = table.button(val, Styles.cleart, () => {
+		value = '' + (value || defaultClass.get(Attribute));
+		let btn = table.button(val, IntStyles.cleart, () => {
 			IntFunc.showSelectListTable(btn, unitType, val, 130, 50, cons(type => btn.setText(val = type)), false);
 		}).minWidth(100).height(45).get();
 
@@ -127,26 +129,51 @@ exports.filterClass = ObjectMap.of(
 		return buildOneStack(table, 'liquid', items, item, amount)
 	},
 	Effect, (table, value) => {
-		let val = '' + value || defaultClass.get(Effect);
-		let btn = table.button(val, Styles.cleart, () => {
-			IntFunc.showSelectListTable(btn, effects, val, 130, 50, cons(fx => btn.setText(val = fx)), true);
+		let isObject = value instanceof MyObject;
+		let val1 = isObject ? value : new MyObject();
+		let table1 = new Table()
+		let typeName = val1.remove('type') || 'ParticleEffect';
+		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(Effect));
+		table1.add(selection.table).padBottom(4).row()
+		let cont = table1.table().name('cont').get()
+		let map = fObject(cont, prov(() => selection.type), val1, Seq())
+
+		let val2 = isObject ? "自定义" : value || defaultClass.get(Effect);
+		let btn = table.button(val2, IntStyles.cleart, () => {
+			IntFunc.showSelectListTable(btn, effects, val2, 130, 50, cons(fx => {
+				btn.setText(fx);
+				if (fx != "自定义") {
+					val2 = fx;
+					table1.remove()
+				} else {
+					table.add(table1);
+					val2 = map;
+				}
+			}), true);
 		}).width(200).height(45).get();
-		return prov(() => val)
+		table.row()
+
+		if (isObject) {
+			table.add(table1);
+			val2 = map
+		}
+
+		return prov(() => val2 instanceof Prov ? val2.get() : val2)
 	},
 	UnitType, (table, value) => {
-		value = '' + value || defaultClass.get(UnitType);
+		value = '' + (value || defaultClass.get(UnitType));
 		let prov = IntFunc.selectionWithField(table, Vars.content.units(), value, 42, 32, 6, true)
 
 		return prov
 	},
 	Item, (table, value) => {
-		value = '' + value || defaultClass.get(Item);
+		value = '' + (value || defaultClass.get(Item));
 		let prov = IntFunc.selectionWithField(table, Vars.content.items(), value, 42, 32, 6, true)
 
 		return prov
 	},
 	Liquid, (table, value) => {
-		value = '' + value || defaultClass.get(Liquid);
+		value = '' + (value || defaultClass.get(Liquid));
 		let prov = IntFunc.selectionWithField(table, Vars.content.liquids(), value, 42, 32, 6, true)
 
 		return prov
@@ -167,7 +194,7 @@ exports.filterClass = ObjectMap.of(
 					key, exports.filterClass.get(classes[1])(foldt[1], v)
 				)
 				t.table(cons(right => {
-					right.button('', Icon.trash, Styles.cleart, () => {
+					right.button('', Icon.trash, IntStyles.cleart, () => {
 						map.remove(k)
 						if (t != null) t.remove()
 					});
@@ -203,7 +230,9 @@ exports.filterClass = ObjectMap.of(
 	}
 )
 
-const unitType = Seq.withArrays('none', 'flying', 'mech', 'legs', 'naval', 'payload');
+const unitType = Seq.with('none', 'flying', 'mech', 'legs', 'naval', 'payload');
+const AISeq = new Seq();
+const AIBlackList = Seq.with(FormationAI);
 const categories = new Seq();
 const categoriesString = new ObjectMap();
 const categoriesIcon = [];
@@ -214,6 +243,11 @@ exports.load = function () {
 		categoriesString.put(c.name(), c)
 		categoriesIcon.push(Vars.ui.getIcon(c.name()));
 	});
+	otherTypes.get(AIController).forEach(ai => {
+		if (!AIBlackList.contains(ai)) {
+			AISeq.add(ai.getSimpleName())
+		}
+	})
 }
 
 exports.filterKey = ObjectMap.of(
@@ -233,7 +267,7 @@ exports.filterKey = ObjectMap.of(
 		let val;
 		if (type == UnitType) {
 			val = value || 'none';
-			let btn = table.button(val, Styles.cleart, () => {
+			let btn = table.button(val, IntStyles.cleart, () => {
 				IntFunc.showSelectListTable(btn, unitType, val, 130, 50, cons(type => btn.setText(val = type)), false);
 			}).minWidth(100).height(45).get();
 		}
@@ -326,7 +360,7 @@ exports.filterKey = ObjectMap.of(
 				table.add("-->");
 				let unitType2 = exports.filterClass.get(UnitType)(table, item.get(1) || defaultClass.get(UnitType))
 				item.put(1, unitType2)
-				table.button('', Icon.trash, Styles.cleart, () => {
+				table.button('', Icon.trash, IntStyles.cleart, () => {
 					value.removeValue(item);
 					table.remove()
 				});
@@ -343,8 +377,19 @@ exports.filterKey = ObjectMap.of(
 		}).fillX()
 
 		return value
-	}
+	},
 
+	'controller', (table, value, type) => {
+		let val;
+		if (type == UnitType) {
+			val = value || 'FlyingAI';
+			let btn = table.button(val, IntStyles.cleart, () => {
+				IntFunc.showSelectListTable(btn, AISeq, val, 130, 50, cons(type => btn.setText(val = type)), false);
+			}).minWidth(100).height(45).get();
+		}
+
+		return prov(() => val)
+	}
 )
 
 exports.make = function (type) {
@@ -358,7 +403,7 @@ exports.make = function (type) {
 }
 
 function fObject(t, type, value, typeBlackList, all) {
-	let table = new Table(Tex.button), children = new Table,
+	let table = new Table(Tex.pane), children = new Table,
 		fields = new Fields.constructor(value, type, children);
 	value = fields.map
 	children.center().defaults().center().minWidth(100)
@@ -411,9 +456,9 @@ function foldTable() {
 		folded = !folded
 		folded ? content.remove() : table.add(content)
 		btn.getStyle().imageUp = folded ? Icon.rightOpen : Icon.downOpen
-	}).padTop(1).padBottom(1).growY().width(32).get()
+	}).padTop(1).padBottom(1).padRight(4).growY().width(32).get()
 	table.add(content).growX().left()
-	if (IntSettings.getValue("base", "auto_fold_code")) {
+	if (IntSettings.getValue("editor", "auto_fold_code")) {
 		btn.fireClick()
 	}
 	return [table, content]
@@ -423,6 +468,8 @@ function foldTable() {
 let cont = Packages.mindustry.ctype.UnlockableContent
 function buildOneStack(t, type, stack, content, amount) {
 	let output = new MyObject();
+
+	t.table(Tex.pane, cons(_t => t = _t)).grow()
 
 	t.add('$' + type);
 
@@ -477,7 +524,7 @@ function fail(t, v) {
 exports.build = function (type, fields, t, k, v, isArray) {
 	if (type == null) return;
 	let unknown = false;
-	if (!isArray && (type != UnitType || !UnitTypeExFields.contains(k)) && IntSettings.getValue("base", "point_out_unknown_field") && !json.getFields(type).containsKey(k)) {
+	if (!isArray && (type != UnitType || !UnitTypeExFields.contains(k)) && IntSettings.getValue("editor", "point_out_unknown_field") && !json.getFields(type).containsKey(k)) {
 		t.table(Tex.pane, cons(t => t.add('unknown', Color.yellow))).padRight(5)
 		unknown = true
 	}
@@ -512,7 +559,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 						"true": "是",
 						"false": "否"
 					}
-					let btn = t.button(obj['' + v], Styles.cleart, () => btn.setText(obj['' + (v = !v)])).minWidth(100).height(45).get()
+					let btn = t.button(obj['' + v], IntStyles.cleart, () => btn.setText(obj['' + (v = !v)])).minWidth(100).height(45).get()
 					return prov(() => v)
 				}
 				return
@@ -550,7 +597,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 				p.pane(p => p.add(contentIni.get(k + '.help'), 1.3)).pad(4, 8, 4, 8)
 			}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
 		}
-		right.button('', Icon.trash, Styles.cleart, () => fields.remove(t, k));
+		right.button('', Icon.trash, IntStyles.cleart, () => fields.remove(t, k));
 	})).right().growX().right();
 
 }
