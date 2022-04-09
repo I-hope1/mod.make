@@ -1,18 +1,19 @@
 name: "mod make"
-description: '''
+description: "
 此mod分离自mod tools.
 [orange]WARNING: []此mod仍在测试中.
 []-----------------------
-1.0
-修复bug.
+1. 修复了一堆bug.
+2. 优化了代码.
+3. 添加了新功能.
 
 创建的是文件夹(在[orange]mods(I hope...)[]文件夹).
 
 旧版本不支持某些功能
-'''
+"
 
 author: "I hope..."
-version: "1.0"
+version: "1.1"
 minGameVersion: 110
 hidden: true
 repo: "I-hope1/mod.make"

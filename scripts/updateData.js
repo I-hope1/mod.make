@@ -27,7 +27,7 @@ Events.run(ClientLoadEvent, () => {
 			'\n[red]本mod未经允许禁止转载!!!\n[white]以下是更新日志'
 		).row()
 		t.image().fillX().color(Color.gray).padTop(2).padBottom(2).row();
-		t.add('1. 修复了一堆bug.\n2. 优化了代码.').padBottom(2).row();
+		t.add('1. 修复了一堆bug.\n2. 优化了代码.\n3. 添加了新功能').padBottom(2).row();
 	})).minHeight(200)
 		.maxHeight(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) * .75).padLeft(20)
 	dialog.row();
