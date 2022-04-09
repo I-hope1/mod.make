@@ -61,21 +61,10 @@ exports.filterClass = ObjectMap.of(
 		return prov(() => color)
 	},
 	BulletType, (table, value) => {
-		table = table.table().get()
-		value = value || new MyObject();
-		let typeName = value.remove('type') || 'BasicBulletType'
-		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(BulletType));
-		table.add(selection.table).padBottom(4).row()
-		let cont = table.table().name('cont').get()
-		let map = fObject(cont, prov(() => selection.type), value, Seq([BulletType]))
-		return map
+		return listWithType(table, value, BulletType, "BasicBulletType");
 	},
 	StatusEffect, (table, value) => {
-		table = table.table().get()
-		value = value || new MyObject()
-		let cont = table.table().name('cont').get()
-		let map = fObject(cont, prov(() => StatusEffect), value, Seq([StatusEffect]))
-		return map
+		return listWithType(table, value, StatusEffect, "StatusEffect");
 	},
 	// AmmoType, (table, value) => {},
 	DrawBlock, (table, value) => {
@@ -129,36 +118,7 @@ exports.filterClass = ObjectMap.of(
 		return buildOneStack(table, 'liquid', items, item, amount)
 	},
 	Effect, (table, value) => {
-		let isObject = value instanceof MyObject;
-		let val1 = isObject ? value : new MyObject();
-		let table1 = new Table()
-		let typeName = val1.remove('type') || 'ParticleEffect';
-		let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(Effect));
-		table1.add(selection.table).padBottom(4).row()
-		let cont = table1.table().name('cont').get()
-		let map = fObject(cont, prov(() => selection.type), val1, Seq())
-
-		let val2 = isObject ? "自定义" : value || defaultClass.get(Effect);
-		let btn = table.button(val2, IntStyles.cleart, () => {
-			IntFunc.showSelectListTable(btn, effects, val2, 130, 50, cons(fx => {
-				btn.setText(fx);
-				if (fx != "自定义") {
-					val2 = fx;
-					table1.remove()
-				} else {
-					table.add(table1);
-					val2 = map;
-				}
-			}), true);
-		}).width(200).height(45).get();
-		table.row()
-
-		if (isObject) {
-			table.add(table1);
-			val2 = map
-		}
-
-		return prov(() => val2 instanceof Prov ? val2.get() : val2)
+		return listWithType(table, value, Effect, "ParticleEffect");
 	},
 	UnitType, (table, value) => {
 		value = '' + (value || defaultClass.get(UnitType));
@@ -462,6 +422,39 @@ function foldTable() {
 		btn.fireClick()
 	}
 	return [table, content]
+}
+
+function listWithType(table, value, type, defaultValue) {
+	let isObject = value instanceof MyObject;
+	let val1 = isObject ? value : new MyObject();
+	let table1 = new Table()
+	let typeName = val1.remove('type') || defaultValue;
+	let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(type));
+	table1.add(selection.table).padBottom(4).row()
+	let cont = table1.table().name('cont').get()
+	let map = fObject(cont, prov(() => selection.type), val1, Seq())
+
+	let val2 = isObject ? "自定义" : value || defaultClass.get(type);
+	let btn = table.button(val2, IntStyles.cleart, () => {
+		IntFunc.showSelectListTable(btn, effects, val2, 130, 50, cons(fx => {
+			btn.setText(fx);
+			if (fx != "自定义") {
+				val2 = fx;
+				table1.remove()
+			} else {
+				table.add(table1);
+				val2 = map;
+			}
+		}), true);
+	}).width(200).height(45).get();
+	table.row()
+
+	if (isObject) {
+		table.add(table1);
+		val2 = map
+	}
+
+	return prov(() => val2 instanceof Prov ? val2.get() : val2)
 }
 
 
