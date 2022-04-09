@@ -24,12 +24,18 @@ const defaultClass = exports.defaultClass = ObjectMap.of(
 	BulletType, BasicBulletType
 )
 
-const effects = new Seq()
-let fs = IntFunc.toClass(Fx).getFields()
-for (let i = 0; i < fs.length; i++) {
-	effects.add(fs[i].name)
+function genericSeqByClass(clazz, _func) {
+	let seq = new Seq()
+	let f = IntFunc.toClass(clazz).getFields()
+	for (let i = 0; i < f.length; i++) {
+		seq.add(_func.get(f[i]))
+	}
+	seq.add("自定义")
+	return seq;
 }
-effects.add("自定义")
+const effects = genericSeqByClass(Fx, func(field => field.name))
+const bullets = genericSeqByClass(Bullets, func(field => field.name))
+
 const UnitPlan = UnitFactory.UnitPlan
 
 exports.filterClass = ObjectMap.of(
@@ -61,10 +67,10 @@ exports.filterClass = ObjectMap.of(
 		return prov(() => color)
 	},
 	BulletType, (table, value) => {
-		return listWithType(table, value, BulletType, "BasicBulletType");
+		return listWithType(table, value, BulletType, "BasicBulletType", bullets);
 	},
 	StatusEffect, (table, value) => {
-		return listWithType(table, value, StatusEffect, "StatusEffect");
+		return listWithType(table, value, StatusEffect, "StatusEffect", Vars.content.statusEffects());
 	},
 	// AmmoType, (table, value) => {},
 	DrawBlock, (table, value) => {
@@ -118,7 +124,7 @@ exports.filterClass = ObjectMap.of(
 		return buildOneStack(table, 'liquid', items, item, amount)
 	},
 	Effect, (table, value) => {
-		return listWithType(table, value, Effect, "ParticleEffect");
+		return listWithType(table, value, Effect, "ParticleEffect", effects);
 	},
 	UnitType, (table, value) => {
 		value = '' + (value || defaultClass.get(UnitType));
@@ -424,19 +430,20 @@ function foldTable() {
 	return [table, content]
 }
 
-function listWithType(table, value, type, defaultValue) {
+function listWithType(table, value, vType, defaultValue, list) {
 	let isObject = value instanceof MyObject;
 	let val1 = isObject ? value : new MyObject();
 	let table1 = new Table()
 	let typeName = val1.remove('type') || defaultValue;
-	let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(type));
+	let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(vType) || [IntFunc.toClass(vType)]);
 	table1.add(selection.table).padBottom(4).row()
 	let cont = table1.table().name('cont').get()
 	let map = fObject(cont, prov(() => selection.type), val1, Seq())
 
-	let val2 = isObject ? "自定义" : value || defaultClass.get(type);
+	let val2 = isObject ? "自定义" : value || defaultClass.get(vType);
 	let btn = table.button(val2, IntStyles.cleart, () => {
-		IntFunc.showSelectListTable(btn, effects, val2, 130, 50, cons(fx => {
+		Log.info(list)
+		IntFunc.showSelectListTable(btn, list, val2, 130, 50, cons(fx => {
 			btn.setText(fx);
 			if (fx != "自定义") {
 				val2 = fx;
