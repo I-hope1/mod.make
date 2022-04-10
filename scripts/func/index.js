@@ -60,7 +60,7 @@ exports.async = function (text, generator, callback) {
 		try {
 			v = generator.next()
 		} catch (err) {
-			Vars.ui.showErrorMessage(err)
+			this.showException(err)
 			v = null;
 		}
 		if (v == null || v.done) {
@@ -71,6 +71,34 @@ exports.async = function (text, generator, callback) {
 	})
 	Core.scene.add(ui);
 }
+
+exports.showException = function (err, text) {
+	text = text || "";
+
+	let ui = new Dialog("");
+	let { cont } = ui
+	let message = err.message;
+
+	ui.setFillParent(true);
+	cont.margin(15);
+	cont.add("@error.title").colspan(2);
+	cont.row();
+	cont.image().width(300).pad(2).colspan(2).height(4).color(Color.scarlet);
+	cont.row();
+	cont.add((text.startsWith("@") ? Core.bundle.get(text.substring(1)) : text) + (message == null ? "" : "\n[lightgray](" + message + ")")).colspan(2).wrap().growX().center().get().setAlignment(Align.center);
+	cont.row();
+
+	let col = new Collapser(base => base.pane(t => t.margin(14).add(err.stack).color(Color.lightGray).left()), true);
+
+	cont.button("@details", Styles.togglet, () => col.toggle()).size(180, 50).checked(b => !col.isCollapsed()).fillX().right();
+	cont.button("@ok", () => ui.hide()).size(110, 50).fillX().left();
+	cont.row();
+	cont.add(col).colspan(2).pad(2);
+	ui.closeOnBack();
+
+	ui.show();
+}
+
 
 Events.run(ClientLoadEvent, () => exports.errorRegion = Core.atlas.find("error"))
 

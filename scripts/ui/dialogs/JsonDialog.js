@@ -2,7 +2,7 @@ const Editor = require('ui/dialogs/Editor')
 
 let dialog, label, p
 exports.load = function () {
-	dialog = new Dialog
+	exports.ui = dialog = new Dialog
 	label = new Label('')
 	p = new Table
 	p.center();
@@ -51,6 +51,7 @@ let w = Core.graphics.getWidth(),
 	h = Core.graphics.getHeight(),
 	bw = w > h ? 550 : 450,
 	bh = w > h ? 200 : Vars.mobile ? 300 : 350;
+
 exports.constructor = function (file, mod) {
 	if (!/^h?json$/.test(file.extension())) return null;
 	this.file = file, this.mod = mod

@@ -32,6 +32,14 @@ exports.filter = function (field) {
 	return false
 }
 
+exports.defaultValue = function (type) {
+	return type.isArray() || type == Seq ? new MyArray() :
+		type.getSimpleName() == 'boolean' ? false :
+			type.isPrimitive() ? 0 :
+				type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */
+					buildContent.defaultClass.containsKey(type) ? buildContent.defaultClass.get(type) : new MyObject()
+}
+
 const caches = new Map();
 exports.constructor = function (obj, Fields, prov) {
 	let btn = new TextButton('$add');
@@ -74,14 +82,7 @@ exports.constructor = function (obj, Fields, prov) {
 								hide.run();
 								return
 							}
-							let type = field.type
-							Fields.add(null, name,
-								type.isArray() || type == Seq ? new MyArray() :
-									type.getSimpleName() == 'boolean' ? false :
-										type.isPrimitive() ? 0 :
-											type.getSimpleName() == 'String' ? '' : /* buildContent.make(type) */
-												buildContent.defaultClass.containsKey(type) ? buildContent.defaultClass.get(type) : new MyObject()
-							);
+							Fields.add(null, name, exports.defaultValue(field.type));
 
 							hide.run();
 						}).size(Core.graphics.getWidth() * .2, 45)

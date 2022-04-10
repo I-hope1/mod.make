@@ -25,7 +25,7 @@ exports.load = function () {
 	desc.center();
 	desc.defaults().padTop(10).left();
 
-	dialog.cont.pane(desc).fillX().fillY().get().setScrollingDisabled(true, false);;
+	dialog.cont.pane(desc).fillX().fillY().get().setScrollingDisabled(true, false);
 }
 
 exports.current = null
@@ -72,7 +72,7 @@ exports.constructor = function (mod) {
 			t.center();
 			t.defaults().padTop(10).left();
 			let contentDir = mod.file.child('content');
-			let selectedContent
+
 			let cont = new Table();
 			cont.defaults().padTop(10).left();
 			let body = new Table();
@@ -80,6 +80,7 @@ exports.constructor = function (mod) {
 			body.defaults().padTop(2).top().left();
 			cont.pane(cons(p => p.add(body).left().grow().get().left())).fillX().minWidth(450).row();
 
+			let selectedContent
 			let displayContentSprite;
 
 			let setup = content => {
@@ -118,15 +119,19 @@ exports.constructor = function (mod) {
 							if (count++ > 10) yield;
 							p.button(cons(b => {
 								b.left()
-								b.table(cons(t => {
-									t.left()
+								let table = new Table();
+								table.left()
+								let _setup = () => {
+									table.clearChildren()
 									if (displayContentSprite) {
-										let image = t.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
+										let image = table.image(IntFunc.find(mod, json.nameWithoutExtension())).size(32).padRight(6).left().get();
 										if (!Vars.mobile) image.addListener(new HandCursorListener());
 									}
 
-									t.add(json.name()).top();
-								})).growX().left().get()
+									table.add(json.name()).top();
+								}
+								_setup();
+								b.add(table).growX().left().get()
 								IntFunc.longPress(b, 600, longPress => {
 									if (longPress) {
 										Vars.ui.showConfirm('$confirm',
@@ -136,9 +141,17 @@ exports.constructor = function (mod) {
 												setup(selectedContent);
 											})
 										);
-									}
-									else {
+									} else {
 										JsonDialog.constructor(json, mod);
+										let listener = extend(VisibilityListener, {
+											hidden: () => {
+												json = JsonDialog.file
+												_setup()
+												JsonDialog.ui.removeListener(listener)
+												return false;
+											}
+										})
+										JsonDialog.ui.addListener(listener);
 									}
 								});
 							}), Styles.defaultb, () => { }).fillX().minWidth(400).pad(2).padLeft(4).left().row();

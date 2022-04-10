@@ -21,7 +21,7 @@ function MyArray(arr) {
 			for (let i = 0; i < this.length; i++) {
 				let item = this[i]
 				let val = item instanceof Prov ? item.get() : item
-				str.push(typeof val == "string" ? '"' + val + '"' : val)
+				str.push(val)
 			}
 			return '[\n' + str.join(', ') + '\n]'
 		}
@@ -54,7 +54,7 @@ function MyObject(obj) {
 			let str = []
 			this.each((k, v) => {
 				let [key, value] = [k instanceof Prov ? k.get() : k, v instanceof Prov ? v.get() : v]
-				str.push(key + ': ' + (typeof value == "string" ? '"' + value + '"' : value))
+				str.push(key + ': ' + value)
 			})
 			return '{\n' + str.join('\n') + '\n}'
 		}

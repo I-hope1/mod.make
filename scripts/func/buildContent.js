@@ -60,13 +60,13 @@ exports.filterClass = ObjectMap.of(
 
 		table.add(button);
 
-		return prov(() => color)
+		return prov(() => '"' + color + '"')
 	},
 	BulletType, (table, value) => {
 		return listWithType(table, value, BulletType, "BasicBulletType", bullets);
 	},
 	StatusEffect, (table, value) => {
-		return listWithType(table, value, StatusEffect, "StatusEffect", Vars.content.statusEffects());
+		return listWithType(table, value, StatusEffect, "StatusEffect", Vars.content.statusEffects(), Seq([StatusEffect]));
 	},
 	// AmmoType, (table, value) => {},
 	DrawBlock, (table, value, vType) => {
@@ -150,7 +150,7 @@ exports.filterClass = ObjectMap.of(
 		map.put("unit", exports.filterClass.get(UnitType)(cont, map.get("unit")));
 		cont.row()
 		cont.add(Core.bundle.get('time', 'time'));
-		map.put("time", fail(cont, map.getDefault("time", 0)));
+		map.put("time", fail(cont, map.getDefault("time", 0), java.lang.Number));
 		cont.row()
 		cont.add(Core.bundle.get("requirements"))
 		let foldt = foldTable()
@@ -309,7 +309,7 @@ exports.filterKey = ObjectMap.of(
 
 	'controller', (table, value, type) => {
 		if (type == UnitType) {
-			return tableWithListSelection(table, value, otherTypes.get(AIController), "mono", false)
+			return tableWithListSelection(table, value, AISeq, "FlyingAI", false)
 		}
 		return null;
 	}
@@ -366,7 +366,7 @@ function fArray(t, vType, v) {
 		addItem(vType, fields, j, v)
 	})
 	table.button('$add', () => {
-		addItem(vType, fields, v.length, defaultClass.get(vType) || new MyObject())
+		addItem(vType, fields, v.length, add.defaultValue(vType))
 	}).growX()
 	return prov(() => v)
 }
@@ -413,7 +413,7 @@ function tableWithTypeSelection(table, value, vType, defaultValue) {
 	return map
 }
 
-function listWithType(table, value, vType, defaultValue, list) {
+function listWithType(table, value, vType, defaultValue, list, blackList) {
 	let isObject = value instanceof MyObject;
 	let val1 = isObject ? value : new MyObject();
 	let table1 = new Table()
@@ -421,7 +421,7 @@ function listWithType(table, value, vType, defaultValue, list) {
 	let selection = new typeSelection.constructor(Classes.get(typeName), typeName, otherTypes.get(vType) || [IntFunc.toClass(vType)]);
 	table1.add(selection.table).padBottom(4).row()
 	let cont = table1.table().name('cont').get()
-	let map = fObject(cont, prov(() => selection.type), val1, Seq())
+	let map = fObject(cont, prov(() => selection.type), val1, blackList || Seq())
 
 	let val2 = isObject ? "自定义" : value || defaultClass.get(vType);
 	let btn = table.button(val2, IntStyles.cleart, () => {
@@ -496,12 +496,15 @@ const foldBlackList = Seq.with(lstr, Color, Category, ItemStack, LiquidStack, Un
 const UnitTypeExFields = Seq.with("requirements", "waves", "controller", "type")
 const json = add.json;
 
-function fail(t, v) {
+function fail(t, v, vType) {
 	let field = new TextField(('' + v).replace(/\n|\r/g, '\\n'))
-	if (typeof v == "string") IntFunc.longPress(field, 600, longPress => longPress && IntFunc.showTextArea(field))
+	if (IntFunc.toClass(lstr).isAssignableFrom(vType)) IntFunc.longPress(field, 600, longPress => longPress && IntFunc.showTextArea(field))
 	if (Vars.mobile) field.removeInputDialog()
 	t.add(field).growX();
-	return prov(() => field.getText().replace(/\s*/, '') != '' ? field.getText() : '')
+	return prov(() => {
+		let txt = field.getText().replace(/\s*/, '') != '' ? field.getText() : ''
+		return vType.isPrimitive() ? txt : '"' + txt + '"';
+	})
 }
 /* 构建table */
 exports.build = function (type, fields, t, k, v, isArray) {
@@ -571,7 +574,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 		}
 		return
 	})();
-	map.put(k, output || fail(t, v))
+	map.put(k, output || fail(t, v, vType))
 	if (tmp != null) t = tmp;
 
 	t.table(cons(right => {

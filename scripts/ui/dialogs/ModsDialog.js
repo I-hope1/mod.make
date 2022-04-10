@@ -115,9 +115,8 @@ exports.import = function (file) {
 			throw Error('没有mod.(h)json')
 		}
 		curretFile.copyTo(toFile.parent())
-	} catch (e) {
-		let err = '[red][' + Core.bundle.get(e.name, e.name) + '][]' + e.message;
-		Vars.ui.showErrorMessage(err);
+	} catch (err) {
+		IntFunc.showException(err)
 	} finally {
 		if (root != null) root.delete()
 	}
@@ -132,8 +131,11 @@ exports.show = function () {
 
 const loadMod = (() => {
 	let clazz = Vars.mods.getClass()
-	let method = clazz.getDeclaredMethod("loadMod", Fi, java.lang.Boolean.TYPE)
-	method.setAccessible(true)
+	let loadMod = clazz.getDeclaredMethod("loadMod", Fi, java.lang.Boolean.TYPE)
+	loadMod.setAccessible(true)
+
+	let checkWarnings = clazz.getDeclaredMethod("checkWarnings")
+	checkWarnings.setAccessible(true)
 
 	let field = clazz.getDeclaredField("mods")
 	field.setAccessible(true)
@@ -178,10 +180,11 @@ const loadMod = (() => {
 		atlas.__load()
 	}
 
+	let lastMod;
 	function* gen(mod) {
 		let fi = mod.file
 
-		let _mod = method.invoke(Vars.mods, fi, true)
+		let _mod = loadMod.invoke(Vars.mods, fi, true)
 		mods.add(_mod)
 		_mod.state = Packages.mindustry.mod.Mods.ModState.enabled;
 
@@ -189,9 +192,10 @@ const loadMod = (() => {
 		Vars.content.createBaseContent()
 		yield;
 		Vars.content.createModContent()
+
 		yield;
-		mods.remove(_mod)
 		let wrong = _mod.hasContentErrors()
+		lastMod = _mod
 
 		if (IntSettings.getValue("loadMod", "load_sprites") && mod.spritesFi() != null) {
 			let spritesFi = mod.spritesFi();
@@ -221,9 +225,16 @@ const loadMod = (() => {
 	}
 	return function (mod) {
 		let g = gen(mod);
-		IntFunc.async("加载mod", g, v => {
+		Time.run(1, () => IntFunc.async("加载mod", g, v => {
 			Vars.ui.showInfo("加载" + (v != null && v.value ? "成功" : "失败"))
-		})
+			// Vars.ui.loadfrag.table
+			if (IntSettings.getValue("loadMod", "display_exception")) {
+				checkWarnings.invoke(Vars.mods)
+			}
+			if (lastMod != null) {
+				mods.remove(lastMod)
+			}
+		}))
 		return true;
 	}
 })()
