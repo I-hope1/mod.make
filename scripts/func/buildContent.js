@@ -484,6 +484,7 @@ function getType(type, k, isArray) {
 		let vType = isArray ? type : field.type
 		return [field, vType];
 	} catch (e) {
+		// IntFunc.showException(e)
 		return []
 	}
 
@@ -497,6 +498,7 @@ const UnitTypeExFields = Seq.with("requirements", "waves", "controller", "type")
 const json = add.json;
 
 function fail(t, v, vType) {
+	vType = vType = IntFunc.toClass(lstr)
 	let field = new TextField(('' + v).replace(/\n|\r/g, '\\n'))
 	if (IntFunc.toClass(lstr).isAssignableFrom(vType)) IntFunc.longPress(field, 600, longPress => longPress && IntFunc.showTextArea(field))
 	if (Vars.mobile) field.removeInputDialog()
