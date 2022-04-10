@@ -21,7 +21,7 @@ const defaultClass = exports.defaultClass = ObjectMap.of(
 	ItemStack, 'copper/0',
 	LiquidStack, 'water/0',
 	Attribute, Attribute.all[0],
-	BulletType, BasicBulletType
+	BulletType, new MyObject()
 )
 
 function genericSeqByClass(clazz, _func) {
@@ -88,43 +88,28 @@ exports.filterClass = ObjectMap.of(
 			typeof value == 'string' ? value.split('/') :
 				value instanceof MyObject ? [value.get('item'), value.get('amount')] : [Items.copper, 0]
 
-		let items = Vars.content.items()
-
-		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Item.'
 		if (isNaN(amount)) throw TypeError('\'' + amount + '\' isn\'t a number')
-		return buildOneStack(table, 'item', items, item, amount)
+		return buildOneStack(table, 'item', Vars.content.items(), item, amount)
 	},
 	// like ItemStack
 	LiquidStack, (table, value) => {
 		let [item, amount] = typeof value == 'string' ?
 			value.split('/') : [value.get('liquid'), value.get('amount')]
 
-		let items = Vars.content.liquids()
-
-		// if (!items.contains(item)) throw 'Unable to convert ' + item + ' to Liquid.'
-		if (isNaN(amount)) amount = 0// throw TypeError('\'' + amount + '\' isn\'t a number')
-		return buildOneStack(table, 'liquid', items, item, amount)
+		if (isNaN(amount)) amount = 0
+		return buildOneStack(table, 'liquid', Vars.content.liquids(), item, amount)
 	},
 	Effect, (table, value) => {
 		return listWithType(table, value, Effect, "ParticleEffect", effects);
 	},
-	UnitType, (table, value) => {
-		value = '' + (value || defaultClass.get(UnitType));
-		let prov = IntFunc.selectionWithField(table, Vars.content.units(), value, 42, 32, 6, true)
-
-		return prov
+	UnitType, (table, value, vType) => {
+		return tableWithFieldImage(table, value, vType, Vars.content.units())
 	},
-	Item, (table, value) => {
-		value = '' + (value || defaultClass.get(Item));
-		let prov = IntFunc.selectionWithField(table, Vars.content.items(), value, 42, 32, 6, true)
-
-		return prov
+	Item, (table, value, vType) => {
+		return tableWithFieldImage(table, value, vType, Vars.content.items())
 	},
-	Liquid, (table, value) => {
-		value = '' + (value || defaultClass.get(Liquid));
-		let prov = IntFunc.selectionWithField(table, Vars.content.liquids(), value, 42, 32, 6, true)
-
-		return prov
+	Liquid, (table, value, vType) => {
+		return tableWithFieldImage(table, value, vType, Vars.content.liquids())
 	},
 	ObjectMap, (table, value, vType, classes) => {
 		let map = new MyObject()
@@ -146,7 +131,7 @@ exports.filterClass = ObjectMap.of(
 						map.remove(key)
 						if (t != null) t.remove()
 					});
-				})).right().growX().right();
+				})).padLeft(4).growX().right();
 			}))).growX().row()
 		}
 		value = value || new MyObject()
@@ -306,7 +291,7 @@ exports.filterKey = ObjectMap.of(
 				table.button('', Icon.trash, IntStyles.cleart, () => {
 					value.removeValue(item);
 					table.remove()
-				});
+				}).marginLeft(4);
 			} else {
 				Vars.ui.showErrorMessage("upgrades解析错误");
 				return null;
@@ -400,6 +385,13 @@ function foldTable() {
 		btn.fireClick()
 	}
 	return [table, content]
+}
+
+function tableWithFieldImage(table, value, vType, seq) {
+	value = '' + (value || defaultClass.get(vType));
+	let prov = IntFunc.selectionWithField(table, seq, value, 42, 32, 6, true)
+
+	return prov
 }
 
 function tableWithListSelection(table, value, seq, defaultValue, searchable) {
@@ -568,7 +560,8 @@ exports.build = function (type, fields, t, k, v, isArray) {
 			}
 		} catch (e) {
 			Log.info(type)
-			Log.err(e)
+			Log.err("[red][" + e.type + "][]" + e.message + "(#" + e.lineNumber + ")")
+			Log.err(e.stack)
 		}
 		finally {
 
@@ -589,7 +582,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 			}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
 		}
 		right.button('', Icon.trash, IntStyles.cleart, () => fields.remove(t, k));
-	})).right().growX().right();
+	})).padLeft(4).growX().right();
 
 }
 
