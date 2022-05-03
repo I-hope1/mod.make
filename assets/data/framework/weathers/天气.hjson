@@ -1,0 +1,12 @@
+
+sizeMax: 13
+sizeMin: 2.6
+density: 1200
+attrs: {
+	light: -0.15
+}
+sound: windhowl
+soundVol: 0
+soundVolOscMag: 1.5
+soundVolOscScl: 1100
+soundVolMin: 0.02

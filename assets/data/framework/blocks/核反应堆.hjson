@@ -1,0 +1,21 @@
+// extend 发电机
+name: 核反应堆
+type: NuclearReactor
+consumes: {
+	items: {
+		items: [{
+			item: copper,
+			amount: 1
+		}]
+	}
+	liquid: {
+		liquid: water, amount: 0.1
+	}
+}
+itemDuration: 120
+heating: 0.01
+smokeThreshold: 0.3
+flashThreshold: 0.46
+explosionRadius: 19
+explosionDamage: 1250
+coolantPower: 0.5
