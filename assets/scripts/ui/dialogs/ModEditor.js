@@ -11,7 +11,7 @@ const { framework, types: typeIni } = findClass("components.dataHandle");
 ModEditor.bundles = null;
 
 let dialog, desc;
-let w = !Core.graphics.isPortrait() ? 540 : Vars.isMobile() ? 410 : 440;
+let w = !Core.graphics.isPortrait() ? 540 : Vars.mobile ? 410 : 440;
 ModEditor.load = function () {
 	JsonDialog.load()
 
