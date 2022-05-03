@@ -111,7 +111,7 @@ public class dataHandle {
 		while (m.find()) {
 			all.add(m.group());
 		}
-		all.forEach(type -> {
+		all.each(type -> {
 			var a = type.split("\\s*:\\s*");
 			map.put(a[0], a[1]);
 		});

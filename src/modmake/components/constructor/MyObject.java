@@ -27,7 +27,7 @@ public class MyObject<K, V> extends OrderedMap<K, V>
 
 	public V put(K k, V v){
 //		Log.info(k + "\n" + v);
-		Log.info("res: " + this);
+//		Log.info("res: " + this);
 		return super.put(k, v);
 	}
 

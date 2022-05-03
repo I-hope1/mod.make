@@ -11,7 +11,7 @@ description: "
 
 旧版本不支持某些功能
 "
-
+main: "modmake.ModMake"
 author: "I hope..."
 version: "1.1"
 minGameVersion: 110
