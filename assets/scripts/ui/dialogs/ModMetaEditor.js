@@ -110,7 +110,10 @@ ModMetaEditor.load = function () {
 		cont.add(field).row()
 	}
 
-	ui.hidden(() => modsDirectory.child("tmp").deleteDirectory())
+	ui.hidden(() => {
+		IntModsDialog.show()
+		modsDirectory.child("tmp").deleteDirectory()
+	})
 	ui.closeOnBack();
 }
 

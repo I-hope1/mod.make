@@ -7,17 +7,14 @@ import arc.graphics.Color;
 import arc.graphics.Pixmap;
 import arc.math.Mathf;
 import arc.struct.Seq;
-import arc.struct.StringMap;
-import arc.util.Log;
-import rhino.JavaAdapter;
-import rhino.NativeJavaObject;
-import rhino.ScriptableObject;
+
+import static mindustry.Vars.ui;
+import static modmake.ui.ImgEditorDialog.Img;
 
 import java.util.ArrayList;
 
 public class ImgEditor {
 	public static final float[] brushSizes = new float[]{1.0F, 1.5F, 2.0F, 3.0F, 4.0F, 5.0F, 9.0F, 15.0F, 20.0F};
-	public StringMap tags = new StringMap();
 	public final Stack stack = new Stack();
 	private boolean loading;
 	public float brushSize = 1.0f;
@@ -44,14 +41,27 @@ public class ImgEditor {
 		loading = false;
 	}
 
-	public void beginEdit(ImgEditorDialog.Img img) {
+	public void beginEdit(Img img) {
 		currentFi = img.file;
 		reset();
 		loading = true;
-		tags.putAll(img.tags);
-
-		loading = false;
 		tiles = new Tiles(img.pixmap);
+		loading = false;
+	}
+
+	public void beginEdit(Fi fi) {
+		Img img;
+		if (fi.exists()) {
+			img = new Img(fi);
+		} else {
+			img = new Img(new Pixmap(32, 32));
+			img.file = fi;
+		}
+		try {
+			beginEdit(img);
+		} catch (Exception e) {
+			ui.showException(e);
+		}
 	}
 
 	public void beginEdit(Pixmap pixmap) {
@@ -70,11 +80,23 @@ public class ImgEditor {
 		clearOp();
 		brushSize = 1.0F;
 		drawColor = Color.clear;
-		tags = new StringMap();
+	}
+
+	public void save() {
+		try {
+			new Img(tiles().pixmap).toFile(currentFi);
+			ui.showInfoFade("@editor.saved");
+		} catch (Exception e) {
+			ui.showException(e);
+		}
 	}
 
 	public Tile tile(int x, int y) {
 		return tiles.getn(x, y);
+	}
+
+	public Pixmap pixmap() {
+		return tiles.pixmap;
 	}
 
 	public int width() {
@@ -131,9 +153,7 @@ public class ImgEditor {
 	}
 
 	public void clearOp() {
-		if (currentOp != null) {
-			currentOp.clear();
-		}
+		currentOp.clear();
 	}
 
 	public void undo() {
@@ -152,11 +172,14 @@ public class ImgEditor {
 		return stack.canRedo();
 	}
 
-	public void flushOp() {
+	public boolean flushOp() {
 		if (!currentOp.isEmpty()) {
-			stack.add(currentOp.copy());
+			stack.addUndo(currentOp.copy());
+			stack.list2.clear();
 			currentOp.clear();
+			return true;
 		}
+		return false;
 	}
 
 	public static void addTileOp(TileData t) {
@@ -192,7 +215,7 @@ public class ImgEditor {
 		drawBlocks(x, y, false, tile -> tile.get() != drawColor);
 	}
 
-	public class Tiles {
+	public static class Tiles {
 		public Tile[][] tiles;
 		public Pixmap pixmap;
 		public int w, h;
@@ -237,10 +260,12 @@ public class ImgEditor {
 			}
 		}
 	}
+
 	public static class TileData {
 		public Color color;
 		public int x, y;
-		public TileData(Tile t){
+
+		public TileData(Tile t) {
 			this.color = t.get();
 			this.x = t.x;
 			this.y = t.y;
@@ -270,51 +295,53 @@ public class ImgEditor {
 	}
 
 	public class Stack {
-		ArrayList<Seq<TileData>> list = new ArrayList<>();
-		int cur = 0;
+		protected ArrayList<Seq<TileData>> list1 = new ArrayList<>();
+		protected ArrayList<Seq<TileData>> list2 = new ArrayList<>();
 
-		public void add(Seq<TileData> t) {
-			if (cur < list.size()) {
-				for (int i = cur; i < list.size(); i++) {
-					list.remove(i);
-				}
-			}
-			list.add(t);
-			cur++;
+		public void addUndo(Seq<TileData> seq) {
+			list1.add(seq);
+		}
+
+		public void addRedo(Seq<TileData> seq) {
+			list2.add(seq);
 		}
 
 		public void clear() {
-			cur = 0;
-			list.clear();
+			list1.clear();
+			list2.clear();
 		}
 
 		public void undo() {
 			if (canUndo()) {
-				Seq<TileData> ts = list.remove(--cur);
-				Pixmap p = tiles.pixmap;
-				ts.each(t -> {
-					p.set(t.x, p.height - t.y - 1, t.color);
-				});
-				ts.clear();
+				var seq = list1.remove(list1.size() - 1);
+				addRedo(setPixmap(seq));
 			}
 		}
 
 		public boolean canUndo() {
-			return cur > 0 && cur <= list.size();
+			return list1.size() > 0;
 		}
 
 		public void redo() {
 			if (canRedo()) {
-				Seq<TileData> ts = list.remove(++cur);
-				ts.each(t -> {
-					Pixmap p = tile(t.x, t.y).pixmap;
-					p.set(t.x, p.height - t.y - 1, t.color);
-				});
+				var seq = list2.remove(list2.size() - 1);
+				addUndo(setPixmap(seq));
 			}
 		}
 
+		public Seq<TileData> setPixmap(Seq<TileData> seq) {
+			Pixmap p = tiles.pixmap;
+			var seq2 = new Seq<TileData>();
+			seq.each(t -> {
+				seq2.add(new TileData(tile(t.x, t.y)));
+				p.set(t.x, p.height - t.y - 1, t.color);
+			});
+			seq.clear();
+			return seq2;
+		}
+
 		public boolean canRedo() {
-			return cur >= 0 && cur < list.size();
+			return list2.size() > 0;
 		}
 	}
 }

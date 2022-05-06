@@ -8,7 +8,7 @@ const findClass = require('func/findClass')
 const IniHandle = findClass("components.dataHandle");
 
 const Classes = exports.Classes = (() => {
-	let classes = Packages.mindustry.mod.ClassMap.classes
+	let classes = Packages.rhino.NativeJavaClass(Vars.mods.scripts.scope, Vars.mods.mainLoader().loadClass("mindustry.mod.ClassMap")).classes
 	return {
 		each(method) {
 			classes.each(new Cons2({ get: method }));

@@ -8,38 +8,30 @@ import arc.graphics.Pixmap;
 import arc.input.KeyCode;
 import arc.math.geom.Vec2;
 import arc.scene.actions.Actions;
-import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
-import arc.scene.style.Drawable;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
-import arc.struct.StringMap;
 import arc.util.*;
-import mindustry.core.GameState.State;
-import mindustry.editor.*;
+import mindustry.Vars;
+import mindustry.editor.MapEditor;
+import mindustry.editor.MapEditorDialog;
 import mindustry.game.Rules;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
-import mindustry.io.MapIO;
-import mindustry.maps.Map;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import modmake.IntUI;
 
 import java.lang.reflect.Field;
 
 import static mindustry.Vars.*;
-import static modmake.IntUI.imgDialog;
 import static modmake.IntUI.imgEditor;
 
 public class ImgEditorDialog extends Dialog {
 	public ImgView view;
-	private ImgInfoDialog infoDialog;
-	private MapLoadDialog loadDialog;
 	private ImgResizeDialog resizeDialog;
 	private ScrollPane pane;
-	private BaseDialog menu;
+	private final BaseDialog menu;
 	private Table blockSelection;
 	public Runnable hiddenRun = null;
 	private boolean saved = false; //currently never read
@@ -51,7 +43,6 @@ public class ImgEditorDialog extends Dialog {
 		background(Styles.black);
 
 		view = new ImgView();
-		infoDialog = new ImgInfoDialog();
 
 		menu = new BaseDialog("@menu");
 		menu.addCloseButton();
@@ -63,17 +54,12 @@ public class ImgEditorDialog extends Dialog {
 
 			t.button("@editor.savemap", Icon.save, this::save);
 
-			t.button("图像信息", Icon.pencil, () -> {
-				infoDialog.show();
-				menu.hide();
-			});
-
-			t.row();
-
 			t.button("@editor.resize", Icon.resize, () -> {
 				resizeDialog.show();
 				menu.hide();
 			});
+
+			t.row();
 
 			t.button("@editor.import", Icon.download, () ->
 					platform.showFileChooser(true, "png", file -> ui.loadAnd(() -> {
@@ -83,10 +69,10 @@ public class ImgEditorDialog extends Dialog {
 							ui.showException(e);
 						}
 					}))
-			).row();
+			);
 
-			t.button("@editor.export", Icon.upload, () -> platform.export(imgEditor.tags.get("name", "unknown"), "png", file -> {
-				new Img(imgEditor.tiles().pixmap).toFile(file);
+			t.button("@editor.export", Icon.upload, () -> platform.export(imgEditor.currentFi.nameWithoutExtension(), "png", file -> {
+				new Img(imgEditor.pixmap()).toFile(file);
 			}));
 		});
 
@@ -106,15 +92,6 @@ public class ImgEditorDialog extends Dialog {
 				});
 			}
 		});
-
-		loadDialog = new MapLoadDialog(map -> ui.loadAnd(() -> {
-			try {
-				//imgEditor.beginEdit(map);
-			} catch (Exception e) {
-				ui.showException("@editor.errorload", e);
-				Log.err(e);
-			}
-		}));
 
 		setFillParent(true);
 
@@ -161,29 +138,20 @@ public class ImgEditorDialog extends Dialog {
 	}
 
 
-	public @Nullable void save() {
+	public @Nullable
+	void save() {
 		boolean isEditor = state.rules.editor;
 		state.rules.editor = false;
-		String name = imgEditor.tags.get("name", "").trim();
-		imgEditor.tags.remove("width");
-		imgEditor.tags.remove("height");
-
-		Img[] returned = {null};
+		Fi fi = imgEditor.currentFi;
 
 		if (imgEditor.currentFi == null) {
 			platform.export("保存", "png", f -> {
 				imgEditor.currentFi = f;
-				imgEditor.tags.put("name", f.nameWithoutExtension());
-				returned[0] = new Img(imgEditor.tiles().pixmap);
-				returned[0].toFile(imgEditor.currentFi);
+				imgEditor.save();
 				ui.showInfoFade("@editor.saved");
 			});
-		} else if (name.isEmpty()) {
-			infoDialog.show();
-			Core.app.post(() -> ui.showErrorMessage("@editor.save.noname"));
 		} else {
-			returned[0] = new Img(imgEditor.tiles().pixmap);
-			returned[0].toFile(imgEditor.currentFi);
+			new Img(imgEditor.tiles().pixmap).toFile(fi);
 			ui.showInfoFade("@editor.saved");
 		}
 
@@ -213,21 +181,13 @@ public class ImgEditorDialog extends Dialog {
 		ui.loadAnd(() -> {
 			try {
 				shownWithImg = true;
-				imgEditor.beginEdit(new Img(file));
+				imgEditor.beginEdit(file);
 				show();
 			} catch (Exception e) {
 				Log.err(e);
 				ui.showException("@editor.errorload", e);
 			}
 		});
-	}
-
-	public ImgView getView() {
-		return view;
-	}
-
-	public void resetSaved() {
-		saved = false;
 	}
 
 	public boolean hasPane() {
@@ -566,13 +526,12 @@ public class ImgEditorDialog extends Dialog {
 		}
 	}
 
-	public class Img {
+	public static class Img {
 		public Fi file;
 		public Pixmap pixmap;
 
 		public Img(Fi fi) {
 			file = fi;
-			tags.put("name", fi.nameWithoutExtension());
 			pixmap = new Pixmap(fi);
 		}
 
@@ -583,7 +542,5 @@ public class ImgEditorDialog extends Dialog {
 		public void toFile(Fi fi) {
 			fi.writePng(pixmap);
 		}
-
-		public StringMap tags = new StringMap();
 	}
 }

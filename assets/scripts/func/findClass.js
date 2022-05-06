@@ -3,7 +3,7 @@ module.exports = (() => {
 	let pkgname = "modmake"
 	let loader = Vars.mods.mainLoader();
 	let scripts = Vars.mods.scripts;
-	let { scope, context } = scripts;
+	let { scope } = scripts;
 	let cache = {}
 	return (name, def) => {
 		try {

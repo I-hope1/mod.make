@@ -234,7 +234,6 @@ exports.setup = function () {
 	this.mods = modsDirectory.list();
 	if (this.mods.length == 0) {
 		p.table(Styles.black6, cons(t => t.add('$mods.none'))).height(80);
-		dialog.show()
 		return;
 	}
 
@@ -308,6 +307,7 @@ exports.setup = function () {
 				right.button(Icon.link, Styles.clearPartiali, () => Core.app.openFolder(mod.file.absolutePath())).size(50);
 			})).growX().right().padRight(-8).padTop(-8);
 		}), IntStyles.clearpb, () => {
+			dialog.hide()
 			ModEditor(mod);
 		}).size(w, h).growX().pad(4).row();
 	});

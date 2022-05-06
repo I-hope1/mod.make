@@ -3,6 +3,7 @@ const findClass = require('func/findClass')
 const IntStyles = findClass('ui.styles');
 const IntFunc = require('func/index');
 const IntSettings = require('content/settings');
+const IntModsDialog = require('ui/dialogs/ModsDialog');
 const JsonDialog = require('ui/dialogs/JsonDialog');
 const Editor = require('ui/dialogs/Editor');
 
@@ -20,7 +21,13 @@ ModEditor.load = function () {
 	this.bundles = field.get(Vars.ui.language)
 
 	dialog = new BaseDialog('');
-	dialog.addCloseButton();
+	dialog.buttons.defaults().size(210, 64);
+    dialog.buttons.button("@back", Icon.left, () => {
+    	dialog.hide()
+   		IntModsDialog.show()
+    }).size(210, 64);
+
+    dialog.addCloseListener();
 
 	desc = new Table;
 	desc.center();
@@ -141,11 +148,13 @@ function getContentTable(mod) {
 								setup(selectedContent)
 								return
 							}
+							dialog.hide()
 							JsonDialog.show(json, mod);
 							let listener = extend(VisibilityListener, {
 								hidden: () => {
 									json = JsonDialog.file
 									_setup()
+									dialog.show()
 									JsonDialog.ui.removeListener(listener)
 									return false;
 								}
@@ -224,7 +233,7 @@ function getContentTable(mod) {
 	let spritesDirectory = mod.file.child('sprites');
 	let showSprites;
 	t.button('查看图片库', showSprites = () => {
-
+		dialog.hide()
 		let ui = new BaseDialog('图片库');
 
 		let cont = new Table(cons(t => {
@@ -272,17 +281,28 @@ function getContentTable(mod) {
 				t.row();
 				t.image().color(Color.gray).minWidth(440).row();
 				t.image(new TextureRegion(new Texture(file))).size(96)
-					.get().clicked(() => ImgEditor.beginEditImg(file));
+					.get().clicked(() => {
+						ui.hide()
+						ImgEditor.beginEditImg(file)
+					});
 			})).padTop(10).left().row();
 		}
 		ui.cont.pane(cont).fillX().fillY();
 		ui.addCloseButton();
 		ImgEditor.hiddenRun = () => {
+			dialog.show()
 			ui.hide();
 			showSprites();
 		};
 		ui.buttons.button('$add', Icon.add, () => IntFunc.createDialog("添加图片",
-			"新建图片", "默认32*32", Icon.add, run(() => ImgEditor.show()),
+			"新建图片", "默认32*32", Icon.add, run(() => {
+				let fi, i = 0;
+				do {
+					fi = spritesDirectory.child("new(" + i + ").png")
+				} while (fi.exists());
+				dialog.hide()
+				ImgEditor.beginEditImg(fi);
+			}),
 			"导入图片", "仅限png", Icon.download, run(() => IntFunc.selectFile(true, 'import file to add sprite', 'png', cons(f => {
 				let toFile = spritesDirectory.child(f.name());
 				function go() {
@@ -351,9 +371,18 @@ function ModEditor(mod) {
 		/* bundles */
 		new Table(Tex.whiteui.tint(1, .8, 1, .8), cons(t => {
 			t.add("$default").padLeft(4).growX().left();
-			t.button(Icon.pencil, Styles.clearTransi, () =>
+			t.button(Icon.pencil, Styles.clearTransi, () => {
+				dialog.hide()
 				Editor.edit(mod.file.child("bundles").child("bundle.properties"), mod)
-			).size(42).pad(10).row();
+				let listener = extend(VisibilityListener, {
+					hidden() {
+						dialog.show()
+						Editor.ui.removeListener(listener)
+						return false;
+					}
+				})
+				Editor.ui.addListener(listener);
+			}).size(42).pad(10).row();
 			Vars.locales.forEach(k => {
 				t.add(ModEditor.bundles.get(k + "") || k + "").padLeft(4).growX().left();
 				t.button(Icon.pencil, Styles.clearTransi, () =>

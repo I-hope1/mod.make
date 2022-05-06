@@ -26,6 +26,9 @@ public enum EditorTool {
 		}
 	},
 	line(KeyCode.l, "orthogonal") {
+		{
+			edit = true;
+		}
 		public void touchedLine(int x1, int y1, int x2, int y2) {
 			if (this.mode == 0) {
 				if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
@@ -43,8 +46,8 @@ public enum EditorTool {
 	},
 	pencil(KeyCode.b, "replace", "square", "drawteams") {
 		{
-			this.edit = true;
-			this.draggable = true;
+			edit = true;
+			draggable = true;
 		}
 
 		public void touched(int x, int y) {
@@ -68,8 +71,8 @@ public enum EditorTool {
 	},
 	eraser(KeyCode.e) {
 		{
-			this.edit = true;
-			this.draggable = true;
+			edit = true;
+			draggable = true;
 		}
 
 		public void touched(int x, int y) {
@@ -82,8 +85,8 @@ public enum EditorTool {
 		IntSeq stack;
 
 		{
-			this.edit = true;
-			this.stack = new IntSeq();
+			edit = true;
+			stack = new IntSeq();
 		}
 
 		public void touched(int x, int y) {
@@ -160,8 +163,8 @@ public enum EditorTool {
 		final double chance = 0.012D;
 
 		{
-			this.edit = true;
-			this.draggable = true;
+			edit = true;
+			draggable = true;
 		}
 
 		public void touched(int x, int y) {
@@ -195,19 +198,19 @@ public enum EditorTool {
 
 	EditorTool(KeyCode code) {
 		this();
-		this.key = code;
+		key = code;
 	}
 
 	EditorTool(String... altModes) {
-		this.key = KeyCode.unset;
-		this.mode = -1;
+		mode = -1;
+		key = KeyCode.unset;
 		this.altModes = altModes;
 	}
 
 	EditorTool(KeyCode code, String... altModes) {
 		this.mode = -1;
-		this.altModes = altModes;
 		this.key = code;
+		this.altModes = altModes;
 	}
 
 	public void touched(int x, int y) {
