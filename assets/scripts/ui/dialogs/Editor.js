@@ -3,9 +3,9 @@ const Fields = require('ui/components/Fields');
 // const scripts = require('ui/scripts');
 const addBtn = require('ui/components/addFieldBtn');
 const typeSelection = require('ui/components/typeSelection');
-const IntSettings = require("content/settings");
 const findClass = require('func/findClass')
 const IniHandle = findClass("components.dataHandle");
+const { settings } = IniHandle;
 
 const Classes = exports.Classes = (() => {
 	let classes = Packages.rhino.NativeJavaClass(Vars.mods.scripts.scope, Vars.mods.mainLoader().loadClass("mindustry.mod.ClassMap")).classes
@@ -70,7 +70,7 @@ exports.load = function () {
 	}
 
 	Classes.each((k, type) => {
-		if (!IntSettings.getValue("editor", "display_deprecated") && type.isAnnotationPresent(java.lang.Deprecated)) return;
+		if (!settings.getBool("display_deprecated") && type.isAnnotationPresent(java.lang.Deprecated)) return;
 		for (let i = 0; i < this.contentTypes.size; i += 2) {
 			if (!this.contentTypes.get(i).isAssignableFrom(type)) continue;
 			let key = this.contentTypes.get(i + 1)
@@ -139,7 +139,7 @@ exports.edit = function (file, mod) {
 
 function buildJson(file) {
 
-	let obj = result.value = IniHandle.toIntObject(IniHandle.hjsonParse(file.readString()))
+	let obj = result.value = IniHandle.parse(file.readString())
 
 	let parentName = (() => {
 		let contentRoot = exports.mod.file.child("content")
@@ -165,7 +165,7 @@ function buildJson(file) {
 	Object.defineProperty(result, 'type', { get: () => selection.type })
 	Object.defineProperty(result, 'typeName', { get: () => selection.typeName })
 
-	let table = new Table(Tex.whiteui.tint(.4, .4, .4, .9))
+	let table = new Table()
 	let fields = new Fields(obj, prov(() => selection.type), table)
 
 	pane.table(Tex.button, cons(t => {

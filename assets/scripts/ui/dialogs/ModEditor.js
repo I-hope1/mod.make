@@ -2,12 +2,11 @@
 const findClass = require('func/findClass')
 const IntStyles = findClass('ui.styles');
 const IntFunc = require('func/index');
-const IntSettings = require('content/settings');
 const IntModsDialog = require('ui/dialogs/ModsDialog');
 const JsonDialog = require('ui/dialogs/JsonDialog');
 const Editor = require('ui/dialogs/Editor');
 
-const { framework, types: typeIni } = findClass("components.dataHandle");
+const { settings, framework, types: typeIni } = findClass("components.dataHandle");
 // 语言
 ModEditor.bundles = null;
 
@@ -57,7 +56,7 @@ function getContentTable(mod) {
 		selectedContent = content
 		body.clearChildren();
 
-		displayContentSprite = IntSettings.getValue("base", "display-content-sprite");
+		displayContentSprite = settings.getBool("display-content-sprite");
 
 		if (content == contentRoot) {
 			let cTypes = Editor.ContentTypes
@@ -229,99 +228,12 @@ function getContentTable(mod) {
 
 	t.add(cont).growX().width(w).row();
 
-	const ImgEditor = findClass('IntUI').imgDialog;
+	const spriteDialog = findClass('IntUI').spriteDialog;
 	let spritesDirectory = mod.file.child('sprites');
 	let showSprites;
 	t.button('查看图片库', showSprites = () => {
-		dialog.hide()
-		let ui = new BaseDialog('图片库');
-
-		let cont = new Table(cons(t => {
-			t.top();
-			let all = mod.spritesFi();
-			if (all != null) {
-				all.walk(cons(f => {
-					try {
-						buildImage(t, f);
-					} catch(err) {
-						Log.err(err);
-					}
-				}))
-			}
-		}));
-		function buildImage(t, file) {
-			if (file.extension() != 'png') return;
-			t.table(cons(t => {
-				t.left();
-
-				let label = new Label(prov(() => file.nameWithoutExtension()))
-				let field = new TextField();
-				field.addListener(extend(InputListener, {
-					keyUp(event, key) {
-						if (key == "Enter") {
-							let toFile;
-							try {
-								toFile = file.sibling(field.getText() + ".png") 
-							} catch(e) {
-								Vars.ui.showErrorMessage("文件名称不合法")
-								return
-							}
-							file.moveTo(toFile)
-							file = toFile
-							cell.setElement(label)
-						}
-					}
-				}));
-				let cell = t.add(label);
-				label.clicked(() => {
-					field.setText(label.getText())
-					cell.setElement(field)
-				});
-				t.button("", Icon.trash, Styles.cleart, () => t.remove() && file.delete())
-				t.row();
-				t.image().color(Color.gray).minWidth(440).row();
-				t.image(new TextureRegion(new Texture(file))).size(96)
-					.get().clicked(() => {
-						ui.hide()
-						ImgEditor.beginEditImg(file)
-					});
-			})).padTop(10).left().row();
-		}
-		ui.cont.pane(cont).fillX().fillY();
-		ui.addCloseButton();
-		ImgEditor.hiddenRun = () => {
-			dialog.show()
-			ui.hide();
-			showSprites();
-		};
-		ui.buttons.button('$add', Icon.add, () => IntFunc.createDialog("添加图片",
-			"新建图片", "默认32*32", Icon.add, run(() => {
-				let fi, i = 0;
-				do {
-					fi = spritesDirectory.child("new(" + i + ").png")
-				} while (fi.exists());
-				dialog.hide()
-				ImgEditor.beginEditImg(fi);
-			}),
-			"导入图片", "仅限png", Icon.download, run(() => IntFunc.selectFile(true, 'import file to add sprite', 'png', cons(f => {
-				let toFile = spritesDirectory.child(f.name());
-				function go() {
-					try {
-						buildImage(cont, f);
-					} catch(err) {
-						Vars.ui.showErrorMessage('文件可能损坏')
-						return
-					}
-					f.copyTo(toFile);
-				}
-				if (toFile.exists()) Vars.ui.showConfirm('$confirm', '是否要覆盖', run(go));
-				else go();
-			})))
-		)).size(210, 64);
-
-		ui.hidden(run(() => setup(selectedContent)));
-
-		ui.show();
+		spriteDialog.hiddenRun = run(() => setup(selectedContent));
+		spriteDialog.setup(spritesDirectory);
 	}).growX();
 	return t;
 }
@@ -340,7 +252,7 @@ function ModEditor(mod) {
 		return dialog.show();
 	}
 
-	if (mod.logo() != 'error' && IntSettings.getValue("base", "display_mod_logo")) desc.image(mod.logo()).row();
+	if (mod.logo() != 'error' && settings.getBool("display_mod_logo")) desc.image(mod.logo()).row();
 
 
 	desc.add('$editor.name', Color.gray).padRight(10).padTop(0).row();

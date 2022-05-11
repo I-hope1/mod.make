@@ -1,32 +1,45 @@
 
 const buildContent = require('func/buildContent')
-const IntSettings = require("content/settings");
 const findClass = require('func/findClass')
+const { settings } = findClass("components.dataHandle");
 const { MyObject, MyArray } = require("func/constructor")
 
 
 let backgrounds;
-function Fields(value, type, table){
+function Fields(value, type, group) {
 	if (value == null) throw Error("'value' can't be null");
 
-	if (value instanceof MyArray || value instanceof MyObject) {
+	if (value instanceof MyObject) {
 		this.map = value
 	} else throw new TypeError("'" + value + "' is not MyArray or MyObject")
 
-	this.table = table
+	this.group = group
 	Object.defineProperty(this, 'type', { get: () => type.get() })
 	let i = 0;
+	let data = new Map();
 	this.add = function (table, key, value) {
 		if (value != null && !this.map.has(key)) {
 			this.map.put(key, value)
 		}
 		let t = table || Fields.json(this, i++, key)
-		this.table.add(t).fillX().row()
+		t.name = key
+		t.defaults().fillX()
+		data.set(key, this.group.add(t).fillX());
+
+		this.group.row()
 	}
-	this.remove = function (item, key) {
+	this.remove = function (key) {
 		this.map.remove(key)
-		if (item != null) item.remove()
+		let cell = data.get(key)
+		data.delete(key)
+		if (cell != null && cell.get() != null) cell.get().remove()
 		else Log.err("can't remove key: " + key)
+	}
+	this.setTable = function(key, table){
+		let cell = data.get(key)
+		if (cell != null) {
+			cell.setElement(table)
+		}
 	}
 }
 Fields.load = function () {
@@ -39,8 +52,8 @@ Fields.load = function () {
 }
 Fields.build = (i, _cons) => {
 	let bg;
-	if (IntSettings.getValue("editor", "colorful_table")) {
-		bg = backgrounds[++i % 4]
+	if (settings.getBool("colorful_table")) {
+		bg = backgrounds[i % 4]
 	} else {
 		bg = Tex.pane;
 	}

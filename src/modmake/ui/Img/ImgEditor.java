@@ -1,4 +1,4 @@
-package modmake.ui;
+package modmake.ui.Img;
 
 import arc.files.Fi;
 import arc.func.Boolf;
@@ -9,7 +9,7 @@ import arc.math.Mathf;
 import arc.struct.Seq;
 
 import static mindustry.Vars.ui;
-import static modmake.ui.ImgEditorDialog.Img;
+import static modmake.ui.Img.ImgEditorDialog.Img;
 
 import java.util.ArrayList;
 
@@ -143,11 +143,12 @@ public class ImgEditor {
 	public void resize(int width, int height) {
 		stack.clear();
 		clearOp();
-		Tiles previous = tiles;
-		int offsetX = (width() - width) / 2;
-		int offsetY = (height() - height) / 2;
+		Pixmap previous = tiles.pixmap;
+		int offsetX = (width - width()) / 2;
+		int offsetY = (height - height()) / 2;
 		loading = true;
-		Tiles tiles = this.tiles.resize(width, height);
+		tiles.resize(width, height);
+		tiles.pixmap.draw(previous, offsetX, offsetY);
 
 		loading = false;
 	}
@@ -233,6 +234,7 @@ public class ImgEditor {
 			this.w = w;
 			this.h = h;
 			tiles = new Tile[w][h];
+			if (pixmap == null || pixmap.width != w || pixmap.height != h) pixmap = new Pixmap(w, h);
 			for (int i = 0; i < w; i++) {
 				for (int j = 0; j < h; j++) {
 					if (tiles[i][j] == null) {
@@ -285,7 +287,7 @@ public class ImgEditor {
 		public void set(Color c) {
 			if (get().equals(c)) return;
 			addTileOp(new TileData(this));
-			pixmap.set(x, pixmap.height - y - 1, c);
+			pixmap.setRaw(x, pixmap.height - y - 1, c.rgba());
 		}
 
 		public Color get() {

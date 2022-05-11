@@ -1,5 +1,0 @@
-// extend 基础炮塔
-type: ItemTurret
-name: 物品炮塔
-ammoTypes: {}
-requirements: []

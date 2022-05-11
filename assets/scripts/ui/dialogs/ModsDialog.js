@@ -70,7 +70,7 @@ exports.load = function (name) {
 	Vars.mods.addParseListener(new ParseListener({
 		parsed: () => {
 			// 每执行n次休眠1秒
-			if (++times > IntSettings.getValue("loadMod", "compiling_times_per_second")) Threads.sleep(1000);
+			if (++times > settings.getBool("compiling_times_per_second")) Threads.sleep(1000);
 		}
 	})) */
 }
@@ -186,7 +186,7 @@ const loadMod = (() => {
 		let wrong = _mod.hasContentErrors()
 		lastMod = _mod
 
-		if (IntSettings.getValue("loadMod", "load_sprites") && mod.spritesFi() != null) {
+		if (settings.getBool("load_sprites") && mod.spritesFi() != null) {
 			let spritesFi = mod.spritesFi();
 
 			let map = new Map()
@@ -217,7 +217,7 @@ const loadMod = (() => {
 		Time.run(1, () => IntFunc.async("加载mod", g, v => {
 			Vars.ui.showInfo("加载" + (v != null && v.value ? "成功" : "失败"))
 			// Vars.ui.loadfrag.table
-			if (IntSettings.getValue("loadMod", "display_exception")) {
+			if (settings.getBool("display_exception")) {
 				checkWarnings.invoke(Vars.mods)
 			}
 			if (lastMod != null) {
@@ -286,7 +286,7 @@ exports.setup = function () {
 				).size(50).row();
 				right.button(Icon.upload, Styles.clearPartiali, () => {
 					let file = Vars.modDirectory;
-					let enable = IntSettings.getValue("base", "auto_load_mod")
+					let enable = settings.getBool("auto_load_mod")
 					function upload() {
 						if (enable) {
 							if (!loadMod(mod)) {
@@ -303,7 +303,7 @@ exports.setup = function () {
 					if (file.child(mod.file.name()).exists() && !enable)
 						Vars.ui.showConfirm('替换', '同名文件已存在\n是否要替换', upload);
 					else upload();
-				}).size(50).disabled(boolf(() => Vars.state.isGame() && IntSettings.getValue("base", "auto_load_mod")));
+				}).size(50).disabled(boolf(() => Vars.state.isGame() && settings.getBool("auto_load_mod")));
 				right.button(Icon.link, Styles.clearPartiali, () => Core.app.openFolder(mod.file.absolutePath())).size(50);
 			})).growX().right().padRight(-8).padTop(-8);
 		}), IntStyles.clearpb, () => {

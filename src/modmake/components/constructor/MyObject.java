@@ -37,11 +37,6 @@ public class MyObject<K, V> extends OrderedMap<K, V>
 	}
 
 	@Override
-	public int size() {
-		return orderedKeys().size;
-	}
-
-	@Override
 	public boolean has(K k) {
 		return containsKey(k);
 	}

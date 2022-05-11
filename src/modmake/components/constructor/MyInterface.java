@@ -1,11 +1,7 @@
 package modmake.components.constructor;
 
-import java.util.function.Consumer;
-
 public interface MyInterface<K, V, C> {
 	boolean has(K k);
-
-	int size();
 
 	V put(K k, V v);
 

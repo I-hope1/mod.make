@@ -8,14 +8,12 @@ import arc.math.Mathf;
 import arc.math.geom.Bresenham2;
 import arc.math.geom.Point2;
 import arc.struct.IntSeq;
-import arc.util.Log;
 import arc.util.Structs;
 
-import static mindustry.Vars.ui;
 import static modmake.IntUI.imgEditor;
-import static modmake.ui.ImgEditor.Tile;
+import static modmake.ui.Img.ImgEditor.Tile;
 
-public enum EditorTool {
+public enum MyEditorTool {
 	zoom(KeyCode.v),
 	pick(KeyCode.i) {
 		public void touched(int x, int y) {
@@ -53,6 +51,7 @@ public enum EditorTool {
 		public void touched(int x, int y) {
 			if (!imgEditor.tiles().in(x, y)) return;
 
+//			Pixmap pix = imgEditor.pixmap();
 			if (this.mode == -1) {
 				imgEditor.drawBlocks(x, y);
 			} else if (this.mode == 0) {
@@ -184,30 +183,30 @@ public enum EditorTool {
 		}
 	};
 
-	public static final EditorTool[] all = values();
+	public static final MyEditorTool[] all = values();
 	public final String[] altModes;
 	public KeyCode key;
 	public int mode;
 	public boolean edit;
 	public boolean draggable;
 
-	EditorTool() {
+	MyEditorTool() {
 		mode = -1;
 		altModes = new String[]{};
 	}
 
-	EditorTool(KeyCode code) {
+	MyEditorTool(KeyCode code) {
 		this();
 		key = code;
 	}
 
-	EditorTool(String... altModes) {
+	MyEditorTool(String... altModes) {
 		mode = -1;
 		key = KeyCode.unset;
 		this.altModes = altModes;
 	}
 
-	EditorTool(KeyCode code, String... altModes) {
+	MyEditorTool(KeyCode code, String... altModes) {
 		this.mode = -1;
 		this.key = code;
 		this.altModes = altModes;

@@ -1,18 +1,11 @@
 package modmake.components.constructor;
 
-import arc.func.Cons2;
 import arc.func.Prov;
 import arc.struct.Seq;
-import arc.util.Log;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.StringJoiner;
-import java.util.function.Consumer;
 
-public class MyArray<E> extends ArrayList<E>
-		implements MyInterface<Integer, E, Consumer<? super E>> {
+public class MyArray<E> extends MyObject<Integer, E> {
 
 	public MyArray(){
 		super();
@@ -20,43 +13,32 @@ public class MyArray<E> extends ArrayList<E>
 	public MyArray(E ...seq) {
 		super();
 		for (E e : seq) {
-			add(e);
+			put(e);
 		}
 	}
 	public MyArray(Seq<E> seq) {
 		super();
-		seq.each(this::add);
+		seq.each(this::put);
 	}
 
 	public E put(Integer i, E v) {
-		if (i < size()) remove((int)i);
-		add(i, v);
+		if (i < size) remove((int)i);
+		super.put(i, v);
 		return v;
 	}
 
-	public boolean put(E v){
-		return add(v);
-	}
-
-	public void each(Consumer<? super E> cons) {
-		forEach(cons);
-	}
-	public void each(Cons2<Integer, E> c) {
-		int s = size();
-		for (int i = 0; i < s; i++) {
-			Log.info(i);
-			c.get(i, get(i));
-		};
+	public void put(E v){
+		put(size, v);
 	}
 
 	@Override
 	public boolean has(Integer i) {
-		return get((int)i) != null;
+		return get(i) != null;
 	}
 
 	public String toString() {
 		var str = new StringJoiner(", ");
-		each(item -> {
+		each((i, item) -> {
 			Object val = item instanceof Prov ? ((Prov<?>) item).get() : item;
 			str.add(val + "");
 		});
@@ -64,16 +46,9 @@ public class MyArray<E> extends ArrayList<E>
 	}
 
 	@Override
-	public E removeKey(Integer i) {
-		E e = get((int)i);
-		remove((int)i);
-		return e;
-	}
-
-	@Override
 	public MyArray<E> cpy() {
-		MyArray<E> array = new MyArray<E>();
-		each(e -> array.add(e));
+		MyArray<E> array = new MyArray<>();
+		each(array::put);
 		return array;
 	}
 }

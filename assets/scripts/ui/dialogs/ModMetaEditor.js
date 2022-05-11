@@ -117,19 +117,22 @@ ModMetaEditor.load = function () {
 	ui.closeOnBack();
 }
 
+const __MinGameVersion__ = 105
+
 function ModMetaEditor(f) {
 	modsDirectory.child("tmp").deleteDirectory()
 	file = f;
 	isNull = !f.exists()
 	if (isNull) file.writeString('')
-	obj = IniHandle.hjsonParse(file.readString());
+	obj = IniHandle.toJsonValue(IniHandle.hjsonParse(file.readString()));
 	ui.title.setText(isNull ? '$mod.create' : '$edit');
 
 	Fields.fileName.setText(isNull ? '' : f.parent().name())
-	Fields.minGameVersion.setText('' + obj.getString('minGameVersion', '105'));
+	let num = obj.getString("minGameVersion", __MinGameVersion__)
+	Fields.minGameVersion.setText('' + (isNaN(num) ? __MinGameVersion__ : num));
 
 	for (let item of arr) {
-		Fields[item].setText(obj.has(item) ? obj.getString(item, '').replace(/\n|\r/g, '\\n') : '')
+		Fields[item].setText(obj.getString(item, '').replace(/\n|\r/g, '\\n'))
 	}
 
 	ui.show();

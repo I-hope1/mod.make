@@ -1,10 +1,9 @@
 
 const buildContent = require('func/buildContent');
 const IntFunc = require('func/index');
-const IntSettings = require("content/settings");
 const findClass = require('func/findClass');
 const { MyObject, MyArray } = require("func/constructor");
-const { content: contentIni } = findClass("components.dataHandle");
+const { settings, content: contentIni } = findClass("components.dataHandle");
 
 const json = addFieldBtn.json = new Json();
 const arrayClass = addFieldBtn.arrayClass = Seq.with(Seq, ObjectSet)
@@ -109,7 +108,7 @@ function addFieldBtn(obj, Fields, prov) {
 }
 
 addFieldBtn.filter = function (field, vType) {
-	if (!IntSettings.getValue("editor", "display_deprecated") && field.isAnnotationPresent(java.lang.Deprecated)) return false;
+	if (!settings.getBool("display_deprecated") && field.isAnnotationPresent(java.lang.Deprecated)) return false;
 
 	let type = field.type, name = field.name
 	while (type.isArray() || arrayClass.contains(type)) {

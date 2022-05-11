@@ -1,6 +1,5 @@
 
 const IntFunc = require('func/index');
-const IntSettings = require("content/settings");
 const findClass = require('func/findClass')
 const IntStyles = findClass('ui.styles');
 const { otherTypes, Classes } = require('ui/dialogs/Editor');
@@ -8,7 +7,7 @@ const addFieldBtn = require('ui/components/addFieldBtn');
 const typeSelection = require('ui/components/typeSelection');
 const Fields = require('ui/components/Fields');
 const { MyObject, MyArray } = require("func/constructor");
-const { content: contentIni, types: typesIni, hjsonParse, toIntObject } = findClass("components.dataHandle");
+const { settings, content: contentIni, types: typesIni, parse } = findClass("components.dataHandle");
 const mod_Name = modName
 
 
@@ -148,12 +147,12 @@ exports.filterClass = ObjectMap.of(
 	ObjectMap, (table, value, vType, classes) => {
 		let map = new MyObject()
 		let cont = new Table(Tex.button)
-		let children = new Table()
-		cont.add(children).fillX().row()
+		let group = new Table()
+		cont.add(group).fillX().row()
 		table.add(cont).fillX()
 		let i = 0
-		function add(k, v) {
-			children.add(Fields.build(i++, cons(t => {
+		function add(k, v, index) {
+			let tab = Fields.build(i++, cons(t => {
 				let key = exports.filterClass.get(classes[0])(t, k || defaultClass.get(classes[0]));
 				let foldt = foldTable()
 				t.add(foldt[0])
@@ -165,13 +164,15 @@ exports.filterClass = ObjectMap.of(
 					if (t != null) t.remove()
 				};
 				t.table(cons(right => {
-					copyAndPaste(right, k, newV => {
+					copyAndPaste(right, k, v, newV => {
 						remove()
 						add(k, newV);
-					})
+					}, () => {})
 					right.button('', Icon.trash, IntStyles.cleart, remove);
 				})).padLeft(4).growX().right();
-			}))).growX().row()
+			}))
+			tab.defaults().growX()
+			group.add(tab).growX().row()
 		}
 		value = value || new MyObject()
 		value.each(add)
@@ -402,7 +403,7 @@ exports.make = function (type) {
 }
 
 function fObject(t, type, value, typeBlackList, all) {
-	let table = new Table(Tex.pane), children = new Table,
+	let table = new Table(Tex.pane), children = new Table(),
 		fields = new Fields(value, type, children);
 	children.center().defaults().center().minWidth(100)
 	table.add(children).row()
@@ -444,7 +445,7 @@ function fArray(t, vType, v) {
 		addItem(vType, fields, i, v)
 	}))
 	table.button('$add', () => {
-		addItem(vType, fields, v.size(), addFieldBtn.defaultValue(vType))
+		addItem(vType, fields, v.size, addFieldBtn.defaultValue(vType))
 	}).growX().minWidth(100)
 	return prov(() => v)
 }
@@ -464,7 +465,7 @@ function foldTable() {
 	style.up = style.over = Tex.whiteui.tint(0.6, 0.8, 0.8, 1)
 	table.add(btn).padTop(1).padBottom(1).padRight(4).growY().width(32);
 	table.add(col).growX().left()
-	if (IntSettings.getValue("editor", "auto_fold_code")) {
+	if (settings.getBool("auto_fold_code")) {
 		btn.fireClick()
 	}
 	return [table, content]
@@ -585,9 +586,9 @@ const foldBlackList = Seq.with(lstr, Color, Category, ItemStack, LiquidStack, Un
 // 单位额外字段
 const UnitTypeExFields = Seq.with("requirements", "waves", "controller", "type")
 const json = addFieldBtn.json;
+const reader = new JsonReader();
 
-
-function copyAndPaste(table, k, v, paste){
+function copyAndPaste(table, k, v, paste, catchf){
 	table.table(cons(t => {
 		// 复制
 		t.button('', Icon.copy, IntStyles.cleart, () => 
@@ -598,8 +599,9 @@ function copyAndPaste(table, k, v, paste){
 			'粘贴', '是否要粘贴', () => {
 				let txt = Core.app.getClipboardText()
 				try {
-					paste(toIntObject(hjsonParse(txt)));
+					paste(parse(txt));
 				} catch(e) {
+					catchf()
 					IntFunc.showException(e)
 				}
 			}
@@ -625,7 +627,7 @@ function fail(t, v, vType) {
 exports.build = function (type, fields, t, k, v, isArray) {
 	if (type == null) return;
 	let unknown = false;
-	if (!isArray && (type != UnitType || !UnitTypeExFields.contains(k)) && IntSettings.getValue("editor", "point_out_unknown_field") && !json.getFields(type).containsKey(k)) {
+	if (!isArray && (type != UnitType || !UnitTypeExFields.contains(k)) && settings.getBool("point_out_unknown_field") && !json.getFields(type).containsKey(k)) {
 		t.table(Tex.pane, cons(t => t.add('未知', Color.yellow))).padRight(5)
 		unknown = true
 	}
@@ -693,9 +695,12 @@ exports.build = function (type, fields, t, k, v, isArray) {
 	// 右边
 	t.table(cons(right => {
 		right.right().defaults().right()
-		if (foldt) copyAndPaste(right, k, v, v => {
-			fields.remove(right, k)
-			fields.add(null, k, v)
+		if (foldt) copyAndPaste(right, k, v, v2 => {
+			map.put(k, v2)
+			fields.setTable(k, Fields.json(fields, 0, k))
+		}, () => {
+			map.put(k, v)
+			fields.setTable(k, t)
 		})
 		// 帮助按钮
 		if (!isArray && !unknown && contentIni.containsKey(k + '.help')) {
@@ -705,7 +710,7 @@ exports.build = function (type, fields, t, k, v, isArray) {
 				.right().grow().get();
 		}
 		// 删除按钮
-		right.button('', Icon.trash, IntStyles.cleart, () => fields.remove(t, k));
+		right.button('', Icon.trash, IntStyles.cleart, () => fields.remove(k));
 	})).padLeft(4).growX().right();
 
 	t.row()

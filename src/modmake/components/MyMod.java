@@ -5,23 +5,24 @@ import arc.files.Fi;
 import arc.graphics.Texture;
 import arc.graphics.g2d.TextureRegion;
 import arc.util.serialization.JsonValue;
+import arc.util.serialization.Jval;
 
 import java.util.Objects;
 
 public class MyMod {
 	public Fi file;
-	public JsonValue meta;
+	public Jval meta;
 
 	public static MyMod set(Fi file) {
 		String json = file.child("mod.json").exists() ? file.child("mod.json").readString() :
 				file.child("mod.hjson").exists() ? file.child("mod.hjson").readString() : null;
 		if (json == null) return null;
-		JsonValue meta = dataHandle.hjsonParse(json);
+		Jval meta = dataHandle.hjsonParse(json);
 		if (meta == null) return null;
 		return new MyMod(file, meta);
 	}
 
-	public MyMod(Fi file, JsonValue meta) {
+	public MyMod(Fi file, Jval meta) {
 		if (meta == null) throw new IllegalArgumentException("meta cannot be null");
 		this.file = file;
 		this.meta = meta;

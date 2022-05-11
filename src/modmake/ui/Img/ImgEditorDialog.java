@@ -1,4 +1,4 @@
-package modmake.ui;
+package modmake.ui.Img;
 
 import arc.Core;
 import arc.files.Fi;
@@ -12,15 +12,15 @@ import arc.scene.event.Touchable;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
 import arc.util.*;
-import mindustry.Vars;
 import mindustry.editor.MapEditor;
-import mindustry.editor.MapEditorDialog;
 import mindustry.game.Rules;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
+import modmake.ui.MyEditorTool;
+import modmake.ui.styles;
 
 import java.lang.reflect.Field;
 
@@ -209,7 +209,7 @@ public class ImgEditorDialog extends Dialog {
 				ButtonGroup<ImageButton> group = new ButtonGroup<>();
 				Table[] lastTable = {null};
 
-				Cons<EditorTool> addTool = tool -> {
+				Cons<MyEditorTool> addTool = tool -> {
 
 					ImageButton button = new ImageButton(ui.getIcon(tool.name()), Styles.clearTogglei);
 					button.clicked(() -> {
@@ -291,14 +291,14 @@ public class ImgEditorDialog extends Dialog {
 
 				ImageButton grid = tools.button(Icon.grid, Styles.clearTogglei, () -> view.setGrid(!view.isGrid())).get();
 
-				addTool.get(EditorTool.zoom);
+				addTool.get(MyEditorTool.zoom);
 
 				tools.row();
 
 				ImageButton undo = tools.button(Icon.undo, Styles.cleari, imgEditor::undo).get();
 				ImageButton redo = tools.button(Icon.redo, Styles.cleari, imgEditor::redo).get();
 
-				addTool.get(EditorTool.pick);
+				addTool.get(MyEditorTool.pick);
 
 				tools.row();
 
@@ -309,14 +309,14 @@ public class ImgEditorDialog extends Dialog {
 				redo.update(() -> redo.getImage().setColor(redo.isDisabled() ? Color.gray : Color.white));
 				grid.update(() -> grid.setChecked(view.isGrid()));
 
-				addTool.get(EditorTool.line);
-				addTool.get(EditorTool.pencil);
-				addTool.get(EditorTool.eraser);
+				addTool.get(MyEditorTool.line);
+				addTool.get(MyEditorTool.pencil);
+				addTool.get(MyEditorTool.eraser);
 
 				tools.row();
 
-				addTool.get(EditorTool.fill);
-				addTool.get(EditorTool.spray);
+				addTool.get(MyEditorTool.fill);
+				addTool.get(MyEditorTool.spray);
 
 //				ImageButton rotate = tools.button(Icon.right, Styles.cleari, () -> imgEditor.rotation = (imgEditor.rotation + 1) % 4).get();
 //				rotate.getImage().update(() -> {
@@ -381,7 +381,7 @@ public class ImgEditorDialog extends Dialog {
 				}
 			}
 		} else {
-			for (EditorTool tool : EditorTool.all) {
+			for (MyEditorTool tool : MyEditorTool.all) {
 				if (Core.input.keyTap(tool.key)) {
 					view.setTool(tool);
 					break;
@@ -468,9 +468,7 @@ public class ImgEditorDialog extends Dialog {
 			Object color = null;
 			try {
 				color = field.get(null);
-			} catch (Exception e) {
-				Log.err(e);
-			}
+			} catch (Exception ignored) {};
 			if (!(color instanceof Color)) continue;
 			Color c = (Color) color;
 

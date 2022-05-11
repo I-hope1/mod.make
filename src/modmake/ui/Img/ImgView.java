@@ -1,4 +1,4 @@
-package modmake.ui;
+package modmake.ui.Img;
 
 import arc.Core;
 import arc.graphics.Color;
@@ -16,13 +16,13 @@ import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Scl;
-import arc.util.Log;
 import arc.util.Tmp;
 import mindustry.editor.MapEditor;
+import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.input.Binding;
 import mindustry.ui.GridImage;
-import rhino.Context;
+import modmake.ui.MyEditorTool;
 
 import static mindustry.Vars.mobile;
 import static mindustry.Vars.ui;
@@ -30,7 +30,7 @@ import static modmake.IntUI.imgDialog;
 import static modmake.IntUI.imgEditor;
 
 public class ImgView extends Element implements GestureDetector.GestureListener {
-	EditorTool tool = EditorTool.pencil;
+	MyEditorTool tool = MyEditorTool.pencil;
 	private float offsetx, offsety;
 	private float zoom = 1f;
 	private boolean grid = false;
@@ -43,7 +43,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	int lastx, lasty;
 	int startx, starty;
 	float mousex, mousey;
-	EditorTool lastTool;
+	MyEditorTool lastTool;
 
 	public ImgView() {
 
@@ -85,12 +85,12 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 				if (button == KeyCode.mouseRight) {
 					lastTool = tool;
-					tool = EditorTool.eraser;
+					tool = MyEditorTool.eraser;
 				}
 
 				if (button == KeyCode.mouseMiddle) {
 					lastTool = tool;
-					tool = EditorTool.zoom;
+					tool = MyEditorTool.zoom;
 				}
 
 				mousex = x;
@@ -118,7 +118,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 				Point2 p = project(x, y);
 
-				if (tool == EditorTool.line) {
+				if (tool == MyEditorTool.line) {
 					tool.touchedLine(startx, starty, p.x, p.y);
 				}
 
@@ -143,7 +143,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 					Bresenham2.line(lastx, lasty, p.x, p.y, (cx, cy) -> tool.touched(cx, cy));
 				}
 
-				if (tool == EditorTool.line && tool.mode == 1) {
+				if (tool == MyEditorTool.line && tool.mode == 1) {
 					if (Math.abs(p.x - firstTouch.x) > Math.abs(p.y - firstTouch.y)) {
 						lastx = p.x;
 						lasty = firstTouch.y;
@@ -159,11 +159,11 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		});
 	}
 
-	public EditorTool getTool() {
+	public MyEditorTool getTool() {
 		return tool;
 	}
 
-	public void setTool(EditorTool tool) {
+	public void setTool(MyEditorTool tool) {
 		this.tool = tool;
 	}
 
@@ -192,7 +192,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 		if (Core.input.keyTap(KeyCode.shiftLeft)) {
 			lastTool = tool;
-			tool = EditorTool.pick;
+			tool = MyEditorTool.pick;
 		}
 
 		if (Core.input.keyRelease(KeyCode.shiftLeft) && lastTool != null) {
@@ -210,7 +210,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		zoom = Mathf.clamp(zoom, 0.2f, 20f);
 	}
 
-	Point2 project(float x, float y) {
+	public Point2 project(float x, float y) {
 		float ratio = 1f / ((float) imgEditor.width() / imgEditor.height());
 		float size = Math.min(width, height);
 		float sclwidth = size * zoom;
@@ -221,7 +221,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		return Tmp.p1.set((int) x, (int) y);
 	}
 
-	private Vec2 unproject(int x, int y) {
+	public Vec2 unproject(int x, int y) {
 		float ratio = 1f / ((float) imgEditor.width() / imgEditor.height());
 		float size = Math.min(width, height);
 		float sclwidth = size * zoom;
@@ -251,11 +251,24 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		Lines.stroke(2f);
 		Lines.rect(centerx - sclwidth / 2 - 1, centery - sclheight / 2 - 1, sclwidth + 2, sclheight + 2);
 
-		float unitx = sclwidth / imgEditor.width();
-		float unity = sclheight / imgEditor.height();
+		float unit = sclwidth / imgEditor.width();
 		imgEditor.tiles().each(tile -> {
+			float x = centerx - sclwidth / 2 + tile.x * unit;
+			float y = centery - sclheight / 2 + tile.y * unit;
+			Color color = tile.get();
+			if (color.a < 1) {
+				float x1 = x + unit * .25f, x2 = x + unit * .75f;
+				float y1 = y + unit * .25f, y2 = y + unit * .75f;
+				float _unit = unit / 2f;
+				Draw.color(Color.gray);
+				Fill.rect(x1, y1, _unit, _unit);
+				Fill.rect(x2, y2, _unit, _unit);
+				Draw.color(Color.lightGray);
+				Fill.rect(x1, y2, _unit, _unit);
+				Fill.rect(x2, y1, _unit, _unit);
+			}
 			Draw.color(tile.get());
-			Fill.rect(centerx - sclwidth / 2 + (tile.x + .5f) * unitx, centery - sclheight / 2 + (tile.y + .5f) * unity, unitx, unity);
+			Fill.rect(x + unit / 2f, y + unit / 2f, unit, unit);
 		});
 
 		Draw.reset();
@@ -286,8 +299,8 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		Draw.color(Pal.accent);
 		Lines.stroke(Scl.scl(2f));
 
-		if (tool != EditorTool.fill) {
-			if (tool == EditorTool.line && drawing) {
+		if (tool != MyEditorTool.fill) {
+			if (tool == MyEditorTool.line && drawing) {
 				Vec2 v1 = unproject(startx, starty).add(x, y);
 				float sx = v1.x, sy = v1.y;
 				Vec2 v2 = unproject(lastx, lasty).add(x, y);
@@ -296,12 +309,12 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 				Lines.poly(brushPolygons[index], v2.x, v2.y, scaling);
 			}
 
-			if ((tool.edit || (tool == EditorTool.line && !drawing)) && (!mobile || drawing)) {
+			if ((tool.edit || (tool == MyEditorTool.line && !drawing)) && (!mobile || drawing)) {
 				Point2 p = project(mousex, mousey);
 				Vec2 v = unproject(p.x, p.y).add(x, y);
 
 				//pencil square outline
-				if (tool == EditorTool.pencil && tool.mode == 1) {
+				if (tool == MyEditorTool.pencil && tool.mode == 1) {
 					Lines.square(v.x + scaling / 2f, v.y + scaling / 2f, scaling * imgEditor.brushSize);
 				} else {
 					Lines.poly(brushPolygons[index], v.x, v.y, scaling);
@@ -330,7 +343,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	public boolean active() {
 		return Core.scene != null && Core.scene.getKeyboardFocus() != null
 				&& Core.scene.getKeyboardFocus().isDescendantOf(imgDialog)
-				&& imgDialog.isShown() && tool == EditorTool.zoom &&
+				&& imgDialog.isShown() && tool == MyEditorTool.zoom &&
 				Core.scene.hit(Core.input.mouse().x, Core.input.mouse().y, true) == this;
 	}
 

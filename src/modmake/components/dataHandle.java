@@ -8,25 +8,32 @@ import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.struct.StringMap;
 import arc.util.Log;
+import arc.util.serialization.Json;
 import arc.util.serialization.JsonReader;
 import arc.util.serialization.JsonValue;
+import arc.util.serialization.Jval;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import modmake.components.constructor.MyArray;
 import modmake.components.constructor.MyInterface;
 import modmake.components.constructor.MyObject;
+import modmake.ui.MySettingsDialog;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static modmake.IntUI.settingsDialog;
+import static modmake.ui.MySettingsDialog.CheckSetting;
 import static modmake.IntVars.data;
 
 public class dataHandle {
 	public static ObjectMap<String, ObjectMap<String, MyObject<Object, Object>>> framework;
-	public static ObjectMap<String, String> types, settings;
-	public static StringMap content;
+	public static ObjectMap<String, String> types;
+	public static StringMap content, settings;
+	;
 	private final static JsonReader reader = new JsonReader();
 
 	public static class _Class {
@@ -44,7 +51,7 @@ public class dataHandle {
 				String str = f.readString();
 				String parent = getParent(str);
 				final var obj = new _Class();
-				obj.value = toIntObject(hjsonParse(str));
+				obj.value = parse(str);
 				map.put(f.nameWithoutExtension(), () -> {
 					if (parent.isEmpty()) return obj.value;
 					var func = map.get(parent);
@@ -104,7 +111,7 @@ public class dataHandle {
 
 		Fi fi = Vars.dataDirectory.child("mods(I hope...)").child("settings.txt");
 		if (!fi.exists()) fi.writeString("");
-		var map = new ObjectMap<String, String>();
+		var map = StringMap.of();
 		Matcher m = Pattern.compile("[\\w-]+?\\s*:\\s*\\w+").matcher(fi.readString());
 		Seq<String> all = new Seq<>();
 		// 将所有符合正则表达式的子串（电话号码）全部输出
@@ -124,6 +131,12 @@ public class dataHandle {
 				});
 				fi.writeString(str + "");
 				return k;
+			}
+
+			@Override
+			public boolean getBool(String name) {
+				var cr = MySettingsDialog.all.get(name);
+				return (cr.bp == null || !cr.bp.get()) && (containsKey(name) ? super.getBool(name) : cr instanceof CheckSetting && ((CheckSetting)cr).def);
 			}
 		};
 
@@ -151,38 +164,43 @@ public class dataHandle {
 		return map;
 	}
 
-	public static JsonValue hjsonParse(Number num) {
-		return new JsonValue((Double) num);
+	public static JsonValue toJsonValue(Jval jval) {
+		return reader.parse(jval.toString());
+	}
+	public static Jval hjsonParse(Number num) {
+		return Jval.valueOf((Double) num);
 	}
 
-	public static JsonValue hjsonParse(Fi fi) {
+	public static Jval hjsonParse(Fi fi) {
 		return hjsonParse(fi.readString());
 	}
 
 	/* hjson解析 (使用arc的JsonReader) */
-	public static JsonValue hjsonParse(String str) {
-		if (!"{".equals("" + str.replaceAll("^\\s+", "").charAt(0))) {
-			str = "{\n" + str + "\n}";
-		}
+	public static Jval hjsonParse(String str) {
 		try {
-			return reader.parse(str);
+			return Jval.read(str);
 			// return reader.parse(str);
 		} catch (Exception err) {
 			Log.err(err);
 			return null;
 		}
 	}
+	public static MyObject parse(String str){
+		Jval jval = hjsonParse(str);
+		if (jval == null) return new MyObject();
+		return toIntObject(toJsonValue(jval));
+	}
 
 	/*public static MyObject<?, ?> toIntObject(String s){
 		return json.fromJson(MyObject.class, s);
 	}*/
 
-	public static MyObject<Object, Object> toIntObject(JsonValue value) {
+	public static MyObject toIntObject(JsonValue value) {
 		if (value == null) return new MyObject<>();
-		MyObject<Object, Object> output = new MyObject<>();
-		MyInterface obj2 = output;
+		MyObject output = value.isArray() ? new MyArray() : new MyObject<>();
+		MyObject obj2 = output;
 		ArrayList<JsonValue> valArr = new ArrayList<>();
-		ArrayList<MyInterface> objArr = new ArrayList<>();
+		ArrayList<MyObject<?, ?>> objArr = new ArrayList<>();
 
 		while (true) {
 			for (JsonValue child = value.child; child != null; child = child.next) {
@@ -205,7 +223,7 @@ public class dataHandle {
 					return _child.asString();
 				}).get(child);
 				if (child.name == null && obj2 instanceof MyArray) {
-					((MyArray<Object>)obj2).put(result);
+					((MyArray) obj2).put(result);
 				} else {
 					obj2.put(child.name, result);
 				}

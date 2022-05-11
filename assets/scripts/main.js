@@ -12,7 +12,8 @@ Events.run(ClientLoadEvent, () => {
 })
 
 require("content/makeMod");
-const IntSettings = require("content/settings");
+const findClass = require('func/findClass')
+const { settings } = findClass("components.dataHandle");
 
 // this.bc = require('func/buildContent')
 
@@ -20,7 +21,7 @@ require('ui/frag')
 
 Core.graphics.setTitle(modName + ": 感谢使用此mod")
 
-if (!IntSettings.getValue("base", "not_show_again")) {
+if (!settings.getBool("not_show_again")) {
 	Log.info("load updateData")
 	require('updateData')
 }

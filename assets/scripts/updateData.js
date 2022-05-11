@@ -1,6 +1,7 @@
 
 const IntFunc = require("func/index")
-const IntSettings = require('content/settings');
+const findClass = require('func/findClass')
+const { settings } = findClass("components.dataHandle");
 
 
 var meta = IntFunc.mod.meta
@@ -35,7 +36,7 @@ Events.run(ClientLoadEvent, () => {
 		_t.button('$ok', () => dialog.hide()).size(120, 50);
 		_t.check(Core.bundle.get('not_show_again', 'not show again'),
 			false,
-			boolc(b => IntSettings.setValue("base", "not_show_again", b))
+			boolc(b => settings.put("not_show_again", b))
 		);
 	}));
 
