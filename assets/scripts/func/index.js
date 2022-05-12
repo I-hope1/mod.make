@@ -4,6 +4,7 @@ const { types: typesIni } = findClass("components.dataHandle");
 const IntUI = findClass('IntUI')
 
 exports.createDialog = IntUI.createDialog;
+exports.doubleClick = IntUI.doubleClick;
 
 
 exports.mod = Vars.mods.locateMod(modName)
@@ -13,46 +14,7 @@ exports.toClass = function (_class) {
 }
 
 /* 一个文本域，可复制粘贴 */
-exports.showTextArea = function (text) {
-	let dialog = new BaseDialog('');
-	dialog.title.remove()
-	let area
-	dialog.cont.add(area = new TextArea(text.getText().replace(/\\n/g, '\n'))).grow();
-	if (Vars.mobile) area.removeInputDialog()
-
-	dialog.addCloseListener();
-	dialog.buttons.defaults().growX()
-	dialog.buttons.button("@back", Icon.left, () => dialog.hide()).grow()
-
-	dialog.buttons.button("@edit", Icon.edit, () => {
-		let dialog = new Dialog('');
-		dialog.addCloseButton();
-		dialog.table(Tex.button, cons(t => {
-			let style = Styles.cleart;
-			t.defaults().size(280, 60).left();
-			t.row();
-			t.button("@schematic.copy.import", Icon.download, style, () => {
-				dialog.hide();
-				area.setText(Core.app.getClipboardText().replace(/\r/g, '\n'));
-			}).marginLeft(12);
-			t.row();
-			t.button("@schematic.copy", Icon.copy, style, () => {
-				dialog.hide();
-				Core.app.setClipboardText(area.getText()
-					.replace(
-						/\r/g, '\n'));
-			}).marginLeft(12);
-		}));
-		dialog.closeOnBack();
-		dialog.show();
-	}).grow();
-	dialog.buttons.button("@ok", Icon.ok, () => {
-		dialog.hide();
-		text.setText(area.getText().replace(/\r|\n/g, '\\n'));
-	}).grow();
-
-	dialog.show();
-}
+exports.showTextArea = IntUI.showTextArea
 
 exports.async = function (text, generator, callback, times) {
 	Vars.ui.loadfrag.show(text);
@@ -126,48 +88,8 @@ exports.findSprites = function (all, name) {
 	return region
 }
 
-/* 选择文件 */
-exports.selectFile = function (open, purpose, ext, _cons) {
-	purpose = /^\$|\@$/.test(purpose[0]) ? Core.bundle.get(purpose.substr(1), purpose) : purpose;
-
-	Vars.platform.showFileChooser(open, purpose + ' (.' + ext + ')', ext, cons(fi => {
-		try {
-			_cons.get(fi);
-		} catch (err) {
-			Log.err('throw error when failed to select file: ', err);
-		}
-	}));
-}
-
-// 一个双击函数
-exports.doubleClick = function (elem, runs) {
-	elem.addListener(extend(ClickListener, {
-		clickTime: 0,
-		clicked(a, b, c) {
-			if (this.tapCount == 2) {
-				runs[0].run();
-				this.tapCount = 0;
-			} else if (this.tapCount == 1) {
-				if (++this.clickTime == 2) {
-					runs[1].run();
-					this.tapCount = 0;
-				}
-			};
-		}
-	}));
-
-	return elem;
-};
 // 长按事件
-exports.longPress = function (elem, duration, func) {
-	elem.addListener(extend(ClickListener, {
-		clicked(a, b, c) {
-			func(Time.millis() - this.visualPressedTime > duration)
-		}
-	}))
-
-	return elem;
-}
+exports.longPress = IntUI.longPress
 
 exports.searchTable = function (t, fun) {
 	t.table(cons(t => {
@@ -202,84 +124,12 @@ exports.searchTable = function (t, fun) {
  */
 exports.showSelectTable = function (button, fun, searchable) {
 	if (typeof fun != 'function') return null;
-	let t = extend(Table, {
-		getPrefHeight() {
-			return Math.min(this.super$getPrefHeight(), Core.graphics.getHeight());
-		},
-		getPrefWidth() {
-			return Math.min(this.super$getPrefWidth(), Core.graphics.getWidth())
-		}
-	});
-	t.margin(4);
-	t.setBackground(Tex.button);
-
-	let b = button;
-	let hitter = new Element;
-	let hide = run(() => {
-		hitter.remove()
-		t.actions(Actions.fadeOut(0.3, Interp.fade), Actions.remove())
-	});
-	hitter.fillParent = true;
-	hitter.clicked(hide);
-
-	Core.scene.add(hitter);
-	Core.scene.add(t);
-
-	t.update(() => {
-		if (b.parent == null || !b.isDescendantOf(Core.scene.root)) {
-			return Core.app.post(() => {
-				hitter.remove();
-				t.remove();
-			});
-		}
-
-		b.localToStageCoordinates(Tmp.v1.set(b.getWidth() / 2, b.getHeight() / 2));
-		t.setPosition(Tmp.v1.x, Tmp.v1.y, Align.center);
-		if (t.getWidth() > Core.scene.getWidth()) t.setWidth(Core.graphics.getWidth());
-		if (t.getHeight() > Core.scene.getHeight()) t.setHeight(Core.graphics.getHeight());
-		t.keepInStage();
-		t.invalidateHierarchy();
-		t.pack();
-	});
-	t.actions(Actions.alpha(0), Actions.fadeIn(0.3, Interp.fade));
-
-	if (searchable) {
-		t.table(cons(t => {
-			t.image(Icon.zoom);
-			let text = new TextField();
-			t.add(text).growX();
-			text.changed(() => fun(p, hide, text.getText()));
-			/* 自动聚焦到搜索框 */
-			if (Core.app.isDesktop() && text != null) {
-				Core.scene.setKeyboardFocus(text);
-			}
-		})).padRight(8).growX().fill().top().row();
-	}
-
-	let pane = t.top().pane(cons(p => fun(p.top(), hide, ''))).pad(0).top().get();
-	pane.setScrollingDisabled(true, false);
-
-	let p = pane.getWidget();
-
-	t.pack();
-
-	return t;
+	IntUI.showSelectTable(button, new Cons3({get: fun}), searchable);
 }
 
 
 exports.showSelectListTable = function (button, list, current, width, height, _cons, searchable) {
-	if (!(list instanceof Seq)) throw TypeError("'" + list + "' isn't instanceof Seq")
-	this.showSelectTable(button, (p, hide, text) => {
-		p.clearChildren();
-
-		let reg = new RegExp(text, 'i')
-		list.each(boolf(item => reg.test(item)), cons(item => {
-			p.button(typesIni.get(item + '') || item + '', Styles.cleart, () => {
-				_cons.get(item)
-				hide.run();
-			}).size(width, height).disabled(current == item).row();
-		}))
-	}, searchable);
+	return IntFunc.showSelectListTable(button, list, () => current, _cons, width, height, searchable);
 }
 
 /**
@@ -305,11 +155,15 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 		p.defaults().size(size);
 
 		let reg = RegExp(v, 'i');
-		for (let i = 0; i < items.size;) {
+		let c = 0;
+		for (let i = 0; i < items.size; i++) {
 			let cont = items.get(i)
 			if (typeof current == 'string' && cont instanceof UnlockableContent && current == cont.name) current = cont;
+			// Log.info(v + "\n" + cont.name)
 			// 过滤不满足条件的
-			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) return;
+			if (v != '' && !(reg.test(cont.name) || reg.test(cont.localizedName))) {
+				continue;
+			}
 
 			let btn = p.button(Tex.whiteui, Styles.clearToggleTransi, imageSize, () => {
 				cons.get(current = cont);
@@ -318,7 +172,7 @@ exports.showSelectImageTableWithIcons = function (button, items, icons, current,
 			btn.getStyle().imageUp = icons[i];
 			btn.update(() => btn.setChecked(cont == current))
 
-			if (++i % cols == 0) p.row();
+			if (++c % cols == 0) p.row();
 		}
 	}, searchable);
 }

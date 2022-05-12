@@ -13,6 +13,7 @@ import mindustry.mod.Mods;
 import mindustry.type.Weapon;
 import mindustry.world.draw.DrawBlock;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import static modmake.components.dataHandle.settings;
@@ -38,7 +39,14 @@ public class ContentSeq {
 		field = Reflect.getField(ContentParser.class, "parsers");
 		parserObjectMap = (ObjectMap<ContentType, ?>) field.get(parser);
 		field = Reflect.getField(ContentParser.class, "contentTypes");
-		contentTypes.putAll((ObjectMap<Class<?>, ContentType>) field.get(parser));
+		var map = (ObjectMap<Class<?>, ContentType>) field.get(parser);
+		// 手动init
+		if(contentTypes.isEmpty()){
+			Method init = ContentParser.class.getDeclaredMethod("init");
+			init.setAccessible(true);
+			init.invoke(parser);
+        }
+		contentTypes.putAll(map);
 		contentTypes.each((clazz, cType) -> {
 			/*if (!parserObjectMap.containsKey(type)) {
 				contentTypes.remove(contentTypes.findKey(type, false));
