@@ -158,7 +158,7 @@ public class dataHandle {
 			if (row.isEmpty() || row.matches("(#|//)[^\n]+")) continue;
 			var arr = row.split("\\s+=\\s+");
 			if (arr.length <= 1) continue;
-			map.put(arr[0], arr[1].replaceAll("\\n", "\n"));
+			map.put(arr[0], arr[1].replaceAll("\\\\n", "\n"));
 		}
 
 		return map;
