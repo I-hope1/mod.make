@@ -5,6 +5,7 @@ import arc.graphics.Color;
 import arc.scene.ui.Dialog;
 import mindustry.graphics.Pal;
 import mindustry.mod.Mods;
+import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntVars;
 
 import static modmake.IntVars.mod;
@@ -12,10 +13,15 @@ import static modmake.IntVars.modName;
 import static modmake.components.dataHandle.settings;
 
 // 更新日志弹窗
-public class UpdateData extends Dialog {
+public class UpdateData extends BaseDialog {
 	Mods.ModMeta meta = IntVars.mod.meta;
 	float w = Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) / 3f,
 			h = w / 9 * 16;
+
+	public UpdateData() {
+		super("");
+		titleTable.remove();
+	}
 
 	@Override
 	public Dialog show() {
@@ -37,7 +43,7 @@ public class UpdateData extends Dialog {
 			).row();
 			t.image().fillX().color(Color.gray).padTop(2).padBottom(2).row();
 			t.add(mod.root.child("更新日志.txt").readString()).padBottom(2).row();
-		}).height(200f).padTop(10f);
+		}).growY().growX().padTop(10f);
 		row();
 		table(_t -> {
 			_t.button("$ok", this::hide).size(120, 50);
