@@ -4,11 +4,7 @@ import arc.func.Cons2;
 import arc.func.Prov;
 import arc.struct.ObjectMap;
 import arc.struct.OrderedMap;
-import arc.struct.Seq;
-import arc.util.Log;
 
-import java.lang.reflect.Field;
-import java.util.Set;
 import java.util.StringJoiner;
 
 public class MyObject<K, V> extends OrderedMap<K, V>
@@ -31,9 +27,10 @@ public class MyObject<K, V> extends OrderedMap<K, V>
 		return super.put(k, v);
 	}
 
-	public V removeKey(K key) {
-		orderedKeys().remove(key);
-		return super.remove(key);
+	public V removeValue(V value) {
+		K k = findKey(value, false);
+		if (k != null) return remove(k);
+		return null;
 	}
 
 	@Override

@@ -9,7 +9,7 @@ public interface MyInterface<K, V, C> {
 
 	String toString();
 
-	V removeKey(K k);
+	V removeValue(V v);
 
 	MyInterface<K, V, C> cpy();
 }

@@ -1,9 +1,10 @@
 package modmake.components.constructor;
 
+import arc.func.Cons;
 import arc.func.Prov;
 import arc.struct.Seq;
-import arc.util.Log;
 
+import java.util.ArrayList;
 import java.util.StringJoiner;
 
 public class MyArray<E> extends MyObject<Integer, E> {
@@ -24,16 +25,15 @@ public class MyArray<E> extends MyObject<Integer, E> {
 	}
 
 	public E put(Integer i, E v) {
-		j++;
-		if (i == -1) {
-			i = j;
-		}
-
+		j = Math.max(i, j) + 1;
 		return super.put(i, v);
 	}
 
 	public void put(E v){
-		put(-1, v);
+		super.put(++j, v);
+	}
+	public void each(Cons<E> cons) {
+		each((i, v) -> cons.get(v));
 	}
 
 	public String toString() {
@@ -48,8 +48,14 @@ public class MyArray<E> extends MyObject<Integer, E> {
 	@Override
 	public MyArray<E> cpy() {
 		MyArray<E> array = new MyArray<>();
-		each(array::put);
+		each(v -> array.put(v));
 		return array;
+	}
+
+	public ArrayList<E> toArray(){
+		var list = new ArrayList<E>();
+		each(v -> list.add(v));
+		return list;
 	}
 }
 

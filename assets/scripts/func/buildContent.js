@@ -361,22 +361,24 @@ exports.filterKey = ObjectMap.of(
 		table.add(cont).row();
 		function build(item) {
 			if (!(item instanceof MyArray)) {
-				Vars.ui.showErrorMessage("upgrades解析错误");
+				IntFunc.showException("upgrades解析错误", new Error("item is't a MyArray"));
 				return;
 			}
+			let list = item.toArray()
+			item.clear()
 			let table = cont.table().get()
 			cont.row();
-			let unitType1 = exports.filterClass.get(UnitType)(table, item.get(0) || defaultClass.get(UnitType))
+			let unitType1 = exports.filterClass.get(UnitType)(table, list.get(0) || defaultClass.get(UnitType))
 			item.put(0, unitType1)
 			table.add("-->");
-			let unitType2 = exports.filterClass.get(UnitType)(table, item.get(1) || defaultClass.get(UnitType))
+			let unitType2 = exports.filterClass.get(UnitType)(table, list.get(1) || defaultClass.get(UnitType))
 			item.put(1, unitType2)
 			table.button('', Icon.trash, IntStyles.cleart, () => {
 				value.removeValue(item);
 				table.remove()
 			}).marginLeft(4);
 		}
-		value.each(build)
+		value.each(cons(build))
 		table.button("$add", () => {
 			let array = new MyArray()
 			value.append(array)
