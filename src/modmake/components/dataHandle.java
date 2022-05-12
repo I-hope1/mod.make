@@ -15,19 +15,17 @@ import arc.util.serialization.Jval;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import modmake.components.constructor.MyArray;
-import modmake.components.constructor.MyInterface;
 import modmake.components.constructor.MyObject;
 import modmake.ui.MySettingsDialog;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static arc.util.serialization.Jval.Jformat;
-import static modmake.ui.MySettingsDialog.CheckSetting;
 import static modmake.IntVars.data;
+import static modmake.ui.MySettingsDialog.CheckSetting;
 
 public class dataHandle {
 	public static ObjectMap<String, ObjectMap<String, MyObject<Object, Object>>> framework;

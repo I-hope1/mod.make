@@ -2,11 +2,11 @@
 const IntFunc = require('func/index')
 const ModEditor = require('ui/dialogs/ModEditor')
 const ModMetaEditor = require('ui/dialogs/ModMetaEditor')
-const IntSettings = require('content/settings');
 
 const findClass = require('func/findClass');
 const IntStyles = findClass('ui.styles');
 const IniHandle = findClass("components.dataHandle");
+const { settings } = IniHandle;
 const MyMod = findClass("components.MyMod");
 
 const lastAtlats = [];

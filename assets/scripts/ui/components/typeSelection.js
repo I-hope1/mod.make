@@ -17,14 +17,14 @@ module.exports = function (type, typeName, types, other) {
 			p.clearChildren()
 			let reg = RegExp('' + v, 'i')
 
-			types.forEach(t => {
+			types.each(cons(t => {
 				if (v != '' && !reg.test(t.getSimpleName()) && !reg.test(typesIni.get(t.getSimpleName()) || '')) return;
 				p.button(typesIni.get(t.getSimpleName()) || t.getSimpleName(), Styles.cleart, run(() => {
 					type = t
 					typeName = t.getSimpleName();
 					hide.run();
 				})).pad(5).size(200, 65).disabled(type == t).row();
-			})
+			}))
 
 			if (!other) return
 			p.add('other', Pal.accent).growX().left().row()

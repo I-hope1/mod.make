@@ -1,5 +1,6 @@
 
 const findClass = require('func/findClass')
+const ContentSeq = findClass("util.ContentSeq");
 const IntStyles = findClass('ui.styles');
 const IntFunc = require('func/index');
 const IntModsDialog = require('ui/dialogs/ModsDialog');
@@ -59,7 +60,7 @@ function getContentTable(mod) {
 		displayContentSprite = settings.getBool("display-content-sprite");
 
 		if (content == contentRoot) {
-			let cTypes = Editor.ContentTypes
+			let cTypes = ContentSeq.cTypeMap
 			cTypes.keys().toSeq().each(cons(type => {
 				let f = content.child(type)
 				if (f.exists() && !f.isDirectory()) {

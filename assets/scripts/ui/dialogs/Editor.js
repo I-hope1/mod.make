@@ -6,86 +6,18 @@ const typeSelection = require('ui/components/typeSelection');
 const findClass = require('func/findClass')
 const IniHandle = findClass("components.dataHandle");
 const { settings, formatPrint } = IniHandle;
+const ContentSeq = findClass("util.ContentSeq");
 
-const Classes = exports.Classes = (() => {
-	let classes = Packages.rhino.NativeJavaClass(Vars.mods.scripts.scope, Vars.mods.mainLoader().loadClass("mindustry.mod.ClassMap")).classes
-	return {
-		each(method) {
-			classes.each(new Cons2({ get: method }));
-		},
-		get(name) {
-			return classes.get(name[0].toLowerCase() != name[0] ? Strings.capitalize(name) : name)
-		}
-	}
-})();
+const Classes = findClass("util.Classes")
 
 let fileName, fileNameTable,
 	cont, pane, result = {};
 
-exports.contentTypes = new Seq();
-// has "s" -> not "s"
-const ContentTypes = exports.ContentTypes = new ObjectMap();
-exports.otherTypes = ObjectMap.of(
-	BulletType, [],
-	DrawBlock, [],
-	Ability, [],
-	Effect, [],
-	Weapon, [],
-	AIController, []
-)
-const types = exports.types = {};
+const types = exports.types = ContentSeq.types;
 
 exports.load = function () {
-	let field = Vars.mods.getClass().getDeclaredField('parser')
-	field.setAccessible(true)
-	let parser = this.parser = field.get(Vars.mods)
-	field = parser.getClass().getDeclaredField("parsers")
-	field.setAccessible(true)
-	let parsers = field.get(parser)
-	for (let type of ContentType.all) {
-		let arr = Vars.content.getBy(type);
-		if (arr.isEmpty()) continue;
-
-		let c = arr.first().getClass();
-		let isAbstract = java.lang.reflect.Modifier.isAbstract
-		//get base content class, skipping intermediates
-		while (!(c.getSuperclass() == Content || c.getSuperclass() == UnlockableContent || isAbstract(c.getSuperclass().getModifiers()))) {
-			c = c.getSuperclass();
-		}
-		isAbstract = null;
-
-		if (parsers.containsKey(type)) {
-			this.contentTypes.add(c, type);
-			type = type + ""
-			let type_s = type.endsWith("s") ? type : type + "s"
-			this.ContentTypes.put(type_s, type)
-		}
-	}
-
-	for (let i = 0; i < this.contentTypes.size; i += 2) {
-		let key = this.contentTypes.get(i + 1)
-		if (parsers.containsKey(key)) {
-			types[key] = []
-		}
-	}
-
-	Classes.each((k, type) => {
-		if (!settings.getBool("display_deprecated") && type.isAnnotationPresent(java.lang.Deprecated)) return;
-		for (let i = 0; i < this.contentTypes.size; i += 2) {
-			if (!this.contentTypes.get(i).isAssignableFrom(type)) continue;
-			let key = this.contentTypes.get(i + 1)
-			types[key].push(type)
-			break;
-		}
-		let f = java.lang.reflect.Modifier.isAbstract
-		this.otherTypes.each(new Cons2({
-			get: (k, arr) => {
-				if (k.isAssignableFrom(type) && !f(type.getModifiers()) && type != BulletType) {
-					arr.push(type)
-				}
-			}
-		}))
-	});
+	// has "s" -> not "s"
+	this.ContentTypes = ContentSeq.cTypeMap;
 
 	const Editor = exports.ui = new BaseDialog(Core.bundle.get('code-editor', 'code editor'))
 
@@ -150,17 +82,17 @@ function buildJson(file) {
 		while (!f.parent().equals(contentRoot)) {
 			f = f.parent();
 		}
-		return ContentTypes.get(f.name())
+		return exports.ContentTypes.get(f.name())
 	})()
 	let typeName
 	if (obj.has('type') && /^block|weather$/.test(parentName)) {
 		typeName = obj.remove('type')
-	} else if (types[parentName] != null && types[parentName][0] != null) {
-		typeName = types[parentName][0].getSimpleName()
+	} else if (types.get(parentName) != null && types.get(parentName).get(0) != null) {
+		typeName = types.get(parentName).get(0).getSimpleName()
 	} else typeName = 'none'
 	if (typeName[0].toLowerCase() == typeName[0]) typeName = typeName[0].toUpperCase() + typeName.slice(1);
 
-	let selection = new typeSelection(Classes.get(typeName), typeName, types[parentName], true);
+	let selection = new typeSelection(Classes.get(typeName), typeName, types.get(parentName), true);
 	pane.add(selection.table).padBottom(4).row()
 	Object.defineProperty(result, 'type', { get: () => selection.type })
 	Object.defineProperty(result, 'typeName', { get: () => selection.typeName })

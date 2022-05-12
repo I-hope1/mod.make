@@ -2,7 +2,9 @@
 const IntFunc = require('func/index');
 const findClass = require('func/findClass')
 const IntStyles = findClass('ui.styles');
-const { otherTypes, Classes } = require('ui/dialogs/Editor');
+const Classes = findClass("util.Classes")
+const ContentSeq = findClass("util.ContentSeq");
+const { otherTypes } = ContentSeq;
 const addFieldBtn = require('ui/components/addFieldBtn');
 const typeSelection = require('ui/components/typeSelection');
 const Fields = require('ui/components/Fields');

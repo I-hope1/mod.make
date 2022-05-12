@@ -5,12 +5,14 @@ import arc.scene.style.Drawable;
 import arc.scene.ui.TextButton;
 import mindustry.gen.Tex;
 import mindustry.ui.dialogs.BaseDialog;
+import modmake.ui.Frag;
 import modmake.ui.Img.ImgEditor;
 import modmake.ui.Img.ImgEditorDialog;
 import modmake.ui.MySettingsDialog;
 import modmake.ui.SpriteDialog;
 
 public class IntUI {
+	public static Frag frag = new Frag();
 	public static ImgEditor imgEditor = new ImgEditor();
 	public static ImgEditorDialog imgDialog = new ImgEditorDialog();
 	public static SpriteDialog spriteDialog = new SpriteDialog();
@@ -18,10 +20,10 @@ public class IntUI {
 
 	/**
 	 * Argument format:
-	 * 0) button name
-	 * 1) description
-	 * 2) icon name
-	 * 3) listener
+	 * <br>0) button name
+	 * <br>1) description
+	 * <br>2) icon name
+	 * <br>3) listener
 	 */
 	public static void createDialog(String title, Object... arguments) {
 		BaseDialog dialog = new BaseDialog(title);
