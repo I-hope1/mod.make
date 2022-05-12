@@ -122,7 +122,7 @@ function buildJson(file) {
 					btn.setText('$none');
 					hide.run()
 				})).growX().row();
-				cont.image(Tex.whiteui, Pal.accent)
+				p.image(Tex.whiteui, Pal.accent)
 							.growX().height(3).pad(4).row();
 
 				let cont = p.table().get();
