@@ -188,12 +188,11 @@ public class dataHandle {
 	}
 
 	public static MyObject parse(String str) {
-		char c = str.replaceAll("^\\s*", "").charAt(0);
-		if (c != '{' && c != '[') str = "{\n" + str + "\n}";
+		if (!Pattern.compile("^\\s*[\\[{]").matcher(str).find()) str = "{\n" + str + "\n}";
 		try {
 			return toIntObject(reader.parse(str));
 		} catch (Exception e) {
-			ui.showException(e);
+			Log.err(e);
 			return new MyObject<>();
 		}
 	}

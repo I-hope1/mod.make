@@ -25,6 +25,7 @@ import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
+import modmake.components.dataHandle;
 import modmake.ui.Frag;
 import modmake.ui.Img.ImgEditor;
 import modmake.ui.Img.ImgEditorDialog;
@@ -32,6 +33,7 @@ import modmake.ui.MySettingsDialog;
 import modmake.ui.SpriteDialog;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public class IntUI {
 	public static Frag frag = new Frag();
@@ -235,12 +237,12 @@ public class IntUI {
 		return showSelectTable(button, (Table p, Runnable hide, String text) -> {
 			p.clearChildren();
 
-			for (String item : list) {
-				p.button(item, Styles.cleart, () -> {
+			list.each(item -> text.isEmpty() || Pattern.compile(text).matcher(item).find(), item -> {
+				p.button(dataHandle.types.get(item, () -> item), Styles.cleart, () -> {
 					cons.get(item);
 					hide.run();
 				}).size(width, height).disabled(Objects.equals(holder.get(), item)).row();
-			}
+			});
 		}, searchable);
 	}
 
