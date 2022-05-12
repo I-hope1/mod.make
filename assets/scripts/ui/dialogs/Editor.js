@@ -5,7 +5,7 @@ const addBtn = require('ui/components/addFieldBtn');
 const typeSelection = require('ui/components/typeSelection');
 const findClass = require('func/findClass')
 const IniHandle = findClass("components.dataHandle");
-const { settings } = IniHandle;
+const { settings, formatPrint } = IniHandle;
 
 const Classes = exports.Classes = (() => {
 	let classes = Packages.rhino.NativeJavaClass(Vars.mods.scripts.scope, Vars.mods.mainLoader().loadClass("mindustry.mod.ClassMap")).classes
@@ -327,8 +327,8 @@ function parseJson(file) {
 
 		else if (!obj.has('type')) obj.put('type', typeName)
 	}
-
-	file.writeString(addBtn.json.prettyPrint(obj + ""));
+	
+	file.writeString(formatPrint(obj + ""));
 	let dir = exports.mod.file.child('content').child(
 		type != null ? ((toClass(UnitType).isAssignableFrom(type) && "unit")
 			|| (toClass(Item).isAssignableFrom(type) && "item")

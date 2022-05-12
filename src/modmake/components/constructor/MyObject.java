@@ -13,10 +13,10 @@ import java.util.StringJoiner;
 
 public class MyObject<K, V> extends OrderedMap<K, V>
 		implements MyInterface<K, V, Cons2<K, V>> {
-	public static MyObject<Object, Object> of(Object... args) {
-		var m = new MyObject<Object, Object>();
+	public static <K1, V1> MyObject<K1, V1> of(Object... args) {
+		var m = new MyObject<K1, V1>();
 		for (int i = 0; i < args.length; i += 2) {
-			m.put(args[i], args[i + 1]);
+			m.put((K1)args[i], (V1)args[i + 1]);
 		}
 		return m;
 	}

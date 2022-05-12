@@ -441,12 +441,13 @@ function fArray(t, vType, v) {
 	children.center().defaults().center().minWidth(100)
 	table.add(children).name('cont').row()
 	t.add(table)
-	v.each(cons2((i, v) => {
+	v.cpy().each(cons2((i, v) => {
 		addItem(vType, fields, i, v)
 	}))
 	table.button('$add', () => {
-		addItem(vType, fields, v.size, addFieldBtn.defaultValue(vType))
+		addItem(vType, fields, -1, addFieldBtn.defaultValue(vType))
 	}).growX().minWidth(100)
+
 	return prov(() => v)
 }
 

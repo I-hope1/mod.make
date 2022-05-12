@@ -25,7 +25,7 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static modmake.IntUI.settingsDialog;
+import static arc.util.serialization.Jval.Jformat;
 import static modmake.ui.MySettingsDialog.CheckSetting;
 import static modmake.IntVars.data;
 
@@ -33,8 +33,9 @@ public class dataHandle {
 	public static ObjectMap<String, ObjectMap<String, MyObject<Object, Object>>> framework;
 	public static ObjectMap<String, String> types;
 	public static StringMap content, settings;
-	;
-	private final static JsonReader reader = new JsonReader();
+
+	public final static JsonReader reader = new JsonReader();
+	public final static Json json = new Json();
 
 	public static class _Class {
 		public MyObject<Object, Object> value;
@@ -234,5 +235,26 @@ public class dataHandle {
 		}
 		// Log.info(output + "")
 		return output;
+	}
+
+	public static String formatPrint(String cx) {
+		return formatPrint(cx, Format.valueOf(settings.get("format")));
+	}
+	public static String formatPrint(String cx, Format format) {
+		switch (format) {
+			case hjsonMin:
+				return Jval.read(cx).toString(Jformat.hjson);
+			case hjson:
+				return json.prettyPrint(cx);
+			case jsonMin:
+				return Jval.read(cx).toString(Jformat.plain);
+			case json:
+				return Jval.read(cx).toString(Jformat.formatted);
+		}
+		return cx;
+	}
+
+	public enum Format {
+		hjsonMin, hjson, jsonMin, json;
 	}
 }

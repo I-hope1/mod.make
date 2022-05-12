@@ -8,14 +8,13 @@ import arc.func.Prov;
 import arc.graphics.Color;
 import arc.math.geom.Vec2;
 import arc.scene.Element;
+import arc.scene.Group;
 import arc.scene.event.Touchable;
-import arc.scene.ui.CheckBox;
-import arc.scene.ui.Label;
-import arc.scene.ui.Slider;
-import arc.scene.ui.Tooltip;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
+import arc.struct.Seq;
 import arc.struct.StringMap;
 import arc.util.Align;
 import arc.util.Nullable;
@@ -27,6 +26,8 @@ import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import mindustry.ui.dialogs.SettingsMenuDialog;
+
+import java.util.Objects;
 
 import static arc.Core.bundle;
 import static modmake.components.dataHandle.settings;
@@ -199,7 +200,9 @@ public class MySettingsDialog extends BaseDialog {
 				new CheckSetting("auto_fold_code", false, b -> {}),
 				new CheckSetting("display_deprecated", false, b -> {}),
 				new CheckSetting("point_out_unknown_field", false, b -> {}),
-				new CheckSetting("colorful_table", false, b -> {}));
+				new CheckSetting("colorful_table", false, b -> {}),
+				new RadioSetting("format", "json",
+						Seq.with("hjsonMin", "hjson", "jsonMin", "json")));
 
 		addSetting("加载mod", () -> !settings.getBool("auto_load_mod"),
 				new CheckSetting("load_sprites", false, b -> {}),
@@ -273,6 +276,43 @@ public class MySettingsDialog extends BaseDialog {
 			table.add(box).left().padTop(3f);
 			addDesc(box);
 			table.row();
+		}
+	}
+
+	public static class RadioSetting extends Setting {
+//		ButtonGroup<CheckBox> group = new ButtonGroup<>();
+		Seq<String> children;
+		String value;
+		public RadioSetting(String name, Seq<String> children) {
+			this(name, children.get(0), children);
+		}
+		public RadioSetting(String name, String def, Seq<String> children) {
+			super(name);
+			this.children = children;
+			if (settings.containsKey(name)) {
+				value = settings.get(name, def);
+			} else {
+				settings.put(name, value = def);
+			}
+		}
+
+		@Override
+		public void add(Table table) {
+			table.add(title).row();
+			table.table(t -> {
+				int[] c = {0};
+				children.each(child -> {
+					String title = bundle.get("setting." + child + ".name", child);
+					var box = new CheckBox(title);
+					box.changed(() -> settings.put(name, value = child));
+					box.update(() -> box.setChecked(Objects.equals(value, child)));
+//					group.add(box);
+					t.add(box).padRight(2f);
+					if (++c[0] % 2 == 0) {
+						t.row();
+					}
+				});
+			}).padLeft(4f);
 		}
 	}
 

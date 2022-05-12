@@ -2,10 +2,12 @@ package modmake.components.constructor;
 
 import arc.func.Prov;
 import arc.struct.Seq;
+import arc.util.Log;
 
 import java.util.StringJoiner;
 
 public class MyArray<E> extends MyObject<Integer, E> {
+	int j = -1;
 
 	public MyArray(){
 		super();
@@ -22,18 +24,16 @@ public class MyArray<E> extends MyObject<Integer, E> {
 	}
 
 	public E put(Integer i, E v) {
-		if (i < size) remove((int)i);
-		super.put(i, v);
-		return v;
+		j++;
+		if (i == -1) {
+			i = j;
+		}
+
+		return super.put(i, v);
 	}
 
 	public void put(E v){
-		put(size, v);
-	}
-
-	@Override
-	public boolean has(Integer i) {
-		return get(i) != null;
+		put(-1, v);
 	}
 
 	public String toString() {

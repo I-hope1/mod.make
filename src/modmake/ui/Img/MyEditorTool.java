@@ -1,4 +1,4 @@
-package modmake.ui;
+package modmake.ui.Img;
 
 import arc.func.Boolf;
 import arc.func.Cons;
@@ -8,6 +8,7 @@ import arc.math.Mathf;
 import arc.math.geom.Bresenham2;
 import arc.math.geom.Point2;
 import arc.struct.IntSeq;
+import arc.struct.Seq;
 import arc.util.Structs;
 
 import static modmake.IntUI.imgEditor;
@@ -18,8 +19,7 @@ public enum MyEditorTool {
 	pick(KeyCode.i) {
 		public void touched(int x, int y) {
 			if (Structs.inBounds(x, y, imgEditor.width(), imgEditor.height())) {
-				Tile tile = imgEditor.tile(x, y);
-				imgEditor.drawColor = tile.get();
+				imgEditor.drawColor = imgEditor.tile(x, y).color();
 			}
 		}
 	},
@@ -42,7 +42,7 @@ public enum MyEditorTool {
 			});
 		}
 	},
-	pencil(KeyCode.b, "replace", "square", "drawteams") {
+	pencil(KeyCode.b, "replace", "square") {
 		{
 			edit = true;
 			draggable = true;
@@ -56,14 +56,10 @@ public enum MyEditorTool {
 				imgEditor.drawBlocks(x, y);
 			} else if (this.mode == 0) {
 				imgEditor.drawBlocksReplace(x, y);
-				imgEditor.tile(x, y).set(imgEditor.drawColor);
+				imgEditor.tile(x, y).color(imgEditor.drawColor);
 			} else if (this.mode == 1) {
 				imgEditor.drawBlocks(x, y, true, (tile) -> true);
-				imgEditor.tile(x, y).set(imgEditor.drawColor);
-			} else if (this.mode == 2) {
-				imgEditor.drawCircle(x, y, (tile) -> {
-					tile.set(imgEditor.drawColor);
-				});
+				imgEditor.tile(x, y).color(imgEditor.drawColor);
 			}
 
 		}
@@ -76,7 +72,7 @@ public enum MyEditorTool {
 
 		public void touched(int x, int y) {
 			imgEditor.drawCircle(x, y, (tile) -> {
-				tile.set(Color.clear);
+				tile.color(Color.clear);
 			});
 		}
 	},
@@ -91,12 +87,12 @@ public enum MyEditorTool {
 		public void touched(int x, int y) {
 			if (Structs.inBounds(x, y, imgEditor.width(), imgEditor.height())) {
 				Tile tile = imgEditor.tile(x, y);
-				Color destx = tile.get();
+				Color destx = tile.color();
 				if (destx.equals(imgEditor.drawColor)) {
 					return;
 				}
-				this.fill(x, y, mode == 0, t -> t.get().equals(destx),
-						t -> t.set(imgEditor.drawColor));
+				this.fill(x, y, mode == 0, t -> t.color().equals(destx),
+						t -> t.color(imgEditor.drawColor));
 			}
 		}
 
@@ -124,7 +120,9 @@ public enum MyEditorTool {
 						int xx = Point2.x(cy);
 						int yx = Point2.y(cy);
 
-						for (x1 = xx; x1 >= 0 && tester.get(imgEditor.tile(x1, yx)); --x1) {
+						x1 = xx;
+						while (x1 >= 0 && tester.get(imgEditor.tile(x1, yx))) {
+							--x1;
 						}
 
 						++x1;
@@ -170,18 +168,34 @@ public enum MyEditorTool {
 			if (this.mode == -1) {
 				imgEditor.drawCircle(x, y, (tile) -> {
 					if (Mathf.chance(0.012D)) {
-						tile.set(imgEditor.drawColor);
+						tile.color(imgEditor.drawColor);
 					}
 
 				});
 			} else if (this.mode == 0) {
-				imgEditor.drawBlocks(x, y, (tile) -> Mathf.chance(0.012D) && tile.get() != Color.clear);
+				imgEditor.drawBlocks(x, y, (tile) -> Mathf.chance(0.012D) && tile.color() != Color.clear);
 			} else {
 				imgEditor.drawBlocks(x, y, (tile) -> Mathf.chance(0.012D));
 			}
 
 		}
-	};
+	}/*,
+	select(KeyCode.u) {
+		public final Seq<Tile> all = new Seq<>();
+		public void touchedLine(int x1, int y1, int x2, int y2) {
+			int x = Math.max(0, Math.min(x1, x2));
+			x2 = Math.min(Math.max(x1, x2), imgEditor.width());
+			x1 =x;
+			int y = Math.max(0, Math.min(y1, y2));
+			y2 = Math.min(Math.max(y1, y2), imgEditor.height());
+			y1 = y;
+			for (; x < x2; x++){
+				for (y = y1; y < y2; y++) {
+					all.add(imgEditor.tile(x, y));
+				}
+			}
+		}
+	}*/;
 
 	public static final MyEditorTool[] all = values();
 	public final String[] altModes;

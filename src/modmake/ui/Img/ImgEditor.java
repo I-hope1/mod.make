@@ -192,13 +192,13 @@ public class ImgEditor {
 	}
 
 	public void drawBlocksReplace(int x, int y) {
-		drawBlocks(x, y, (tile) -> tile.get() != Color.clear);
+		drawBlocks(x, y, (tile) -> tile.color() != Color.clear);
 	}
 
 	public void drawBlocks(int x, int y, boolean square, Boolf<Tile> tester) {
 		Cons<Tile> drawer = tile -> {
 			if (tester.get(tile)) {
-				tile.set(drawColor);
+				tile.color(drawColor);
 			}
 		};
 		if (square) {
@@ -213,7 +213,7 @@ public class ImgEditor {
 	}
 
 	public void drawBlocks(int x, int y) {
-		drawBlocks(x, y, false, tile -> tile.get() != drawColor);
+		drawBlocks(x, y, false, tile -> tile.color() != drawColor);
 	}
 
 	public static class Tiles {
@@ -268,7 +268,7 @@ public class ImgEditor {
 		public int x, y;
 
 		public TileData(Tile t) {
-			this.color = t.get();
+			this.color = t.color();
 			this.x = t.x;
 			this.y = t.y;
 		}
@@ -284,13 +284,13 @@ public class ImgEditor {
 			this.pixmap = pixmap;
 		}
 
-		public void set(Color c) {
-			if (get().equals(c)) return;
+		public void color(Color c) {
+			if (color().equals(c)) return;
 			addTileOp(new TileData(this));
 			pixmap.setRaw(x, pixmap.height - y - 1, c.rgba());
 		}
 
-		public Color get() {
+		public Color color() {
 			return new Color(pixmap.get(x, pixmap.height - y - 1));
 		}
 

@@ -19,7 +19,6 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import modmake.ui.MyEditorTool;
 import modmake.ui.styles;
 
 import java.lang.reflect.Field;
@@ -317,6 +316,7 @@ public class ImgEditorDialog extends Dialog {
 
 				addTool.get(MyEditorTool.fill);
 				addTool.get(MyEditorTool.spray);
+//				addTool.get(MyEditorTool.select);
 
 //				ImageButton rotate = tools.button(Icon.right, Styles.cleari, () -> imgEditor.rotation = (imgEditor.rotation + 1) % 4).get();
 //				rotate.getImage().update(() -> {

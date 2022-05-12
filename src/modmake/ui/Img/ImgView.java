@@ -18,11 +18,9 @@ import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Scl;
 import arc.util.Tmp;
 import mindustry.editor.MapEditor;
-import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.input.Binding;
 import mindustry.ui.GridImage;
-import modmake.ui.MyEditorTool;
 
 import static mindustry.Vars.mobile;
 import static mindustry.Vars.ui;
@@ -255,7 +253,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		imgEditor.tiles().each(tile -> {
 			float x = centerx - sclwidth / 2 + tile.x * unit;
 			float y = centery - sclheight / 2 + tile.y * unit;
-			Color color = tile.get();
+			Color color = tile.color();
 			if (color.a < 1) {
 				float x1 = x + unit * .25f, x2 = x + unit * .75f;
 				float y1 = y + unit * .25f, y2 = y + unit * .75f;
@@ -267,7 +265,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 				Fill.rect(x1, y2, _unit, _unit);
 				Fill.rect(x2, y1, _unit, _unit);
 			}
-			Draw.color(tile.get());
+			Draw.color(tile.color());
 			Fill.rect(x + unit / 2f, y + unit / 2f, unit, unit);
 		});
 
