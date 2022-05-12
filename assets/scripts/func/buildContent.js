@@ -218,11 +218,11 @@ exports.load = function () {
 		categoriesString.put(c.name(), c)
 		categoriesIcon.push(Vars.ui.getIcon(c.name()));
 	});
-	otherTypes.get(AIController).forEach(ai => {
+	otherTypes.get(AIController).each(cons(ai => {
 		if (!AIBlackList.contains(ai)) {
 			AISeq.add(ai.getSimpleName())
 		}
-	})
+	}))
 }
 
 exports.filterKey = ObjectMap.of(
