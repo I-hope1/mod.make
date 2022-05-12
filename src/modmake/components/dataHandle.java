@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static arc.util.serialization.Jval.Jformat;
+import static mindustry.Vars.ui;
 import static modmake.IntVars.data;
 import static modmake.ui.MySettingsDialog.CheckSetting;
 
@@ -97,7 +98,7 @@ public class dataHandle {
 	static {
 		content = new StringMap();
 		Events.run(EventType.ClientLoadEvent.class, () -> {
-			Fi file = data.child("content").child(Vars.ui.language.getLocale() + ".ini");
+			Fi file = data.child("content").child(ui.language.getLocale() + ".ini");
 			if (file.exists()) {
 				iniParse(content, file.readString());
 			}
@@ -135,7 +136,7 @@ public class dataHandle {
 			@Override
 			public boolean getBool(String name) {
 				var cr = MySettingsDialog.all.get(name);
-				return (cr.bp == null || !cr.bp.get()) && (containsKey(name) ? super.getBool(name) : cr instanceof CheckSetting && ((CheckSetting)cr).def);
+				return (cr.bp == null || !cr.bp.get()) && (containsKey(name) ? super.getBool(name) : cr instanceof CheckSetting && ((CheckSetting) cr).def);
 			}
 		};
 
@@ -166,6 +167,7 @@ public class dataHandle {
 	public static JsonValue toJsonValue(Jval jval) {
 		return reader.parse(jval.toString());
 	}
+
 	public static Jval hjsonParse(Number num) {
 		return Jval.valueOf((Double) num);
 	}
@@ -184,10 +186,16 @@ public class dataHandle {
 			return null;
 		}
 	}
-	public static MyObject parse(String str){
-		Jval jval = hjsonParse(str);
-		if (jval == null) return new MyObject();
-		return toIntObject(toJsonValue(jval));
+
+	public static MyObject parse(String str) {
+		char c = str.replaceAll("^\\s*", "").charAt(0);
+		if (c != '{' && c != '[') str = "{\n" + str + "\n}";
+		try {
+			return toIntObject(reader.parse(str));
+		} catch (Exception e) {
+			ui.showException(e);
+			return new MyObject<>();
+		}
 	}
 
 	/*public static MyObject<?, ?> toIntObject(String s){
@@ -238,6 +246,7 @@ public class dataHandle {
 	public static String formatPrint(String cx) {
 		return formatPrint(cx, Format.valueOf(settings.get("format")));
 	}
+
 	public static String formatPrint(String cx, Format format) {
 		switch (format) {
 			case hjsonMin:
