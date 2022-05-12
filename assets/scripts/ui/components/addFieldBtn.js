@@ -68,7 +68,6 @@ function addFieldBtn(obj, Fields, prov) {
 			}));
 			if (table.children.size == 0) {
 				table.table(cons(t => t.add('$none'))).size(Core.graphics.getWidth() * .2, 45)
-
 			}
 		}
 

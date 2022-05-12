@@ -120,7 +120,10 @@ function buildJson(file) {
 				p.button('$none', Styles.cleart, run(() => {
 					obj.put(k, '');
 					btn.setText('$none');
-				}));
+					hide.run()
+				})).growX().row();
+				cont.image(Tex.whiteui, Pal.accent)
+							.growX().height(3).pad(4).row();
 
 				let cont = p.table().get();
 				let tableArr = [new Table, new Table, new Table, new Table, new Table, new Table];
