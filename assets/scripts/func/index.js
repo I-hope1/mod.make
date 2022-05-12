@@ -129,7 +129,7 @@ exports.showSelectTable = function (button, fun, searchable) {
 
 
 exports.showSelectListTable = function (button, list, current, width, height, _cons, searchable) {
-	return IntFunc.showSelectListTable(button, list, () => current, _cons, width, height, searchable);
+	return IntUI.showSelectListTable(button, list, () => current, _cons, width, height, searchable);
 }
 
 /**
