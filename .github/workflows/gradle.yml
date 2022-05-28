@@ -20,6 +20,11 @@ jobs:
         cat /proc/version
         sudo chmod 777 *
         ./gradlew deploy
+    - name: Unzip mod jar
+      run: |
+        cat /proc/version
+        sudo chmod 777 *
+        ./gradlew unzip
 #     - name: schmiddim-wget-unzip
 #       # You may pin to the exact commit or the version.
 #       # uses: schmiddim/action-wget-unzip@a84af2494e90b6fbb10283b1822e6111991a56dd
