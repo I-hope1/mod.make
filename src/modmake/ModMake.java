@@ -6,6 +6,7 @@ import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.mod.Mod;
 import modmake.ui.UpdateData;
+import modmake.ui.content.ModMakeContent;
 import modmake.ui.content.SettingContent;
 import modmake.ui.styles;
 import modmake.util.ContentSeq;
@@ -14,11 +15,14 @@ import static modmake.IntUI.frag;
 import static modmake.components.dataHandle.settings;
 
 public class ModMake extends Mod {
-	public ModMake(){
-		new SettingContent();
+	public ModMake() {
 		Events.run(EventType.ClientLoadEvent.class, () -> {
+			new SettingContent();
+			new ModMakeContent();
+
 			try {
 				ContentSeq.load();
+//				LoadMod.init();
 			} catch (Exception e) {
 				Vars.ui.showException("加载ContentSeq出现异常", e);
 			}

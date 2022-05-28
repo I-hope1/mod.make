@@ -1,4 +1,4 @@
-package modmake.ui.Img;
+package modmake.ui.img;
 
 import arc.files.Fi;
 import arc.func.Boolf;
@@ -8,19 +8,19 @@ import arc.graphics.Pixmap;
 import arc.math.Mathf;
 import arc.struct.Seq;
 
-import static mindustry.Vars.ui;
-import static modmake.ui.Img.ImgEditorDialog.Img;
-
 import java.util.ArrayList;
 
+import static mindustry.Vars.ui;
+import static modmake.ui.img.ImgEditorDialog.Img;
+
 public class ImgEditor {
-	public static final float[] brushSizes = new float[]{1.0F, 1.5F, 2.0F, 3.0F, 4.0F, 5.0F, 9.0F, 15.0F, 20.0F};
+	public static final float[] brushSizes = {1f, 1.5f, 2f, 3f, 4f, 5f, 9f, 15f, 20f};
 	public final Stack stack = new Stack();
 	private boolean loading;
 	public float brushSize = 1.0f;
 	public Color drawColor;
 	public Fi currentFi = null;
-	private static Seq<TileData> currentOp = new Seq<>();
+	private static final Seq<TileData> currentOp = new Seq<>();
 	private Tiles tiles;
 
 	public ImgEditor() {

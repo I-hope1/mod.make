@@ -12,6 +12,6 @@ public class Classes {
 	}
 
 	public static Class<?> get(String name) {
-		return values.select(clazz -> clazz.getSimpleName().equalsIgnoreCase(name)).get(0);
+		return values.find(clazz -> clazz.getSimpleName().equalsIgnoreCase(name));
 	}
 }

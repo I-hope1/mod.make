@@ -1,10 +1,7 @@
 package modmake;
 
 import arc.Core;
-import arc.func.Boolc;
-import arc.func.Cons;
-import arc.func.Cons3;
-import arc.func.Prov;
+import arc.func.*;
 import arc.graphics.Color;
 import arc.math.Interp;
 import arc.scene.Element;
@@ -20,6 +17,7 @@ import arc.util.Align;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
+import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
@@ -27,20 +25,29 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.components.dataHandle;
 import modmake.ui.Frag;
-import modmake.ui.Img.ImgEditor;
-import modmake.ui.Img.ImgEditorDialog;
-import modmake.ui.MySettingsDialog;
-import modmake.ui.SpriteDialog;
+import modmake.ui.dialog.*;
+import modmake.ui.img.ImgEditor;
+import modmake.ui.img.ImgEditorDialog;
+import modmake.ui.img.ImgView;
 
 import java.util.Objects;
 import java.util.regex.Pattern;
+
+import static mindustry.Vars.content;
 
 public class IntUI {
 	public static Frag frag = new Frag();
 	public static ImgEditor imgEditor = new ImgEditor();
 	public static ImgEditorDialog imgDialog = new ImgEditorDialog();
+	public static ImgView view = imgDialog.view;
 	public static SpriteDialog spriteDialog = new SpriteDialog();
 	public static MySettingsDialog settingsDialog = new MySettingsDialog();
+
+	public static ModsDialog modsDialog = new ModsDialog();
+	public static ModMetaDialog modMetaDialog = new ModMetaDialog();
+	public static JsonDialog jsonDialog = new JsonDialog();
+	public static Editor editor = new Editor();
+	public static ModDialog modDialog = new ModDialog();
 
 	/**
 	 * Argument format:
@@ -154,6 +161,29 @@ public class IntUI {
 		return elem;
 	}
 
+	public static void searchTable(Table table, Cons2<Table, String> fun) {
+		Table[] p = {null};
+		table.table(t -> {
+			t.image(Icon.zoom);
+			TextField text = new TextField();
+			t.add(text).growX();
+			text.changed(() -> {
+				fun.get(p[0], text.getText());
+			});
+			/* 自动聚焦到搜索框 */
+			if (Core.app.isDesktop()) {
+				Core.scene.setKeyboardFocus(text);
+			}
+		}).padRight(8).growX().fill().top().row();
+
+		var pane = table.top().pane(p1 -> fun.get(p1.top(), "")).pad(0).top().get();
+		pane.setScrollingDisabled(true, false);
+
+		p[0] = (Table) pane.getWidget();
+
+		table.pack();
+	}
+
 	/**
 	 * 弹出一个小窗，自己设置内容
 	 *
@@ -164,9 +194,9 @@ public class IntUI {
 	 *                   text 如果 searchable 为 true ，则启用。用于返回用户在搜索框输入的文本
 	 * @param searchable 可选，启用后会添加一个搜索框
 	 */
-	public static <T extends Button> Table showSelectTable(T button, Cons3<Table, Runnable, String> f,
-	                                                       Boolean searchable) {
-		if (button == null){
+	public static <T extends Button> Table
+	showSelectTable(T button, Cons3<Table, Runnable, String> f, Boolean searchable) {
+		if (button == null) {
 			throw new NullPointerException("button cannot be null");
 		}
 		Table t = new Table(Tex.button) {
@@ -230,27 +260,23 @@ public class IntUI {
 		return t;
 	}
 
-	public static <T extends Button> Table showSelectListTable(T button, Seq<String> list, Prov<String> holder,
-	                                                           Cons<String> cons,
-	                                                           int width, int height, Boolean searchable) {
+	public static <T extends Button> Table
+	showSelectListTable(T button, Seq<String> list, Prov<String> holder,
+	                    Cons<String> cons, int width, int height, Boolean searchable) {
 		if (list == null) throw new IllegalArgumentException("list cannot be null");
 		return showSelectTable(button, (Table p, Runnable hide, String text) -> {
 			p.clearChildren();
 
-			list.each(item -> text.isEmpty() || Pattern.compile(text).matcher(item).find(), item -> {
-				p.button(dataHandle.types.get(item, () -> item), Styles.cleart, () -> {
+			var pattern = Pattern.compile("(?i)" + text);
+			list.each(item -> text.isEmpty() || pattern.matcher("" + item).find()
+					|| pattern.matcher(dataHandle.types.get("" + item, () -> "" + item)).find(), item -> {
+				p.button(dataHandle.types.get("" + item, () -> "" + item), Styles.cleart, () -> {
 					cons.get(item);
 					hide.run();
-				}).size(width, height).disabled(Objects.equals(holder.get(), item)).row();
+				}).size(width, height).disabled(Objects.equals(holder.get(), "" + item)).row();
 			});
 		}, searchable);
 	}
-
-
-
-
-
-
 
 
 	/**
@@ -265,10 +291,10 @@ public class IntUI {
 	 * @param cons      选中内容就会调用
 	 * @param cols      一行的元素数量
 	 */
-	public static <T extends Button, T1> Table showSelectImageTableWithIcons(T button,
-	                                                                         Seq<T1> items, Seq<? extends Drawable> icons, Prov<T1> holder, Cons<T1> cons,
-	                                                                         float size, float imageSize, int cols,
-	                                                                         boolean searchable) {
+	public static <T extends Button, T1> Table
+	showSelectImageTableWithIcons(T button, Seq<T1> items, Seq<? extends Drawable> icons,
+	                              Prov<T1> holder, Cons<T1> cons,
+	                              float size, float imageSize, int cols, boolean searchable) {
 		return showSelectTable(button, (Table p, Runnable hide, String text) -> {
 			p.clearChildren();
 			p.left();
@@ -276,29 +302,35 @@ public class IntUI {
 			group.setMinCheckCount(0);
 			p.defaults().size(size);
 
+			int c = 0;
 			for (int i = 0; i < items.size; i++) {
 				T1 item = items.get(i);
 				// 过滤不满足条件的
 				UnlockableContent unlock;
-				if (!Objects.equals(text, "") && !(item instanceof String && ((String) item).matches(text)) &&
+				var pattern = Pattern.compile(text, Pattern.CASE_INSENSITIVE);
+				if (!Objects.equals(text, "") && !(item instanceof String && pattern.matcher((String) item).find()) &&
 						!(item instanceof UnlockableContent
-								&& ((unlock = (UnlockableContent) item).name.matches(text) ||
-								unlock.localizedName.matches(text))))
+								&& (pattern.matcher((unlock = (UnlockableContent) item).name).find() ||
+								pattern.matcher(unlock.localizedName).find()))) {
 					continue;
+				}
 
 				ImageButton btn = p.button(Tex.whiteui, Styles.clearToggleTransi, imageSize, () -> {
 					cons.get(item);
 					hide.run();
 				}).size(size).get();
-				if (!Vars.mobile)
-					btn.addListener(new Tooltip(t -> t.background(Tex.button)
-							.add(item instanceof UnlockableContent ? ((UnlockableContent) item).localizedName
-									: item + "")));
+//				if (!Vars.mobile)
+				btn.addListener(new Tooltip(t -> t.background(Tex.button)
+						.add(item + "")));
 				btn.getStyle().imageUp = icons.get(i);
-				btn.update(() -> button.setChecked(holder.get() == item));
+				btn.update(() -> {
+					T1 hold = holder.get();
+					btn.setChecked(item instanceof UnlockableContent && hold instanceof UnlockableContent ? hold.equals(item) : (hold + "").equals(item + ""));
+				});
 
-				if ((i + 1) % cols == 0)
+				if (++c % cols == 0) {
 					p.row();
+				}
 			}
 		}, searchable);
 	}
@@ -306,12 +338,40 @@ public class IntUI {
 	/**
 	 * 弹出一个可以选择内容的窗口（无需你提供图标）
 	 */
-	public static <T extends Button, T1 extends UnlockableContent> Table showSelectImageTable(T button,
-	                                                                                          Seq<T1> items, Prov<T1> holder, Cons<T1> cons, float size, int imageSize, int cols,
-	                                                                                          boolean searchable) {
+	public static <T extends Button, T1 extends UnlockableContent> Table
+	showSelectImageTable(T button, Seq<T1> items, Prov<T1> holder, Cons<T1> cons,
+	                     float size, int imageSize, int cols, boolean searchable) {
 		Seq<Drawable> icons = new Seq<>();
 		items.each(item -> icons.add(new TextureRegionDrawable(item.uiIcon)));
 		return showSelectImageTableWithIcons(button, items, icons, holder, cons, size, imageSize, cols,
 				searchable);
 	}
+
+	/**
+	 * 弹出一个可以选择内容的窗口（需你提供图标构造器）
+	 */
+	public static <T extends Button, T1> Table
+	showSelectImageTableWithFunc(T button, Seq<T1> items, Prov<T1> holder, Cons<T1> cons,
+	                             float size, int imageSize, int cols, Func<T1, Drawable> func, boolean searchable) {
+		Seq<Drawable> icons = new Seq<>();
+		items.each(item -> {
+			icons.add(func.get(item));
+		});
+		return showSelectImageTableWithIcons(button, items, icons, holder, cons, size, imageSize, cols, searchable);
+	}
+
+
+	public static <T extends Button, T1 extends UnlockableContent> Prov<String> selectionWithField(Table table, Seq<T1> items, String current, int size, int imageSize, int cols, boolean searchable) {
+		var field = new TextField(current);
+		table.add(field).fillX();
+		var btn = table.button(Icon.pencilSmall, Styles.clearFulli, () -> {}).size(40).padLeft(-1).get();
+		btn.clicked(() -> showSelectImageTable(btn, items,
+				() -> content.getByName(ContentType.item, field.getText()),
+				item -> field.setText(item.name), size, imageSize,
+				cols, searchable)
+		);
+
+		return field::getText;
+	}
+
 }

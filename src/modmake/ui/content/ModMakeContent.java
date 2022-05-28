@@ -1,22 +1,27 @@
 package modmake.ui.content;
 
-import mindustry.ui.dialogs.ModsDialog;
+import modmake.util.BuildContent;
+import modmake.util.Fields;
+
+import static modmake.IntUI.*;
 
 public class ModMakeContent extends Content {
-	public Runnable load, build;
-	public ModMakeContent(Runnable load, Runnable build) {
+	public ModMakeContent() {
 		super("makeMod");
-		this.load = load;
-		this.build = build;
+
 	}
 
 	@Override
 	public void load() {
-		load.run();
+		Fields.load((fields, table, key) -> BuildContent.build(fields.type, fields, table, key, fields.map.get(key)));
+		modsDialog.load();
+		editor.load();
+		BuildContent.load();
+//		load.run();
 	}
 
 	@Override
 	public void build() {
-		build.run();
+		modsDialog.show();
 	}
 }

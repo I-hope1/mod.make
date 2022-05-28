@@ -1,4 +1,4 @@
-package modmake.ui.Img;
+package modmake.ui.img;
 
 import arc.Core;
 import arc.files.Fi;
@@ -19,6 +19,7 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
+import modmake.IntUI;
 import modmake.ui.styles;
 
 import java.lang.reflect.Field;
@@ -51,7 +52,7 @@ public class ImgEditorDialog extends Dialog {
 		menu.cont.table(t -> {
 			t.defaults().size(swidth, 60f).padBottom(5).padRight(5).padLeft(5);
 
-			t.button("@editor.savemap", Icon.save, this::save);
+			t.button("@save", Icon.save, this::save);
 
 			t.button("@editor.resize", Icon.resize, () -> {
 				resizeDialog.show();
@@ -73,11 +74,11 @@ public class ImgEditorDialog extends Dialog {
 			t.button("@editor.export", Icon.upload, () -> platform.export(imgEditor.currentFi.nameWithoutExtension(), "png", file -> {
 				new Img(imgEditor.pixmap()).toFile(file);
 			}));
-		});
 
-		menu.cont.row();
+			t.row();
 
-		menu.cont.row();
+			t.button("@settings", Icon.settings, () -> IntUI.settingsDialog.show());
+		}).row();
 
 		menu.cont.button("@quit", Icon.exit, () -> {
 			tryExit();
@@ -123,6 +124,8 @@ public class ImgEditorDialog extends Dialog {
 			shownWithImg = false;
 
 			Time.runTask(10f, platform::updateRPC);
+
+			view.allSelected.clear();
 		});
 
 		hidden(() -> {
@@ -316,7 +319,7 @@ public class ImgEditorDialog extends Dialog {
 
 				addTool.get(MyEditorTool.fill);
 				addTool.get(MyEditorTool.spray);
-//				addTool.get(MyEditorTool.select);
+				addTool.get(MyEditorTool.select);
 
 //				ImageButton rotate = tools.button(Icon.right, Styles.cleari, () -> imgEditor.rotation = (imgEditor.rotation + 1) % 4).get();
 //				rotate.getImage().update(() -> {
@@ -326,8 +329,14 @@ public class ImgEditorDialog extends Dialog {
 
 				tools.row();
 
-				tools.table(Tex.underline, t -> t.add("@editor.teams"))
+				tools.table(Tex.underline, t -> t.add("选择"))
 						.colspan(3).height(40).width(size * 3f + 3f).padBottom(3);
+
+				tools.row();
+
+				tools.table(t -> {
+					t.button("place", view::cover).fillX();
+				}).growX();
 
 				tools.row();
 
@@ -354,11 +363,11 @@ public class ImgEditorDialog extends Dialog {
 
 				mid.row();
 
-				if (!mobile) {
+//				if (!mobile) {
 					mid.table(t -> {
 						t.button("@editor.center", Icon.move, Styles.cleart, view::center).growX().margin(9f);
 					}).growX().top();
-				}
+//				}
 
 				mid.row();
 			}).margin(0).left().growY();

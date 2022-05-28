@@ -16,7 +16,7 @@ import mindustry.Vars;
 import mindustry.game.EventType;
 import modmake.components.constructor.MyArray;
 import modmake.components.constructor.MyObject;
-import modmake.ui.MySettingsDialog;
+import modmake.ui.dialog.MySettingsDialog;
 
 import java.util.ArrayList;
 import java.util.StringJoiner;
@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 import static arc.util.serialization.Jval.Jformat;
 import static mindustry.Vars.ui;
 import static modmake.IntVars.data;
-import static modmake.ui.MySettingsDialog.CheckSetting;
+import static modmake.ui.dialog.MySettingsDialog.CheckSetting;
 
 public class dataHandle {
 	public static ObjectMap<String, ObjectMap<String, MyObject<Object, Object>>> framework;
@@ -172,14 +172,11 @@ public class dataHandle {
 		return Jval.valueOf((Double) num);
 	}
 
-	public static Jval hjsonParse(Fi fi) {
-		return hjsonParse(fi.readString());
-	}
-
 	/* hjson解析 (使用arc的JsonReader) */
-	public static Jval hjsonParse(String str) {
+	public static JsonValue hjsonParse(String str) {
+		if (!Pattern.compile("^\\s*[\\[{]").matcher(str).find()) str = "{\n" + str + "\n}";
 		try {
-			return Jval.read(str);
+			return reader.parse(str);
 			// return reader.parse(str);
 		} catch (Exception err) {
 			Log.err(err);
@@ -188,9 +185,8 @@ public class dataHandle {
 	}
 
 	public static MyObject parse(String str) {
-		if (!Pattern.compile("^\\s*[\\[{]").matcher(str).find()) str = "{\n" + str + "\n}";
 		try {
-			return toIntObject(reader.parse(str));
+			return toIntObject(hjsonParse(str));
 		} catch (Exception e) {
 			Log.err(e);
 			return new MyObject<>();

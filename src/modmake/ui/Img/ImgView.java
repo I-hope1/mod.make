@@ -1,4 +1,4 @@
-package modmake.ui.Img;
+package modmake.ui.img;
 
 import arc.Core;
 import arc.graphics.Color;
@@ -16,6 +16,7 @@ import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Scl;
+import arc.struct.Seq;
 import arc.util.Tmp;
 import mindustry.editor.MapEditor;
 import mindustry.graphics.Pal;
@@ -26,6 +27,7 @@ import static mindustry.Vars.mobile;
 import static mindustry.Vars.ui;
 import static modmake.IntUI.imgDialog;
 import static modmake.IntUI.imgEditor;
+import static modmake.components.dataHandle.settings;
 
 public class ImgView extends Element implements GestureDetector.GestureListener {
 	MyEditorTool tool = MyEditorTool.pencil;
@@ -42,6 +44,29 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	int startx, starty;
 	float mousex, mousey;
 	MyEditorTool lastTool;
+
+	public final Seq<TmpTile> allSelected = new Seq<>();
+
+	public void cover() {
+		allSelected.each(TmpTile::cover);
+		allSelected.clear();
+	}
+
+	static class TmpTile {
+		public int x, y;
+		final Color color;
+
+		public TmpTile(ImgEditor.Tile tile) {
+			x = tile.x;
+			y = tile.y;
+			color = tile.color();
+		}
+
+		public void cover() {
+			imgEditor.tile(x, y).color(color);
+		}
+	}
+
 
 	public ImgView() {
 
@@ -119,8 +144,13 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 				if (tool == MyEditorTool.line) {
 					tool.touchedLine(startx, starty, p.x, p.y);
 				}
+				if (tool == MyEditorTool.select) {
+					tool.selected(startx, starty, p.x, p.y);
+				}
 
-				if (tool.edit && imgEditor.flushOp()) imgEditor.save();
+				if (tool.edit && imgEditor.flushOp() && settings.getBool("auto_save_image")) {
+					imgEditor.save();
+				}
 
 				if ((button == KeyCode.mouseMiddle || button == KeyCode.mouseRight) && lastTool != null) {
 					tool = lastTool;
@@ -250,9 +280,10 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		Lines.rect(centerx - sclwidth / 2 - 1, centery - sclheight / 2 - 1, sclwidth + 2, sclheight + 2);
 
 		float unit = sclwidth / imgEditor.width();
+		Vec2 leftBottom = new Vec2(centerx - sclwidth / 2, centery - sclheight / 2);
 		imgEditor.tiles().each(tile -> {
-			float x = centerx - sclwidth / 2 + tile.x * unit;
-			float y = centery - sclheight / 2 + tile.y * unit;
+			float x = leftBottom.x + tile.x * unit;
+			float y = leftBottom.y + tile.y * unit;
 			Color color = tile.color();
 			if (color.a < 1) {
 				float x1 = x + unit * .25f, x2 = x + unit * .75f;
@@ -268,6 +299,32 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			Draw.color(tile.color());
 			Fill.rect(x + unit / 2f, y + unit / 2f, unit, unit);
 		});
+
+		if (allSelected.any()) {
+			TmpTile first = allSelected.first(), last = allSelected.peek();
+			float firstX = leftBottom.x + (first.x) * unit, firstY = leftBottom.y + (first.y) * unit;
+			float lastX = leftBottom.x + (last.x) * unit, lastY = leftBottom.y + (last.y) * unit;
+			Draw.color(Color.gray.cpy().a(0.7f));
+			Fill.rect(firstX, firstY, lastX - firstX, lastY - firstY);
+			allSelected.each(tile -> {
+				float x = leftBottom.x + tile.x * unit;
+				float y = leftBottom.y + tile.y * unit;
+				Color color = tile.color;
+				if (color.a < 1) {
+					float x1 = x + unit * .25f, x2 = x + unit * .75f;
+					float y1 = y + unit * .25f, y2 = y + unit * .75f;
+					float _unit = unit / 2f;
+					Draw.color(Color.gray);
+					Fill.rect(x1, y1, _unit, _unit);
+					Fill.rect(x2, y2, _unit, _unit);
+					Draw.color(Color.lightGray);
+					Fill.rect(x1, y2, _unit, _unit);
+					Fill.rect(x2, y1, _unit, _unit);
+				}
+				Draw.color(tile.color);
+				Fill.rect(x + unit / 2f, y + unit / 2f, unit, unit);
+			});
+		}
 
 		Draw.reset();
 
@@ -307,13 +364,19 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 				Lines.poly(brushPolygons[index], v2.x, v2.y, scaling);
 			}
 
+
 			if ((tool.edit || (tool == MyEditorTool.line && !drawing)) && (!mobile || drawing)) {
 				Point2 p = project(mousex, mousey);
-				Vec2 v = unproject(p.x, p.y).add(x, y);
+				Vec2 v = unproject(p.x, p.y).add(x, y).cpy();
 
 				//pencil square outline
 				if (tool == MyEditorTool.pencil && tool.mode == 1) {
 					Lines.square(v.x + scaling / 2f, v.y + scaling / 2f, scaling * imgEditor.brushSize);
+				} else if (tool == MyEditorTool.select && tool.mode == -1 && drawing) {
+//					Vec2 v1 = unproject(startx, starty);
+					Vec2 v1 = unproject(startx, starty).add(x, y);
+					float sx = v1.x, sy = v1.y;
+					Lines.rect(sx, sy, v.x - sx, v.y - sy);
 				} else {
 					Lines.poly(brushPolygons[index], v.x, v.y, scaling);
 				}

@@ -1,4 +1,4 @@
-package modmake.ui;
+package modmake.ui.dialog;
 
 import arc.Core;
 import arc.Events;
@@ -199,8 +199,10 @@ public class MySettingsDialog extends BaseDialog {
 				new CheckSetting("display_deprecated", false, b -> {}),
 				new CheckSetting("point_out_unknown_field", false, b -> {}),
 				new CheckSetting("colorful_table", false, b -> {}),
+				new CheckSetting("auto_save_image", false, b -> {}),
 				new RadioSetting("format", "json",
-						Seq.with("hjsonMin", "hjson", "jsonMin", "json")));
+						Seq.with("hjsonMin", "hjson", "jsonMin", "json"))
+		);
 
 		addSetting("加载mod", () -> !settings.getBool("auto_load_mod"),
 				new CheckSetting("load_sprites", false, b -> {}),
@@ -220,7 +222,7 @@ public class MySettingsDialog extends BaseDialog {
 		public Setting(String name) {
 			this.name = name;
 			String winkey = "setting." + name + ".name.windows";
-			title = OS.isWindows && bundle.has(winkey) ? bundle.get(winkey) : bundle.get("setting." + name + ".name");
+			title = OS.isWindows && bundle.has(winkey) ? bundle.get(winkey) : bundle.get("setting." + name + ".name", name);
 			description = bundle.getOrNull("setting." + name + ".description");
 		}
 

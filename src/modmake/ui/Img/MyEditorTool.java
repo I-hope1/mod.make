@@ -1,4 +1,4 @@
-package modmake.ui.Img;
+package modmake.ui.img;
 
 import arc.func.Boolf;
 import arc.func.Cons;
@@ -8,11 +8,12 @@ import arc.math.Mathf;
 import arc.math.geom.Bresenham2;
 import arc.math.geom.Point2;
 import arc.struct.IntSeq;
-import arc.struct.Seq;
 import arc.util.Structs;
 
+import static mindustry.Vars.ui;
 import static modmake.IntUI.imgEditor;
-import static modmake.ui.Img.ImgEditor.Tile;
+import static modmake.IntUI.view;
+import static modmake.ui.img.ImgEditor.Tile;
 
 public enum MyEditorTool {
 	zoom(KeyCode.v),
@@ -27,6 +28,7 @@ public enum MyEditorTool {
 		{
 			edit = true;
 		}
+
 		public void touchedLine(int x1, int y1, int x2, int y2) {
 			if (this.mode == 0) {
 				if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
@@ -179,23 +181,40 @@ public enum MyEditorTool {
 			}
 
 		}
-	}/*,
-	select(KeyCode.u) {
-		public final Seq<Tile> all = new Seq<>();
-		public void touchedLine(int x1, int y1, int x2, int y2) {
-			int x = Math.max(0, Math.min(x1, x2));
-			x2 = Math.min(Math.max(x1, x2), imgEditor.width());
-			x1 =x;
-			int y = Math.max(0, Math.min(y1, y2));
-			y2 = Math.min(Math.max(y1, y2), imgEditor.height());
-			y1 = y;
-			for (; x < x2; x++){
-				for (y = y1; y < y2; y++) {
-					all.add(imgEditor.tile(x, y));
-				}
-			}
+	},
+	select(KeyCode.f, "move") {
+		{
+			edit = true;
 		}
-	}*/;
+
+
+		public void selected(int startX, int startY, int toX, int toY) {
+			if (mode == -1) {
+				int x = Math.max(0, Math.min(startX, toX));
+				toX = Math.min(Math.max(startX, toX), imgEditor.width());
+				startX = x;
+				int y = Math.max(0, Math.min(startY, toY));
+				toY = Math.min(Math.max(startY, toY), imgEditor.height());
+				startY = y;
+				view.allSelected.clear();
+				for (x = startX; x < toX; x++) {
+					for (y = startY; y < toY; y++) {
+						view.allSelected.add(new ImgView.TmpTile(imgEditor.tile(x, y)));
+					}
+				}
+				mode = 0;
+				ui.showInfo("" + view.allSelected);
+			} else if (mode == 0) {
+				// 左下角（0,0）
+				int offsetX = toY - startX, offsetY = toY - startY;
+				view.allSelected.each(tile -> {
+					tile.x += offsetX;
+					tile.y += offsetY;
+				});
+			}
+
+		}
+	};
 
 	public static final MyEditorTool[] all = values();
 	public final String[] altModes;
@@ -231,4 +250,9 @@ public enum MyEditorTool {
 
 	public void touchedLine(int x1, int y1, int x2, int y2) {
 	}
+
+	// for select
+	public void selected(int x1, int y1, int x2, int y2) {}
+
+	public void cover() {}
 }

@@ -1,4 +1,4 @@
-package modmake.ui.Img;
+package modmake.ui.img;
 
 import arc.func.Intc2;
 import arc.math.Mathf;
