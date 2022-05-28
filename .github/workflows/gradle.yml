@@ -11,24 +11,24 @@ jobs:
     - name: Set up PATH
       run: |
         echo "${ANDROID_HOME}/build-tools/30.0.1" >> $GITHUB_PATH
-    - name: Set up JDK 16
+    - name: Set up JDK 17
       uses: actions/setup-java@v1
       with:
-        java-version: 16
+        java-version: 17
     - name: Build mod jar
       run: |
         cat /proc/version
         sudo chmod 777 *
         ./gradlew deploy
-    - name: schmiddim-wget-unzip
-      # You may pin to the exact commit or the version.
-      # uses: schmiddim/action-wget-unzip@a84af2494e90b6fbb10283b1822e6111991a56dd
-      uses: schmiddim/action-wget-unzip@v2
-      with:
-        # url that must point to a zip file
-        url: build/libs/${{ github.event.repository.name }}.jar
-        # destination folder
-        destination: build/libs/tmp
+#     - name: schmiddim-wget-unzip
+#       # You may pin to the exact commit or the version.
+#       # uses: schmiddim/action-wget-unzip@a84af2494e90b6fbb10283b1822e6111991a56dd
+#       uses: schmiddim/action-wget-unzip@v2
+#       with:
+#         # url that must point to a zip file
+#         url: build/libs/${{ github.event.repository.name }}.jar
+#         # destination folder
+#         destination: build/libs/tmp
     - name: Upload built jar file
       uses: actions/upload-artifact@v2
       with:
