@@ -83,5 +83,24 @@ task deploy(type: Jar){
             delete "$buildDir/libs/${project.archivesBaseName}Desktop.jar"
             delete "$buildDir/libs/${project.archivesBaseName}Android.jar"
         }
+        unzip
     }
 }
+
+
+task unzip(type: Copy) {
+
+    // 原始jar包文件
+    def zipFile = file("$buildDir/libs/${project.archivesBaseName}.jar")
+
+    // 解压缩目标目录
+    def outputDir = file("$buildDir/libs/tmp")
+    
+    // 文件过滤，去除部分class。这里建议写精确点，因为可能存在名称相同或相近的文件。
+    FileTree jarTree = zipTree(zipFile)
+
+    // 从jar的目录树中输出到目标目录
+    from jarTree
+    into outputDir
+}
+
