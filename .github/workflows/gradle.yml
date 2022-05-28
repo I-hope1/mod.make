@@ -20,8 +20,17 @@ jobs:
         cat /proc/version
         sudo chmod 777 *
         ./gradlew deploy
+    - name: schmiddim-wget-unzip
+      # You may pin to the exact commit or the version.
+      # uses: schmiddim/action-wget-unzip@a84af2494e90b6fbb10283b1822e6111991a56dd
+      uses: schmiddim/action-wget-unzip@v2
+      with:
+        # url that must point to a zip file
+        url: build/libs/${{ github.event.repository.name }}.jar
+        # destination folder
+        destination: build/libs/tmp
     - name: Upload built jar file
       uses: actions/upload-artifact@v2
       with:
         name: ${{ github.event.repository.name }}
-        path: build/libs/${{ github.event.repository.name }}.jar
+        path: build/libs/tmp/*
