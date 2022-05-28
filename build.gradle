@@ -89,6 +89,7 @@ task deploy(type: Jar){
 
 
 task unzip(type: Copy) {
+    throw new Throwable("")
 
     // 原始jar包文件
     def zipFile = file("$buildDir/libs/${project.archivesBaseName}.jar")
