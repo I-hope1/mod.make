@@ -17,7 +17,7 @@ public class MyMod {
 	public JsonValue meta;
 	public String name() {
 		return meta.getString("name");
-	};
+	}
 
 	public static MyMod set(Fi file) {
 		String json = file.child("mod.json").exists() ? file.child("mod.json").readString() :

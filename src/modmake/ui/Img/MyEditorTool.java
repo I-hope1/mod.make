@@ -59,7 +59,7 @@ public enum MyEditorTool {
 				imgEditor.drawBlocksReplace(x, y);
 				imgEditor.tile(x, y).color(imgEditor.drawColor);
 			} else if (this.mode == 1) {
-				imgEditor.drawBlocks(x, y, true, (tile) -> true);
+				imgEditor.drawBlocks(x, y, true, tile -> true);
 				imgEditor.tile(x, y).color(imgEditor.drawColor);
 			}
 
@@ -72,7 +72,7 @@ public enum MyEditorTool {
 		}
 
 		public void touched(int x, int y) {
-			imgEditor.drawCircle(x, y, (tile) -> {
+			imgEditor.drawCircle(x, y, tile -> {
 				tile.color(Color.clear);
 			});
 		}
@@ -167,16 +167,16 @@ public enum MyEditorTool {
 
 		public void touched(int x, int y) {
 			if (this.mode == -1) {
-				imgEditor.drawCircle(x, y, (tile) -> {
+				imgEditor.drawCircle(x, y, tile -> {
 					if (Mathf.chance(0.012D)) {
 						tile.color(imgEditor.drawColor);
 					}
 
 				});
 			} else if (this.mode == 0) {
-				imgEditor.drawBlocks(x, y, (tile) -> Mathf.chance(0.012D) && tile.color() != Color.clear);
+				imgEditor.drawBlocks(x, y, tile -> Mathf.chance(0.012D) && tile.color() != Color.clear);
 			} else {
-				imgEditor.drawBlocks(x, y, (tile) -> Mathf.chance(0.012D));
+				imgEditor.drawBlocks(x, y, tile -> Mathf.chance(0.012D));
 			}
 
 		}

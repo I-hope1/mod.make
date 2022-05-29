@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 import static mindustry.Vars.ui;
 import static modmake.IntUI.*;
 import static modmake.components.dataHandle.*;
-import static modmake.util.BuildContent.or;
+import static modmake.util.Tools.or;
 
 public class ModDialog extends BaseDialog {
 	public ModDialog() {
@@ -50,7 +50,7 @@ public class ModDialog extends BaseDialog {
 	public void load() {
 		jsonDialog.load();
 
-		Field field = null;
+		Field field;
 		try {
 			field = LanguageDialog.class.getDeclaredField("displayNames");
 			field.setAccessible(true);
@@ -223,17 +223,17 @@ public class ModDialog extends BaseDialog {
 					new Dialog("") {{
 						var name = new TextField();
 
-						cont.table((t -> {
+						cont.table(t -> {
 							t.add("$name");
 							t.add(name).growX();
-						})).growX().row();
+						}).growX().row();
 						var table = new Table();
 						Seq<Object> values = new Seq<>();
 						final int[] selected = {0};
 						final int[] j = {0};
 						boolean[] ok = {false};
 						Seq<Button> btns = new Seq<>();
-						ObjectMap<String, MyObject<Object, Object>> map = or(framework.get(content.name()), new ObjectMap<>());
+						ObjectMap<String, MyObject<Object, Object>> map = or(framework.get(content.name()), ObjectMap::new);
 						map.each((key, value) -> {
 							if (!ok[0]) {
 								int k = j[0];
@@ -353,7 +353,6 @@ public class ModDialog extends BaseDialog {
 						).size(42).pad(10).row();
 						// if (Core.graphics.getWidth() > Core.graphics.getHeight() && i % 2 == 1) t.row();
 					}
-					;
 				}),
 				/* scripts */
 				new Table(styles.whiteui.tint(.7f, .7f, 1, .8f), t -> {

@@ -243,8 +243,8 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		float size = Math.min(width, height);
 		float sclwidth = size * zoom;
 		float sclheight = size * zoom * ratio;
-		float px = ((float) x / imgEditor.width()) * sclwidth + offsetx * zoom - sclwidth / 2 + getWidth() / 2;
-		float py = ((float) (y) / imgEditor.height()) * sclheight
+		float px = (float) x / imgEditor.width() * sclwidth + offsetx * zoom - sclwidth / 2 + getWidth() / 2;
+		float py = (float) y / imgEditor.height() * sclheight
 				+ offsety * zoom - sclheight / 2 + getHeight() / 2;
 		return vec.set(px, py);
 	}
@@ -353,7 +353,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			}
 
 
-			if ((tool.edit || (tool == MyEditorTool.line && !drawing)) && (!mobile || drawing)) {
+			if ((tool.edit || tool == MyEditorTool.line && !drawing) && (!mobile || drawing)) {
 				Point2 p = project(mousex, mousey);
 				Vec2 v = unproject(p.x, p.y).add(x, y);
 

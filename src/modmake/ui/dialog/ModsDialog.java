@@ -65,7 +65,7 @@ public class ModsDialog extends BaseDialog {
 		pane.margin(10).top();
 
 		cont.add("$mod.advise").top().row();
-		cont.table(Styles.none, (t -> t.pane(pane).scrollX(false).fillX().fillY())).row();
+		cont.table(Styles.none, t -> t.pane(pane).scrollX(false).fillX().fillY()).row();
 
 		buttons.button("$back", Icon.left, style, this::hide).margin(margin).size(210, 60);
 		buttons.button("$mod.add", Icon.add, style, () -> {
@@ -127,7 +127,6 @@ public class ModsDialog extends BaseDialog {
 			} else {
 				currentFile = root;
 			}
-			list = null;
 			if (!currentFile.child("mod.json").exists() && !currentFile.child("mod.hjson").exists()) {
 				throw new IllegalArgumentException("没有mod.(h)json");
 			}
@@ -285,7 +284,7 @@ public class ModsDialog extends BaseDialog {
 		p.clearChildren();
 		mods = new Seq<>(modsDirectory.list());
 		if (mods.size == 0) {
-			p.table(Styles.black6, (t -> t.add("$mods.none"))).height(80);
+			p.table(Styles.black6, t -> t.add("$mods.none")).height(80);
 			return;
 		}
 
@@ -294,12 +293,12 @@ public class ModsDialog extends BaseDialog {
 			MyMod mod = MyMod.set(file);
 			if (mod == null) return;
 
-			p.button((b -> {
+			p.button(b -> {
 				b.top().left();
 				b.margin(12);
 				b.defaults().left().top();
 
-				b.table((title -> {
+				b.table(title -> {
 					title.left();
 
 					var image = new BorderImage();
@@ -315,15 +314,15 @@ public class ModsDialog extends BaseDialog {
 					image.border(Pal.accent);
 					title.add(image).size(h - 8).padTop(-8).padLeft(-8).padRight(8);
 
-					title.table((text -> {
+					title.table(text -> {
 						text.add("[accent]" + mod.displayName() + "\n[lightgray]v" +
 								mod.meta.getString("version", "???")).wrap().width(300).growX().left();
 
-					})).top().growX();
+					}).top().growX();
 
 					title.add().growX().left();
-				}));
-				b.table((right -> {
+				});
+				b.table(right -> {
 					right.right();
 					right.button(Icon.edit, Styles.clearPartiali, () -> {
 						modMetaDialog.show(mod.root.child("mod.json").exists()
@@ -361,8 +360,8 @@ public class ModsDialog extends BaseDialog {
 						} else upload.run();
 					}).size(50).disabled(__ -> Vars.state.isGame() && settings.getBool("auto_load_mod"));
 					right.button(Icon.link, Styles.clearPartiali, () -> Core.app.openFolder(mod.root.absolutePath())).size(50);
-				})).growX().right().padRight(-8).padTop(-8);
-			}), styles.clearpb, () -> {
+				}).growX().right().padRight(-8).padTop(-8);
+			}, styles.clearpb, () -> {
 				hide();
 				modDialog.show(mod);
 			}).size(w, h).growX().pad(4).row();

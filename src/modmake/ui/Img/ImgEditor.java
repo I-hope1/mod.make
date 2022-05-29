@@ -194,7 +194,7 @@ public class ImgEditor {
 	}
 
 	public void drawBlocksReplace(int x, int y) {
-		drawBlocks(x, y, (tile) -> tile.color() != Color.clear);
+		drawBlocks(x, y, tile -> tile.color() != Color.clear);
 	}
 
 	public void drawBlocks(int x, int y, boolean square, Boolf<Tile> tester) {

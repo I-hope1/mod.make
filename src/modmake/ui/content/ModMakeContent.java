@@ -3,7 +3,8 @@ package modmake.ui.content;
 import modmake.util.BuildContent;
 import modmake.util.Fields;
 
-import static modmake.IntUI.*;
+import static modmake.IntUI.editor;
+import static modmake.IntUI.modsDialog;
 
 public class ModMakeContent extends Content {
 	public ModMakeContent() {
@@ -13,7 +14,7 @@ public class ModMakeContent extends Content {
 
 	@Override
 	public void load() {
-		Fields.load((fields, table, key) -> BuildContent.build(fields.type, fields, table, key, fields.map.get(key)));
+		Fields.load();
 		modsDialog.load();
 		editor.load();
 		BuildContent.load();

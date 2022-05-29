@@ -43,6 +43,7 @@ import static modmake.components.AddFieldBtn.filter;
 import static modmake.components.dataHandle.*;
 import static modmake.util.ContentSeq.getGenericType;
 import static modmake.util.ContentSeq.otherTypes;
+import static modmake.util.Tools.nullCheck;
 
 public class BuildContent {
 	public static Json json = dataHandle.json;
@@ -75,7 +76,7 @@ public class BuildContent {
 
 	public static int parseInt(String s) {
 		try {
-			return Integer.parseInt(s);
+			return Jval.read(s).asInt();
 		} catch (Exception e) {
 			return 0;
 		}
@@ -83,21 +84,6 @@ public class BuildContent {
 
 	public static int parseInt(Object s) {
 		return parseInt("" + s);
-	}
-
-	public static <T> T or(T arg1, T arg2) {
-		return arg1 != null ? arg1 : arg2;
-	}
-	public static <T> T or(T arg1, Prov<T> arg2) {
-		return arg1 != null ? arg1 : arg2.get();
-	}
-
-	public static <T> T as(Object obj) {
-		try {
-			return (T) obj;
-		} catch (Throwable thr) {
-			return null;
-		}
 	}
 
 	public static <T> Seq<T> genericSeqByClass(Class<?> clazz, Func<Field, T> _func) {
@@ -132,9 +118,9 @@ public class BuildContent {
 	}
 
 
-	public static <T extends UnlockableContent> Prov<MyObject>
+	public static <T extends UnlockableContent> Prov<MyObject<String, Object>>
 	buildOneStack(Table t, String type, Seq<T> stack, String content, String amount) {
-		var output = new MyObject<String, Prov<?>>();
+		var output = new MyObject<String, Object>();
 
 		t = t.table(Tex.pane).grow().get();
 
@@ -142,18 +128,21 @@ public class BuildContent {
 
 		if (content == null) content = stack.get(0).name;
 		var prov = IntUI.selectionWithField(t, stack, content, 42, 32, 6, true);
-		output.put(type, prov);
 
 		t.add("$amount");
-		var atf = t.field("" + amount, __ -> {}).get();
-		output.put("amount", () -> parseInt(atf.getText()));
+		var atf = new TextField("" + amount);
+		t.add(atf);
 
-		return () -> output;
+		return () -> {
+			output.put("item", prov.get());
+			output.put("amount", parseInt(atf.getText()));
+			return output;
+		};
 	}
 
 
 	public static void
-	copyAndPaste(Table table, String key, Object value, Cons<MyObject> paste, Runnable catchF) {
+	copyAndPaste(Table table, Object key, Object value, Cons<MyObject> paste, Runnable catchF) {
 		table.table(t -> {
 			// 复制
 			t.button("", Icon.copy, styles.cleart, () -> {
@@ -210,18 +199,18 @@ public class BuildContent {
 		Seq<String> tmpList = new Seq<>();
 		tmpList.addAll(list.as());
 		tmpList.add("自定义");
-		value = or(value, defaultClass.get(vType));
+		value = Tools.or(value, () -> defaultClass.get(vType));
 		boolean isObject = value instanceof MyObject;
 		MyObject val1 = isObject ? (MyObject) value : new MyObject();
 		var table1 = new Table();
-		String typeName = or(val1.remove("type") + "", defaultType);
-		var selection = new TypeSelection(Classes.get(typeName), typeName, or(otherTypes.get(vType), new Seq<>(vType)));
+		String typeName = Tools.or(val1.remove("type") + "", defaultType);
+		var selection = new TypeSelection(Classes.get(typeName), typeName, Tools.or(otherTypes.get(vType), new Seq<>(vType)));
 		table1.add(selection.table).padBottom(4).row();
 		var cont = table1.table().name("cont").get();
-		var map = fObject(cont, selection::type, val1, or(blackList, new Seq<>()));
+		var map = fObject(cont, selection::type, val1, Tools.or(blackList, new Seq<>()));
 
-		String[] val2 = {isObject ? "自定义" : value + ""};
-		Object[] retV = {val2};
+		Object[] retV = {isObject ? "自定义" : value};
+		String[] val2 = {"" + retV[0]};
 		Cell<?>[] cell = {null};
 		TextButton[] btn = {null};
 		Seq<T> finalList = list;
@@ -256,8 +245,8 @@ public class BuildContent {
 
 	public static Prov<MyObject> tableWithTypeSelection(Table table, MyObject value, Class<?> vType, String defaultType) {
 		table = table.table().get();
-		var obj = or(value, new MyObject<>());
-		String typeName = or("" + value.remove("type"), defaultType);
+		var obj = Tools.or(value, MyObject::new);
+		String typeName = Tools.or("" + value.remove("type"), defaultType);
 		var selection = new TypeSelection(Classes.get(typeName), typeName, otherTypes.get(vType));
 		table.add(selection.table).padBottom(4).row();
 		Table cont = table.table().name("cont").get();
@@ -294,13 +283,13 @@ public class BuildContent {
 		} else {
 			value.each((k, v) -> {
 				if (!(v instanceof Method))
-					fields.add(null, k + "");
+					fields.add(null, k);
 			});
 			table.add(new AddFieldBtn(value, fields, type)).fillX().growX().minWidth(100);
 		}
 		return () -> {
 			if (typeBlackList == null || !typeBlackList.contains(type.get()))
-				value.put("type", type.get().getSimpleName());
+				nullCheck(type.get(), t -> value.put("type", t.getSimpleName()));
 			return value;
 		};
 	}
@@ -309,17 +298,18 @@ public class BuildContent {
 	public static Prov<MyArray>
 	fArray(Table parent, Class<?> vType, MyArray v) {
 		Table table = new Table(), children = new Table();
-		var fields = new Fields(v = or(v, new MyArray<>()), () -> vType, children);
+//		MyArray newV = new MyArray<>();
+		var fields = new Fields(v = Tools.or(v, MyArray::new), () -> vType, children);
 		children.center().defaults().center().minWidth(100);
 		table.add(children).name("cont").row();
 		parent.add(table);
 		Cons2<Integer, Object> addItem = (i, value) -> {
 			var table1 = new Table();
-			build(vType, fields, table1, i + "", value, true);
-			fields.add(table1, i + "");
+			build(vType, fields, table1, i, value, true);
+			fields.add(table1, i);
 		};
 		v.cpy().each((i, val) -> {
-			addItem.get((int) i, val);
+			addItem.get((Integer) i, val);
 		});
 		table.button("@add", () -> {
 			addItem.get(-1, AddFieldBtn.defaultValue(vType));
@@ -347,7 +337,7 @@ public class BuildContent {
 	// 处理字符串和失败的对象
 	public static Prov<String> fail(Table t, Object v, Class<?> vType) {
 		if (vType == null) vType = String.class;
-		var field = new TextField(("" + v).replaceAll("[\\n\\r]", "\\n").replaceAll("\\t", "\\t"));
+		var field = new TextField(("" + v).replaceAll("\n|\r|\\r", "\\n").replaceAll("\\t", "\\t"));
 		if (String.class.isAssignableFrom(vType)) IntUI.longPress(field, 600, longPress -> {
 			if (longPress) IntUI.showTextArea(field);
 		});
@@ -364,18 +354,19 @@ public class BuildContent {
 
 	/* 构建table */
 	public static void
-	build(Class<?> type, Fields fields, Table table, String k, Object v, boolean isArray) {
+	build(Class<?> type, Fields fields, Table table, Object k, Object v, boolean isArray) {
 		if (type == null) return;
 		boolean unknown = false;
+		String strK = "" + k;
 		Object[] value = {v};
-		if (!isArray && (type != UnitType.class || !UnitTypeExFields.contains(k)) && settings.getBool("point_out_unknown_field") && !json.getFields(type).containsKey(k)) {
+		if (!isArray && (type != UnitType.class || !UnitTypeExFields.contains(strK)) && settings.getBool("point_out_unknown_field") && !json.getFields(type).containsKey(strK)) {
 			table.table(Tex.pane, left -> left.add("未知", Color.yellow)).padRight(5);
 			unknown = true;
 		}
 
 		var map = fields.map;
 
-		var NewType = new Type(type, k, isArray);
+		var NewType = new Type(type, strK, isArray);
 		Field field = NewType.field;
 		Class<?> vType = NewType.vType;
 
@@ -386,7 +377,7 @@ public class BuildContent {
 		}
 		// 不是数组的话，添加key
 		if (!isArray) {
-			table.add((unknown ? k : content.get(k, () -> k)) + ':').fillX().left().padLeft(2).padRight(6);
+			table.add((unknown ? strK : content.get(strK, () -> strK)) + ':').fillX().left().padLeft(2).padRight(6);
 		}
 
 		Table[] finalTable = {null};
@@ -410,7 +401,7 @@ public class BuildContent {
 								"true", "是",
 								"false", "否");
 						var btn = new TextButton(obj.get("" + val[0]), styles.cleart);
-						btn.clicked(() -> btn.setText(obj.get((value[0] = (val[0] = !val[0])) + "")));
+						btn.clicked(() -> btn.setText(obj.get((value[0] = val[0] = !val[0]) + "")));
 						finalTable[0].add(btn).minWidth(100).height(45).get();
 						return () -> val[0];
 					}
@@ -431,15 +422,18 @@ public class BuildContent {
 				Log.info(type);
 				Log.err(e);
 			}
-			if (filterKeys.containsKey(k)) {
-				return filterKeys.get(k).get(finalTable[0], v, type);
+			if (filterKeys.containsKey(strK)) {
+				return filterKeys.get(strK).get(finalTable[0], v, type);
 			}
 			return null;
 		}).get();
-		var res = or(output, () -> fail(table, value[0], vType));
-		if (isArray) {
-			((MyArray)map).put(res);
-		} else map.put(k, res);
+		Prov<?> res = output != null ? output : fail(table, value[0], vType);
+//		if (isArray) {
+//			Log.info(output);
+//			((MyArray) map).put(res);
+//		} else {
+		map.put(k, res);
+//		}
 
 		// 右边
 		Table[] finalFoldT = foldT;
@@ -469,7 +463,7 @@ public class BuildContent {
 	}
 
 	public static void
-	build(Class<?> type, Fields fields, Table table, String k, Object v) {
+	build(Class<?> type, Fields fields, Table table, Object k, Object v) {
 		build(type, fields, table, k, v, fields.map instanceof MyArray<?>);
 	}
 }

@@ -27,6 +27,7 @@ import modmake.components.constructor.MyArray;
 import modmake.components.constructor.MyObject;
 import modmake.ui.styles;
 import modmake.util.Classes;
+import modmake.util.Tools;
 
 import static mindustry.Vars.ui;
 import static modmake.IntVars.modName;
@@ -56,7 +57,7 @@ public class BuildKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, 
 
 	public void setup() {
 		put("category", (table, value, __) -> {
-			String[] val = {"" + or(Category.valueOf(value + ""), Category.distribution)};
+			String[] val = {"" + Tools.or(Category.valueOf(value + ""), Category.distribution)};
 
 			var btn = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.clearPartial2i));
 			var style = btn.getStyle();
@@ -120,7 +121,7 @@ public class BuildKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, 
 				var tab = new Table();
 				t.add(tab).fillX();
 				var p = filterClass.get(LiquidStack.class).get(tab, obj, null, null);
-				MyObject v = as(p.get());
+				MyObject v = Tools.as(p.get());
 				t.row();
 				MyObject finalObj = obj;
 				t.table(t1 -> {
@@ -128,7 +129,7 @@ public class BuildKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, 
 					t1.check(Core.bundle.get(modName + ".consumes-optional", "optional"), (boolean) finalObj.get("optional", false), b -> v.put("optional", b));
 				}).fillX().row();
 				return () -> v;
-			}, box -> (all.get("coolant") != null && all.get("coolant").enable) || type == NuclearReactor.class);
+			}, box -> all.get("coolant") != null && all.get("coolant").enable || type == NuclearReactor.class);
 			if (type == NuclearReactor.class) all.get("liquid").setup(true);
 
 			new Consumer<>("coolant", "coolant", value.get("coolant"), (t, _obj) -> {
@@ -148,7 +149,7 @@ public class BuildKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, 
 					v.each(out::put);
 					return out;
 				};
-			}, box -> (all.get("liquid") != null && all.get("liquid").enable) || type == NuclearReactor.class);
+			}, box -> all.get("liquid") != null && all.get("liquid").enable || type == NuclearReactor.class);
 			if (type == NuclearReactor.class) all.get("coolant").setup(false);
 
 			return () -> {
@@ -175,10 +176,10 @@ public class BuildKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, 
 				item.clear();
 				var __table = cont.table().get();
 				cont.row();
-				var unitType1 = filterClass.get(UnitType.class).get(__table, or(list.get(0), defaultClass.get(UnitType.class)), null, null);
+				var unitType1 = filterClass.get(UnitType.class).get(__table, Tools.or(list.get(0), () -> defaultClass.get(UnitType.class)), null, null);
 				item.put(0, unitType1);
 				__table.add("-->");
-				var unitType2 = filterClass.get(UnitType.class).get(__table, or(list.get(1), defaultClass.get(UnitType.class)), null, null);
+				var unitType2 = filterClass.get(UnitType.class).get(__table, Tools.or(list.get(1), () -> defaultClass.get(UnitType.class)), null, null);
 				item.put(1, unitType2);
 				__table.button("", Icon.trash, styles.cleart, () -> {
 					value.removeValue(item);

@@ -256,7 +256,7 @@ public class ImgEditorDialog extends Dialog {
 									b.row();
 									b.add(Core.bundle.get("toolmode." + name + ".description")).color(Color.lightGray).left();
 								}, () -> {
-									tool.mode = (tool.mode == mode ? -1 : mode);
+									tool.mode = tool.mode == mode ? -1 : mode;
 									table.remove();
 								}).update(b -> b.setChecked(tool.mode == mode));
 								table.row();
@@ -481,11 +481,10 @@ public class ImgEditorDialog extends Dialog {
 			try {
 				color = field.get(null);
 			} catch (Exception ignored) {}
-			;
 			if (!(color instanceof Color)) continue;
 			Color c = (Color) color;
 
-			if ((!searchText.isEmpty() && !field.getName().toLowerCase().contains(searchText.toLowerCase()))
+			if (!searchText.isEmpty() && !field.getName().toLowerCase().contains(searchText.toLowerCase())
 			) continue;
 
 			ImageButton button = new ImageButton(Tex.whiteui, Styles.clearTogglei);
@@ -517,7 +516,7 @@ public class ImgEditorDialog extends Dialog {
 			if (!(color instanceof Color)) continue;
 			Color c = (Color) color;
 
-			if ((!searchText.isEmpty() && !field.getName().toLowerCase().contains(searchText.toLowerCase()))
+			if (!searchText.isEmpty() && !field.getName().toLowerCase().contains(searchText.toLowerCase())
 			) continue;
 
 			ImageButton button = new ImageButton(Tex.whiteui, Styles.clearTogglei);

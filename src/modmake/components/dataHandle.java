@@ -143,7 +143,7 @@ public class dataHandle {
 	}
 
 	public static String getParent(String str) {
-		if (str.substring(0, 2).equals("//")) {
+		if (str.startsWith("//")) {
 			// [\u4e00-\u9fa5]为中文
 			return str.replaceAll("//\\s+extend\\s+([\\u4e00-\\u9fa5]+)[^\\n]+", "$1");
 		}
@@ -174,9 +174,10 @@ public class dataHandle {
 
 	/* hjson解析 (使用arc的JsonReader) */
 	public static JsonValue hjsonParse(String str) {
-		if (!Pattern.compile("^\\s*[\\[{]").matcher(str).find()) str = "{\n" + str + "\n}";
+
+//		if (!Pattern.compile("^\\s*[\\[{]").matcher(str).find()) str = "{\n" + str + "\n}";
 		try {
-			return reader.parse(str);
+			return reader.parse(Jval.read(str).toString(Jformat.plain));
 			// return reader.parse(str);
 		} catch (Exception err) {
 			Log.err(err);
@@ -234,7 +235,7 @@ public class dataHandle {
 			value = valArr.remove(0);
 			obj2 = objArr.remove(0);
 		}
-		// Log.info(output + "")
+//		 Log.info(output + "");
 		return output;
 	}
 
@@ -243,6 +244,7 @@ public class dataHandle {
 	}
 
 	public static String formatPrint(String cx, Format format) {
+//		Log.info(cx);
 		switch (format) {
 			case hjsonMin:
 				return Jval.read(cx).toString(Jformat.hjson);
@@ -252,11 +254,12 @@ public class dataHandle {
 				return Jval.read(cx).toString(Jformat.plain);
 			case json:
 				return Jval.read(cx).toString(Jformat.formatted);
+			default:
+				throw new IllegalArgumentException("not found format '" + format + "'.");
 		}
-		return cx;
 	}
 
 	public enum Format {
-		hjsonMin, hjson, jsonMin, json;
+		hjsonMin, hjson, jsonMin, json
 	}
 }

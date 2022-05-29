@@ -44,17 +44,17 @@ public class SpriteDialog extends BaseDialog {
 					new Dialog("") {{
 						var name = new TextField();
 
-						cont.table((t -> {
+						cont.table(t -> {
 							t.add("$name");
 							t.add(name).growX().valid(__ -> !root.child(name.getText() + ".png").exists());
-						})).growX().row();
+						}).growX().row();
 
 						buttons.button("$back", this::hide).size(150, 64);
-						buttons.button("$ok", (() -> {
+						buttons.button("$ok", () -> {
 							Fi file = root.child(name.getText() + ".png");
 							imgDialog.beginEditImg(file);
 							hide();
-						})).size(150, 64).disabled(__ -> !name.isValid());
+						}).size(150, 64).disabled(__ -> !name.isValid());
 						closeOnBack();
 
 						show();

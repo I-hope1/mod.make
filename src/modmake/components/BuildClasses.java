@@ -26,6 +26,7 @@ import modmake.components.constructor.MyArray;
 import modmake.components.constructor.MyObject;
 import modmake.ui.styles;
 import modmake.util.Fields;
+import modmake.util.Tools;
 
 import java.lang.reflect.Field;
 
@@ -59,7 +60,7 @@ public class BuildClasses extends ObjectMap<Class<?>, BuildClasses.ClassInterfac
 					});
 				}).padLeft(4).growX().right();
 			})).growX().row();
-			var obj = or((MyObject) value, new MyObject<>());
+			var obj = Tools.or((MyObject) value, MyObject::new);
 			obj.each(add);
 
 			cont.button("$add", Icon.add, () -> add.get(null, 0)).growX().minWidth(100);
@@ -78,10 +79,10 @@ public class BuildClasses extends ObjectMap<Class<?>, BuildClasses.ClassInterfac
 			var image = button.image().size(30).color(color[0]);
 			var field = button.add("" + color[0]).get();
 			/* 使用原本自带的采色器 */
-			button.clicked(() -> Vars.ui.picker.show(color[0], (c -> {
+			button.clicked(() -> Vars.ui.picker.show(color[0], c -> {
 				image.color(color[0] = c.cpy());
 				field.setText("" + c);
-			})));
+			}));
 
 			table.add(button);
 
@@ -158,8 +159,8 @@ public class BuildClasses extends ObjectMap<Class<?>, BuildClasses.ClassInterfac
 			final int[] i = {0};
 			Cons2<String, Object>[] add = new Cons2[]{null};
 			add[0] = (k, v) -> {
-				var tab = Fields.build(i[0]++, (t -> {
-					Prov<?> key = get(classes.get(0)).get(t, or(k, defaultClass.get(classes.get(0))), null, null);
+				var tab = Fields.build(i[0]++, t -> {
+					Prov<?> key = get(classes.get(0)).get(t, Tools.or(k, () -> defaultClass.get(classes.get(0))), null, null);
 					Table[] foldt = foldTable();
 					t.add(foldt[0]);
 					map.put(
@@ -169,18 +170,18 @@ public class BuildClasses extends ObjectMap<Class<?>, BuildClasses.ClassInterfac
 						map.remove(key);
 						t.remove();
 					};
-					t.table((right -> {
-						copyAndPaste(right, k, v, (newV -> {
+					t.table(right -> {
+						copyAndPaste(right, k, v, newV -> {
 							remove.run();
 							add[0].get(k, newV);
-						}), () -> {});
+						}, () -> {});
 						right.button("", Icon.trash, styles.cleart, remove);
-					})).padLeft(4).growX().right();
-				}));
+					}).padLeft(4).growX().right();
+				});
 				tab.defaults().growX();
 				group.add(tab).growX().row();
 			};
-			ObjectMap obj = or((ObjectMap) value, new MyObject<>());
+			ObjectMap obj = Tools.or((ObjectMap) value, MyObject::new);
 			obj.each(add[0]);
 
 			cont.button("$add", Icon.add, () -> add[0].get(null, null)).growX().minWidth(100);
@@ -189,7 +190,7 @@ public class BuildClasses extends ObjectMap<Class<?>, BuildClasses.ClassInterfac
 		});
 
 		put(UnitFactory.UnitPlan.class, (table, value, __, ___) -> {
-			MyObject map = or((MyObject) value, new MyObject<>());
+			MyObject map = Tools.or((MyObject) value, MyObject::new);
 			Table cont = new Table(Tex.button);
 			table.add(cont).fillX();
 			cont.add(Core.bundle.get("unit", "unit"));

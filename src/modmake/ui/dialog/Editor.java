@@ -35,10 +35,9 @@ import java.util.regex.Pattern;
 
 import static arc.Core.bundle;
 import static modmake.components.dataHandle.formatPrint;
-import static modmake.util.BuildContent.as;
-import static modmake.util.BuildContent.or;
 import static modmake.util.ContentSeq.cTypeMap;
 import static modmake.util.ContentSeq.types;
+import static modmake.util.Tools.*;
 
 @SuppressWarnings("ALL")
 public class Editor extends BaseDialog {
@@ -161,13 +160,15 @@ public class Editor extends BaseDialog {
 			// 研究
 			t.table(research -> {
 				var k = "research";
-				String value = "" + obj.get(k, "core-shard");
+				String value = "" + obj.get(k, "");
 				research.add(bundle.get(k, k));
 				research.add(":");
 
 				var techs = TechTree.all;
 
-				var btn = new TextButton(!value.equals("") ? or(techs.find(node -> node.content.name.equals(value)).content.localizedName, value) : "$none", Styles.cleart);
+				var btn = new TextButton(!value.equals("") ?
+						or(nullCheck(techs.find(node -> node.content.name.equals(value)), node -> node.content.localizedName), value) :
+						"$none", Styles.cleart);
 				btn.clicked(() -> IntUI.showSelectTable(btn, (p, hide, v) -> {
 					p.clearChildren();
 					p.button("$none", Styles.cleart, () -> {
@@ -231,7 +232,7 @@ public class Editor extends BaseDialog {
 		fields.map.each((k, v) -> {
 			if ((k + "").equals("research")) return;
 
-			fields.add(null, k + "");
+			fields.add(null, k);
 		});
 
 	}
@@ -350,16 +351,17 @@ public class Editor extends BaseDialog {
 		}
 
 		file.writeString(formatPrint(result.value.get()));
-		var dir = mod.root.child("content").child(type == null ? "blocks" :
-				UnitType.class.isAssignableFrom(type) ? "unit"
+		/*var dir = mod.root.child("content").child(type == null ? "blocks" :
+				(UnitType.class.isAssignableFrom(type) ? "unit"
 						: Item.class.isAssignableFrom(type) ? "item"
 						: Liquid.class.isAssignableFrom(type) ? "liquid"
 						: StatusEffect.class.isAssignableFrom(type) ? "statu"
 						: SectorPreset.class.isAssignableFrom(type) ? "sector"
 						: Weather.class.isAssignableFrom(type) ? "weather"
-						: "block" + "s");
-		file = dir.child(file.name());
-		file.moveTo(file);
+						: "block") + "s");
+		var toFile = dir.child(file.name());
+		file.moveTo(toFile);
+		file = toFile;*/
 	}
 
 

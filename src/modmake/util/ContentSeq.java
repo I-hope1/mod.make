@@ -78,7 +78,7 @@ public class ContentSeq {
 				}
 
 				if (methodName.equals("toString")) {
-					return "Proxy[" + target.toString() + "]";
+					return "Proxy[" + target + "]";
 				}
 			}
 			Log.info(proxyx + "\n" + method);
@@ -121,7 +121,7 @@ public class ContentSeq {
                 } else if(actualType instanceof GenericArrayType){
                     Type componentType = ((GenericArrayType)actualType).getGenericComponentType();
                     if(componentType instanceof Class)
-                        classes.add(java.lang.reflect.Array.newInstance((Class<?>)componentType, 0).getClass());
+                        classes.add(Array.newInstance((Class<?>)componentType, 0).getClass());
                 }
             }
         }

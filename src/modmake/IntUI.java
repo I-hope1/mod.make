@@ -32,6 +32,7 @@ import modmake.ui.dialog.*;
 import modmake.ui.img.ImgEditor;
 import modmake.ui.img.ImgEditorDialog;
 import modmake.ui.img.ImgView;
+import modmake.util.Tools;
 
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -318,12 +319,11 @@ public class IntUI {
 			for (int i = 0; i < items.size; i++) {
 				T1 item = items.get(i);
 				// 过滤不满足条件的
-				UnlockableContent unlock;
 				var pattern = Pattern.compile(text, Pattern.CASE_INSENSITIVE);
-				if (!Objects.equals(text, "") && !(item instanceof String && pattern.matcher((String) item).find()) &&
-						!(item instanceof UnlockableContent
-								&& (pattern.matcher((unlock = (UnlockableContent) item).name).find() ||
-								pattern.matcher(unlock.localizedName).find()))) {
+				if (!Objects.equals(text, "") && !(item instanceof String && pattern.matcher("" + item).find())
+						&& !Tools.<UnlockableContent, Boolean>as(item,
+						unlock -> pattern.matcher(unlock.name).find() ||
+								pattern.matcher(unlock.localizedName).find(), false)) {
 					continue;
 				}
 
@@ -373,7 +373,7 @@ public class IntUI {
 	}
 
 
-	public static <T extends Button, T1 extends UnlockableContent> Prov<String> selectionWithField(Table table, Seq<T1> items, String current, int size, int imageSize, int cols, boolean searchable) {
+	public static <T extends UnlockableContent> Prov<String> selectionWithField(Table table, Seq<T> items, String current, int size, int imageSize, int cols, boolean searchable) {
 		var field = new TextField(current);
 		table.add(field).fillX();
 		var btn = table.button(Icon.pencilSmall, Styles.clearFulli, () -> {}).size(40).padLeft(-1).get();
