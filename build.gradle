@@ -85,3 +85,11 @@ task deploy(type: Jar){
         }
     }
 }
+
+
+task unzip(type: Copy) {
+    // 从jar的目录树中输出到目标目录
+    from zipTree("$buildDir/libs/${project.archivesBaseName}.jar")
+    into file("$buildDir/libs/tmp")
+}
+
