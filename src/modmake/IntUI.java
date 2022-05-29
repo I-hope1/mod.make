@@ -3,6 +3,8 @@ package modmake;
 import arc.Core;
 import arc.func.*;
 import arc.graphics.Color;
+import arc.graphics.Texture;
+import arc.graphics.g2d.TextureRegion;
 import arc.math.Interp;
 import arc.scene.Element;
 import arc.scene.actions.Actions;
@@ -12,6 +14,7 @@ import arc.scene.style.Drawable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
+import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Align;
 import arc.util.Time;
@@ -34,6 +37,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 import static mindustry.Vars.content;
+import static modmake.IntVars.mod;
 
 public class IntUI {
 	public static Frag frag = new Frag();
@@ -48,6 +52,14 @@ public class IntUI {
 	public static JsonDialog jsonDialog = new JsonDialog();
 	public static Editor editor = new Editor();
 	public static ModDialog modDialog = new ModDialog();
+
+	public static ObjectMap<String, TextureRegionDrawable> icons = new ObjectMap<>();
+
+	static {
+		mod.root.child("icons").findAll(f -> f.extEquals("png")).each(f -> {
+			icons.put(f.nameWithoutExtension(), new TextureRegionDrawable(new TextureRegion(new Texture(f))));
+		});
+	}
 
 	/**
 	 * Argument format:

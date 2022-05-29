@@ -4,12 +4,10 @@ import arc.Core;
 import arc.files.Fi;
 import arc.graphics.Color;
 import arc.graphics.Texture;
-import arc.graphics.g2d.TextureRegion;
 import arc.input.KeyCode;
 import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
 import arc.scene.ui.Dialog;
-import arc.scene.ui.Image;
 import arc.scene.ui.Label;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Table;
@@ -17,6 +15,8 @@ import arc.util.Align;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.gen.Icon;
+import mindustry.graphics.Pal;
+import mindustry.ui.BorderImage;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
@@ -157,12 +157,13 @@ public class SpriteDialog extends BaseDialog {
 			});
 			t.row();
 			t.image().color(Color.gray).minWidth(440).row();
-			Image img = new Image(new TextureRegion(new Texture(file[0])));
+			BorderImage img = new BorderImage(new Texture(file[0]));
+			img.border(Pal.accent);
 			img.clicked(() -> {
 				hide();
 				imgDialog.beginEditImg(file[0]);
 			});
-			t.pane(p -> p.add(img)).growX().height(96);
+			t.pane(p -> p.add(img)).growX().minHeight(96);
 		}).padTop(10).left().row();
 	}
 }

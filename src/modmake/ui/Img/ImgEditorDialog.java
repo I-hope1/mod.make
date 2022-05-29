@@ -25,6 +25,7 @@ import modmake.ui.styles;
 import java.lang.reflect.Field;
 
 import static mindustry.Vars.*;
+import static modmake.IntUI.icons;
 import static modmake.IntUI.imgEditor;
 
 public class ImgEditorDialog extends Dialog {
@@ -125,7 +126,7 @@ public class ImgEditorDialog extends Dialog {
 
 			Time.runTask(10f, platform::updateRPC);
 
-			view.allSelected.clear();
+			view.select.clear();
 		});
 
 		hidden(() -> {
@@ -213,7 +214,8 @@ public class ImgEditorDialog extends Dialog {
 
 				Cons<MyEditorTool> addTool = tool -> {
 
-					ImageButton button = new ImageButton(ui.getIcon(tool.name()), Styles.clearTogglei);
+					ImageButton button = new ImageButton(
+							(Icon.icons.containsKey(tool.name()) ? Icon.icons : icons).get(tool.name()), Styles.clearTogglei);
 					button.clicked(() -> {
 						view.setTool(tool);
 						if (lastTable[0] != null) {
@@ -287,7 +289,7 @@ public class ImgEditorDialog extends Dialog {
 					tools.stack(button, mode);
 				};
 
-				tools.defaults().size(size, size);
+				tools.defaults().size(size);
 
 				tools.button(Icon.menu, Styles.cleari, menu::show);
 
@@ -329,17 +331,6 @@ public class ImgEditorDialog extends Dialog {
 
 				tools.row();
 
-				tools.table(Tex.underline, t -> t.add("选择"))
-						.colspan(3).height(40).width(size * 3f + 3f).padBottom(3);
-
-				tools.row();
-
-				tools.table(t -> {
-					t.button("place", view::cover).fillX();
-				}).growX();
-
-				tools.row();
-
 				mid.add(tools).top().padBottom(-6);
 
 				mid.row();
@@ -363,11 +354,23 @@ public class ImgEditorDialog extends Dialog {
 
 				mid.row();
 
-//				if (!mobile) {
-					mid.table(t -> {
-						t.button("@editor.center", Icon.move, Styles.cleart, view::center).growX().margin(9f);
-					}).growX().top();
-//				}
+				mid.table(Tex.underline, t -> {
+					t.table(Tex.underlineWhite, t1 -> t1.add("选择")).growX().row();
+					t.table(Tex.pane, select -> {
+						select.defaults().width(size * 3f);
+						select.button("放置", view.select::cover).disabled(__ -> !view.select.any()).row();
+						select.check("剪切", view.select.cut, b -> view.select.cut = b).row();
+						select.check("选择透明", view.select.selectTransparent, b -> view.select.selectTransparent = b);
+					});
+				}).growX().top();
+
+				mid.row();
+
+				mid.table(t -> {
+					t.defaults().growX().margin(9f);
+					t.button("@editor.center", Icon.move, Styles.cleart, view::center).row();
+					t.check("显示透明画布", ImgView.showTransparentCanvas, b -> ImgView.showTransparentCanvas = b);
+				}).growX().top();
 
 				mid.row();
 			}).margin(0).left().growY();
@@ -459,7 +462,7 @@ public class ImgEditorDialog extends Dialog {
 		}).growX().left().get().clicked(() -> ui.picker.show(imgEditor.drawColor,
 				c -> imgEditor.drawColor = c.cpy()));
 		cont.row();
-		cont.add(pane).expandY().top().left();
+		cont.add(pane).expandY().growX().top().left();
 
 		rebuildBlockSelection("");
 	}
@@ -477,7 +480,8 @@ public class ImgEditorDialog extends Dialog {
 			Object color = null;
 			try {
 				color = field.get(null);
-			} catch (Exception ignored) {};
+			} catch (Exception ignored) {}
+			;
 			if (!(color instanceof Color)) continue;
 			Color c = (Color) color;
 

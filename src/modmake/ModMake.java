@@ -21,8 +21,8 @@ public class ModMake extends Mod {
 			new ModMakeContent();
 
 			try {
-				ContentSeq.load();
 //				LoadMod.init();
+				ContentSeq.load();
 			} catch (Exception e) {
 				Vars.ui.showException("加载ContentSeq出现异常", e);
 			}
@@ -32,6 +32,8 @@ public class ModMake extends Mod {
 				Log.info("load updateData");
 				new UpdateData().show();
 			}
+			// debug
+//			imgDialog.beginEditImg(Vars.dataDirectory.child("tmp.png"));
 		});
 	}
 }

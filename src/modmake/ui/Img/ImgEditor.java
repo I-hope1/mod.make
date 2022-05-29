@@ -11,6 +11,7 @@ import arc.struct.Seq;
 import java.util.ArrayList;
 
 import static mindustry.Vars.ui;
+import static modmake.IntUI.imgDialog;
 import static modmake.ui.img.ImgEditorDialog.Img;
 
 public class ImgEditor {
@@ -80,6 +81,7 @@ public class ImgEditor {
 		clearOp();
 		brushSize = 1.0F;
 		drawColor = Color.clear;
+		imgDialog.view.reset();
 	}
 
 	public void save() {
@@ -251,7 +253,8 @@ public class ImgEditor {
 
 		public Tile getn(int x, int y) {
 			if (in(x, y)) return tiles[x][y];
-			throw new IllegalArgumentException(x + "," + y + "不在" + w + "," + h + "里");
+			return null;
+//			throw new IllegalArgumentException(x + "," + y + "不在" + w + "," + h + "里");
 		}
 
 		public void each(Cons<Tile> cons) {

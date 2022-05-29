@@ -189,30 +189,29 @@ public enum MyEditorTool {
 
 
 		public void selected(int startX, int startY, int toX, int toY) {
-			if (mode == -1) {
-				int x = Math.max(0, Math.min(startX, toX));
-				toX = Math.min(Math.max(startX, toX), imgEditor.width());
-				startX = x;
-				int y = Math.max(0, Math.min(startY, toY));
-				toY = Math.min(Math.max(startY, toY), imgEditor.height());
-				startY = y;
-				view.allSelected.clear();
-				for (x = startX; x < toX; x++) {
-					for (y = startY; y < toY; y++) {
-						view.allSelected.add(new ImgView.TmpTile(imgEditor.tile(x, y)));
-					}
+			if (mode != -1) return;
+			int x = Math.max(0, Math.min(startX, toX));
+			toX = Math.min(Math.max(startX, toX), imgEditor.width());
+			startX = x;
+			int y = Math.max(0, Math.min(startY, toY));
+			toY = Math.min(Math.max(startY, toY), imgEditor.height());
+			startY = y;
+			view.select.clear();
+			for (x = startX; x <= toX; x++) {
+				for (y = startY; y <= toY; y++) {
+					view.select.add(imgEditor.tile(x, y));
 				}
-				mode = 0;
-				ui.showInfo("" + view.allSelected);
-			} else if (mode == 0) {
-				// 左下角（0,0）
-				int offsetX = toY - startX, offsetY = toY - startY;
-				view.allSelected.each(tile -> {
-					tile.x += offsetX;
-					tile.y += offsetY;
-				});
 			}
+			mode = 0;
+			ui.showInfo("" + view.select.all);
+		}
 
+		public void drag(int offsetX, int offsetY) {
+			if (mode != 0) return;
+			view.select.each(tile -> {
+				tile.x += offsetX;
+				tile.y += offsetY;
+			});
 		}
 	};
 
@@ -254,5 +253,5 @@ public enum MyEditorTool {
 	// for select
 	public void selected(int x1, int y1, int x2, int y2) {}
 
-	public void cover() {}
+	public void drag(int offsetX, int offsetY) {}
 }

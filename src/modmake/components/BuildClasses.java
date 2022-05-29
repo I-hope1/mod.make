@@ -207,6 +207,10 @@ public class BuildClasses extends ObjectMap<Class<?>, BuildClasses.ClassInterfac
 
 			return () -> map;
 		});
+
+		/*put(TextureRegion.class, (table, value, __, ___) -> {
+
+		});*/
 	}
 
 	public interface ClassInterface {

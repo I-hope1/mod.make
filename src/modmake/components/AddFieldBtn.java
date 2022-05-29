@@ -144,6 +144,7 @@ public class AddFieldBtn extends TextButton {
 				|| (type == TextureRegion.class && field.getType().isArray())
 				|| (Consume.class.isAssignableFrom(vType) && "^(update|optional|booster)$".matches(name))) return false;
 		if (type.isPrimitive() || type == String.class) return true;
+//		if (type == TextureRegion.class && type.isAnnotationPresent())
 		// 使用throw跳出循环
 		try {
 			Class<?> finalType = type;

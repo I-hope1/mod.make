@@ -231,10 +231,9 @@ public class ModDialog extends BaseDialog {
 						Seq<Object> values = new Seq<>();
 						final int[] selected = {0};
 						final int[] j = {0};
-						String[] val = {content.name()};
 						boolean[] ok = {false};
 						Seq<Button> btns = new Seq<>();
-						ObjectMap<String, MyObject<Object, Object>> map = or(framework.get(val[0]), new ObjectMap<>());
+						ObjectMap<String, MyObject<Object, Object>> map = or(framework.get(content.name()), new ObjectMap<>());
 						map.each((key, value) -> {
 							if (!ok[0]) {
 								int k = j[0];
@@ -261,13 +260,13 @@ public class ModDialog extends BaseDialog {
 						cont.pane(table).width(300).height(300);
 
 						buttons.button("$back", this::hide).size(150, 64);
-						buttons.button("$ok", (() -> {
-							Fi file = content.child(val[0]).child(name.getText() + ".hjson");
+						buttons.button("$ok", () -> {
+							Fi file = content.child(name.getText() + ".hjson");
 							file.writeString("" + values.get(selected[0]));
 							// dialog.hide();
 							ref.setup.get(selectedContent[0]);
 							hide();
-						})).size(150, 64);
+						}).size(150, 64);
 						closeOnBack();
 
 						show();
