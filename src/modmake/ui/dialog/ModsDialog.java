@@ -80,13 +80,13 @@ public class ModsDialog extends BaseDialog {
 					hide();
 
 					Vars.platform.showMultiFileChooser(file -> {
-						this.importMod(file);
-						this.setup();
+						importMod(file);
+						setup();
 					}, "zip", "jar");
 				}).margin(12).row();
 				t.button("$mod.add", Icon.add, bstyle, () -> {
 					modMetaDialog.show(modsDirectory.child("tmp").child("mod.hjson"));
-					this.setup();
+					setup();
 				}).margin(12);
 			});
 			dialog.addCloseButton();
@@ -98,7 +98,7 @@ public class ModsDialog extends BaseDialog {
 		}).margin(margin).size(210, 64);
 		buttons.button("$quit", Icon.exit, style, () -> Core.app.exit()).margin(margin).size(210, 64);
 
-		this.setup();
+		setup();
 
 	/* let { ParseListener } = Packages.rhino.NativeJavaClass(Vars.mods.scripts.scope, Packages.mindustry.mod.ContentParser);
 	let times = 0
@@ -177,21 +177,21 @@ public class ModsDialog extends BaseDialog {
 					public AtlasRegion find(String name) {
 						var base = map.containsKey(name) ? map.get(name) : shadow.find(name);
 
-						if (base == null) return this.error;
+						if (base == null) return error;
 						return base;
 					}
 
 					//return the *actual* pixmap regions, not the disposed ones.
 					@Override
 					public PixmapRegion getPixmap(AtlasRegion region) {
-						if (region == null) return shadow.getPixmap(this.error);
+						if (region == null) return shadow.getPixmap(error);
 						var base = packer[0].has(region.name) ? packer[0].get(region.name) : shadow.getPixmap(region);
-						if (base == null) return shadow.getPixmap(this.error);
+						if (base == null) return shadow.getPixmap(error);
 						return base;
 					}
 
 					public boolean has(String s) {
-						return shadow.has(s) || this.isFound(map.get(s));
+						return shadow.has(s) || isFound(map.get(s));
 					}
 
 					{
@@ -284,12 +284,12 @@ public class ModsDialog extends BaseDialog {
 		Table p = pane;
 		p.clearChildren();
 		mods = new Seq<>(modsDirectory.list());
-		if (this.mods.size == 0) {
+		if (mods.size == 0) {
 			p.table(Styles.black6, (t -> t.add("$mods.none"))).height(80);
 			return;
 		}
 
-		this.mods.forEach(file -> {
+		mods.each(file -> {
 			if (Objects.equals(file.name(), "tmp")) return;
 			MyMod mod = MyMod.set(file);
 			if (mod == null) return;
@@ -332,7 +332,7 @@ public class ModsDialog extends BaseDialog {
 					right.button(Icon.trash, Styles.clearPartiali, () ->
 							ui.showConfirm("$confirm", "$mod.remove.confirm", () -> {
 								file.deleteDirectory();
-								this.setup();
+								setup();
 							})
 					).size(50).row();
 					right.button(Icon.upload, Styles.clearPartiali, () -> {

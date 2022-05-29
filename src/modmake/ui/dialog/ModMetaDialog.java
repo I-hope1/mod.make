@@ -13,6 +13,7 @@ import mindustry.gen.Icon;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
 
+import java.util.Objects;
 import java.util.StringJoiner;
 
 import static modmake.IntUI.modsDialog;
@@ -55,8 +56,8 @@ public class ModMetaDialog extends BaseDialog {
 
 	ObjectMap<String, TextField> Fields = new ObjectMap<>();
 
-	TextField MyTextField(String name) {
-		var field = new TextField(name);
+	TextField MyTextField() {
+		var field = new TextField("");
 		if (Vars.mobile) field.removeInputDialog();
 		return field;
 	}
@@ -71,14 +72,14 @@ public class ModMetaDialog extends BaseDialog {
 		Seq<TextField> FieldArray = new Seq<>();
 
 		String[] errorText = {""};
-		buttons.table((err -> {
-			err.label(() -> "[red]" + errorText).get();
-		})).row();
+		buttons.table(err -> {
+			err.label(() -> "[red]" + errorText[0]).get();
+		}).row();
 		buttons.table(b -> {
 			b.button("$back", Icon.left, this::hide).size(210, 64);
 			b.button("$ok", Icon.ok, () -> {
 				Fi mod = modsDirectory.child(Fields.get("fileName").getText());
-				if (mod.path() != file.parent().path() && mod.exists()) {
+				if (!Objects.equals(mod.path(), file.parent().path()) && mod.exists()) {
 					Vars.ui.showConfirm("覆盖", "同名文件已存在\n是否要覆盖", () -> {
 						mod.deleteDirectory();
 						write(mod);
@@ -96,7 +97,7 @@ public class ModMetaDialog extends BaseDialog {
 		});
 
 		container.add("$mod.fileName");
-		TextField fileName = MyTextField("");
+		TextField fileName = MyTextField();
 		Fields.put("fileName", fileName);
 		container.add(fileName).valid(text -> {
 			boolean valid = true;
@@ -110,7 +111,7 @@ public class ModMetaDialog extends BaseDialog {
 		FieldArray.add(fileName);
 
 		container.add("$minGameVersion");
-		TextField minGameVersion = MyTextField("");
+		TextField minGameVersion = MyTextField();
 		Fields.put("minGameVersion", minGameVersion);
 		container.add(minGameVersion).valid(text -> {
 			boolean valid = true;
@@ -134,7 +135,7 @@ public class ModMetaDialog extends BaseDialog {
 
 		for (var str : arr) {
 			container.add(Core.bundle.get(str, str));
-			TextField field = MyTextField("");
+			TextField field = MyTextField();
 			IntUI.longPress(field, 600, longPress -> {
 				if (longPress) IntUI.showTextArea(field);
 			});
