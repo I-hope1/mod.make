@@ -204,7 +204,7 @@ public class ImgEditorDialog extends Dialog {
 		table(cont -> {
 			cont.left();
 
-			cont.table(mid -> {
+			cont.pane(mid -> {
 				mid.top();
 
 				Table tools = new Table().top();
@@ -357,18 +357,18 @@ public class ImgEditorDialog extends Dialog {
 				mid.table(Tex.underline, t -> {
 					t.table(Tex.underlineWhite, t1 -> t1.add("选择")).growX().row();
 					t.table(Tex.pane, select -> {
-						select.defaults().width(size * 3f);
+						select.defaults().growX();
 						select.button("放置", view.select::cover).disabled(__ -> !view.select.any()).row();
 						select.check("剪切", view.select.cut, b -> view.select.cut = b).row();
 						select.check("选择透明", view.select.selectTransparent, b -> view.select.selectTransparent = b);
-					});
+					}).growX();
 				}).growX().top();
 
 				mid.row();
 
 				mid.table(t -> {
-					t.defaults().growX().margin(9f);
-					t.button("@editor.center", Icon.move, Styles.cleart, view::center).row();
+					t.defaults().growX();
+					t.button("@editor.center", Icon.move, Styles.cleart, view::center).margin(6).row();
 					t.check("显示透明画布", ImgView.showTransparentCanvas, b -> ImgView.showTransparentCanvas = b);
 				}).growX().top();
 
