@@ -10,7 +10,6 @@ import arc.math.geom.Point2;
 import arc.struct.IntSeq;
 import arc.util.Structs;
 
-import static mindustry.Vars.ui;
 import static modmake.IntUI.imgEditor;
 import static modmake.IntUI.view;
 import static modmake.ui.img.ImgEditor.Tile;
@@ -203,7 +202,7 @@ public enum MyEditorTool {
 				}
 			}
 			mode = 0;
-			ui.showInfo("" + view.select.all);
+//			ui.showInfo("" + view.select.all);
 		}
 
 		public void drag(int offsetX, int offsetY) {
