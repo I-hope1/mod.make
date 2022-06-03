@@ -40,13 +40,14 @@ import java.util.Objects;
 import static mindustry.Vars.ui;
 import static modmake.components.AddFieldBtn.defaultValue;
 import static modmake.components.AddFieldBtn.filter;
-import static modmake.components.dataHandle.*;
+import static modmake.components.DataHandle.*;
 import static modmake.util.ContentSeq.getGenericType;
 import static modmake.util.ContentSeq.otherTypes;
 import static modmake.util.Tools.nullCheck;
+import static modmake.util.Tools.trope;
 
 public class BuildContent {
-	public static Json json = dataHandle.json;
+	public static Json json = DataHandle.json;
 	public static ObjectMap<Class<?>, Object> defaultClass = ObjectMap.of(
 			Effect.class, "none",
 			UnitType.class, "mono",
@@ -80,10 +81,18 @@ public class BuildContent {
 		} catch (Exception e) {
 			return 0;
 		}
+
 	}
 
 	public static int parseInt(Object s) {
 		return parseInt("" + s);
+	}
+
+	public static String packString(String str) {
+		return str.replaceAll("[\n\r]", "\\\\n").replaceAll("\t", "\\\\t");
+	}
+	public static String unpackString(String str) {
+		return str.replace("\\n", "\n");
 	}
 
 	public static <T> Seq<T> genericSeqByClass(Class<?> clazz, Func<Field, T> _func) {
@@ -337,7 +346,8 @@ public class BuildContent {
 	// 处理字符串和失败的对象
 	public static Prov<String> fail(Table t, Object v, Class<?> vType) {
 		if (vType == null) vType = String.class;
-		var field = new TextField(("" + v).replaceAll("\n|\r|\\r", "\\n").replaceAll("\\t", "\\t"));
+		Log.info(v);
+		var field = new TextField(packString("" + v));
 		if (String.class.isAssignableFrom(vType)) IntUI.longPress(field, 600, longPress -> {
 			if (longPress) IntUI.showTextArea(field);
 		});
@@ -346,8 +356,7 @@ public class BuildContent {
 		Class<?> finalVType = vType;
 		return () -> {
 			var txt = !field.getText().replace("\\s*", "").isBlank() ? field.getText() : "";
-			// 通过Jval转义
-			txt = (Jval.read('"' + txt.replaceAll("\\\\\"", "\\\"") + '"') + "").replaceAll("[\\n\\r]", "\n").replaceAll("\"", "\\\"");
+			txt = trope(txt);
 			return finalVType.isPrimitive() ? txt : '"' + txt + '"';
 		};
 	}

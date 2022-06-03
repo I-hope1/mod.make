@@ -28,7 +28,7 @@ import static mindustry.Vars.ui;
 import static modmake.IntVars.data;
 import static modmake.ui.dialog.MySettingsDialog.CheckSetting;
 
-public class dataHandle {
+public class DataHandle {
 	public static ObjectMap<String, ObjectMap<String, MyObject<Object, Object>>> framework;
 	public static ObjectMap<String, String> types;
 	public static StringMap content, settings;

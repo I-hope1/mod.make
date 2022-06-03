@@ -10,7 +10,7 @@ import mindustry.mod.Mods;
 
 import java.util.Objects;
 
-import static modmake.components.dataHandle.json;
+import static modmake.components.DataHandle.json;
 
 public class MyMod {
 	public Fi root;
@@ -23,7 +23,7 @@ public class MyMod {
 		String json = file.child("mod.json").exists() ? file.child("mod.json").readString() :
 				file.child("mod.hjson").exists() ? file.child("mod.hjson").readString() : null;
 		if (json == null) return null;
-		JsonValue meta = dataHandle.hjsonParse(json);
+		JsonValue meta = DataHandle.hjsonParse(json);
 		if (meta == null) return null;
 		return new MyMod(file, meta);
 	}

@@ -11,7 +11,7 @@ import mindustry.gen.Tex;
 import modmake.components.constructor.MyObject;
 import modmake.ui.styles;
 
-import static modmake.components.dataHandle.settings;
+import static modmake.components.DataHandle.settings;
 import static modmake.util.Tools.or;
 
 public class Fields {

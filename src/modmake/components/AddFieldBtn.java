@@ -25,7 +25,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import static modmake.components.dataHandle.*;
+import static modmake.components.DataHandle.*;
 import static modmake.util.Tools.as;
 
 public class AddFieldBtn extends TextButton {
@@ -142,8 +142,8 @@ public class AddFieldBtn extends TextButton {
 			type = arrayClass.contains(type) ? ContentSeq.getGenericType(field).get(0) : type.getComponentType();
 		}
 		if (pattern.matcher(name).find()
-				|| type == TextureRegion.class && field.getType().isArray()
-				|| Consume.class.isAssignableFrom(vType) && "^(update|optional|booster)$".matches(name)) return false;
+				|| (type == TextureRegion.class && field.getType().isArray())
+				|| (Consume.class.isAssignableFrom(vType) && "^(update|optional|booster)$".matches(name))) return false;
 		if (type.isPrimitive() || type == String.class) return true;
 //		if (type == TextureRegion.class && type.isAnnotationPresent())
 		// 使用throw跳出循环

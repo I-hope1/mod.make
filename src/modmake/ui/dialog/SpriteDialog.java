@@ -1,39 +1,33 @@
 package modmake.ui.dialog;
 
-import arc.Core;
 import arc.files.Fi;
-import arc.graphics.Color;
+import arc.func.Cons;
 import arc.graphics.Texture;
-import arc.input.KeyCode;
-import arc.scene.event.InputEvent;
-import arc.scene.event.InputListener;
-import arc.scene.ui.Dialog;
-import arc.scene.ui.Label;
-import arc.scene.ui.TextField;
+import arc.graphics.g2d.TextureRegion;
+import arc.scene.ui.Button;
+import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
-import arc.util.Align;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.gen.Icon;
-import mindustry.graphics.Pal;
-import mindustry.ui.BorderImage;
+import mindustry.gen.Tex;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
-import static modmake.IntUI.imgDialog;
+import static modmake.IntUI.*;
 
 public class SpriteDialog extends BaseDialog {
-	Table _cont = new Table(Table::top);
+	Table p;
 	public Runnable hiddenRun = null;
 	public Fi root;
 
 	public SpriteDialog() {
 		super("图片库");
 
-		cont.pane(_cont).fillX().fillY();
 		addCloseButton();
 		imgDialog.hiddenRun = () -> {
 			hide();
@@ -41,24 +35,10 @@ public class SpriteDialog extends BaseDialog {
 		};
 		buttons.button("@add", Icon.add, () -> IntUI.createDialog("添加图片",
 				"新建图片", "默认32*32", Icon.add, (Runnable) () -> {
-					new Dialog("") {{
-						var name = new TextField();
-
-						cont.table(t -> {
-							t.add("$name");
-							t.add(name).growX().valid(__ -> !root.child(name.getText() + ".png").exists());
-						}).growX().row();
-
-						buttons.button("$back", this::hide).size(150, 64);
-						buttons.button("$ok", () -> {
-							Fi file = root.child(name.getText() + ".png");
-							imgDialog.beginEditImg(file);
-							hide();
-						}).size(150, 64).disabled(__ -> !name.isValid());
-						closeOnBack();
-
-						show();
-					}};
+					nameDialog.show(text -> {
+						Fi file = root.child(text + ".png");
+						imgDialog.beginEditImg(file);
+					}, text -> !root.child(text + ".png").exists());
 					/*Fi fi1;
 					int i = 0;
 					do {
@@ -69,13 +49,12 @@ public class SpriteDialog extends BaseDialog {
 				"导入图片", "仅限png", Icon.download, (Runnable) () -> Vars.platform.showFileChooser(true, "import file to add sprite", "png", f -> {
 					Fi toFile = root.child(f.name());
 					Runnable go = () -> {
+						f.copyTo(toFile);
 						try {
-							buildImage(_cont, f);
+							buildImage(p, toFile);
 						} catch (Exception err) {
 							Vars.ui.showException("文件可能损坏", err);
-							return;
 						}
-						f.copyTo(toFile);
 					};
 					if (toFile.exists()) Vars.ui.showConfirm("$confirm", "是否要覆盖", go);
 					else go.run();
@@ -94,14 +73,20 @@ public class SpriteDialog extends BaseDialog {
 
 	public void setup(Fi all) {
 		root = all;
-		_cont.clearChildren();
+		cont.clearChildren();
 		if (all != null) {
-			all.walk(f -> {
-				try {
-					buildImage(_cont, f);
-				} catch (Exception e) {
-					Log.err(e);
-				}
+			searchTable(cont, (p, text) -> {
+				p.clearChildren();
+				this.p = p;
+				Pattern pattern = Pattern.compile(text, Pattern.CASE_INSENSITIVE);
+				all.walk(f -> {
+					try {
+						if (!pattern.matcher(f.nameWithoutExtension()).find()) return;
+						buildImage(p, f);
+					} catch (Exception e) {
+						Log.err(e);
+					}
+				});
 			});
 		}
 		show();
@@ -111,7 +96,7 @@ public class SpriteDialog extends BaseDialog {
 	public void buildImage(Table table, Fi fi) {
 		if (!Objects.equals(fi.extension(), "png")) return;
 		Fi[] file = {fi};
-		table.table(t -> {
+		/*table.table(t -> {
 			t.left();
 
 			var label = new Label(file[0].nameWithoutExtension());
@@ -164,6 +149,57 @@ public class SpriteDialog extends BaseDialog {
 				imgDialog.beginEditImg(file[0]);
 			});
 			t.pane(p -> p.add(img)).growX().minHeight(96);
-		}).padTop(10).left().row();
+		}).padTop(10).left().row();*/
+
+		var ref = new Object() {
+			Cons<Table> setup = null;
+		};
+		ref.setup = t -> {
+			t.clearChildren();
+			Button button = new Button(Styles.defaultb);
+
+			button.left();
+			Texture texture = new Texture(file[0]);
+			float w = texture.getTextureData().getWidth();
+			float h = texture.getTextureData().getHeight();
+			float srcW, srcH;
+			if (w > h) {
+				srcW = 45;
+				srcH = 45 * h / w;
+			} else {
+				srcW = 45 * w / h;
+				srcH = 45;
+			}
+			TextureRegion region = new TextureRegion(texture);
+			Table image = button.table(b1 -> {
+				b1.image(region).size(srcW, srcH);
+			}).size(45).pad(4).get();
+			image.addListener(new Tooltip(tool -> tool.background(Tex.button)
+					.image(region).pad(4)));
+			button.add(file[0].nameWithoutExtension()).padLeft(4);
+			t.add(button).size(440, 64);
+			IntUI.longPress(button, 600, b -> {
+				if (b) {
+//					if (Core.input.useKeyboard()) return;
+
+					nameDialog.show(text -> {
+						Fi toFile = file[0].sibling(text + ".png");
+						file[0].moveTo(toFile);
+						file[0] = toFile;
+						ref.setup.get(t);
+					}, text -> !file[0].sibling(text + ".png").exists(), file[0].nameWithoutExtension());
+				} else {
+					hide();
+					imgDialog.beginEditImg(file[0]);
+				}
+			});
+			t.button(b -> {
+				b.image(Icon.trash);
+			}, Styles.defaultb, () -> {
+				file[0].delete();
+				t.remove();
+			}).growX().growY();
+		};
+		table.table(ref.setup).pad(10).padBottom(3).padTop(0).row();
 	}
 }

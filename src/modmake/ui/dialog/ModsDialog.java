@@ -4,41 +4,30 @@ import arc.Core;
 import arc.files.Fi;
 import arc.files.ZipFi;
 import arc.func.Boolf;
-import arc.func.Cons;
-import arc.graphics.Pixmap;
 import arc.graphics.Texture;
-import arc.graphics.g2d.PixmapRegion;
 import arc.graphics.g2d.TextureAtlas;
-import arc.graphics.g2d.TextureAtlas.AtlasRegion;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
 import arc.struct.Seq;
-import arc.util.Log;
+import arc.struct.StringMap;
 import mindustry.Vars;
-import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
-import mindustry.graphics.MultiPacker;
 import mindustry.graphics.Pal;
-import mindustry.mod.ContentParser;
-import mindustry.mod.Mods;
 import mindustry.ui.BorderImage;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
+import modmake.components.DataHandle;
 import modmake.components.MyMod;
 import modmake.ui.styles;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Objects;
 
 import static mindustry.Vars.ui;
 import static modmake.IntUI.modDialog;
 import static modmake.IntUI.modMetaDialog;
-import static modmake.components.dataHandle.settings;
+import static modmake.components.DataHandle.settings;
 
 public class ModsDialog extends BaseDialog {
 
@@ -144,14 +133,13 @@ public class ModsDialog extends BaseDialog {
 	float margin;
 
 	public static class ACLASS {
-		public static Boolf<MyMod> boolf = null;
+		/*public static Boolf<MyMod> boolf = null;
 		public static Seq<Mods.LoadedMod> mods;
 		public static Mods.LoadedMod lastMod;
 		public static Method checkWarnings;
 		public static boolean hasException = false;
 
 		static void init() throws NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
-			Class<?> clazz = Vars.mods.getClass();
 			Method loadMod = Mods.class.getDeclaredMethod("loadMod", Fi.class, Boolean.TYPE);
 			loadMod.setAccessible(true);
 
@@ -276,6 +264,11 @@ public class ModsDialog extends BaseDialog {
 				ui.showException(e);
 				hasException = true;
 			}
+		}*/
+		public static StringMap settings = DataHandle.settings;
+		public static Boolf<MyMod> boolf;
+		public static boolean loadMod(MyMod mod) {
+			return boolf != null && boolf.get(mod);
 		}
 	}//*/findClass("util.LoadMod").load;
 

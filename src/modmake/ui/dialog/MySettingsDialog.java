@@ -28,7 +28,7 @@ import mindustry.ui.dialogs.SettingsMenuDialog;
 import java.util.Objects;
 
 import static arc.Core.bundle;
-import static modmake.components.dataHandle.settings;
+import static modmake.components.DataHandle.settings;
 
 public class MySettingsDialog extends BaseDialog {
 	static Table pane = new Table();

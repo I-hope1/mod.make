@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 
 import static mindustry.Vars.ui;
 import static modmake.IntUI.*;
-import static modmake.components.dataHandle.*;
+import static modmake.components.DataHandle.*;
 import static modmake.util.Tools.or;
 
 public class ModDialog extends BaseDialog {
@@ -279,11 +279,17 @@ public class ModDialog extends BaseDialog {
 
 		t.add(cont).growX().width(w).row();
 
-		Fi spritesDirectory = mod.root.child("sprites");
-		t.button("查看图片库", () -> {
+		Fi spritesDirectory1 = mod.root.child("sprites");
+		Fi spritesDirectory2 = mod.root.child("sprites-override");
+		t.button("查看图片库1", () -> {
 			spriteDialog.hiddenRun = (() -> ref.setup.get(selectedContent[0]));
-			spriteDialog.setup(spritesDirectory);
+			spriteDialog.setup(spritesDirectory1);
+		}).growX().row();
+		t.button("查看图片库2", () -> {
+			spriteDialog.hiddenRun = () -> ref.setup.get(selectedContent[0]);
+			spriteDialog.setup(spritesDirectory2);
 		}).growX();
+
 		return t;
 	}
 

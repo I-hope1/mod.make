@@ -12,12 +12,15 @@ import mindustry.core.Version;
 import mindustry.gen.Icon;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
+import modmake.util.Tools;
 
 import java.util.Objects;
 import java.util.StringJoiner;
 
 import static modmake.IntUI.modsDialog;
-import static modmake.components.dataHandle.hjsonParse;
+import static modmake.components.DataHandle.hjsonParse;
+import static modmake.util.BuildContent.packString;
+import static modmake.util.BuildContent.unpackString;
 import static rhino.ScriptRuntime.toNumber;
 
 public class ModMetaDialog extends BaseDialog {
@@ -45,8 +48,8 @@ public class ModMetaDialog extends BaseDialog {
 		str.add("minGameVersion: " + Fields.get("minGameVersion").getText());
 
 		for (String item : arr) {
-			String text = Fields.get(item).getText();
-			str.add(item + ": " + (text.replaceAll("\\s+", "").isEmpty() ? "\"\"" : text));
+			String text = Tools.trope(unpackString(Fields.get(item).getText()));
+			str.add(item + ": \"" + text + "\"");
 		}
 		modRoot.child(isNull ? "mod.json" : "mod." + file.extension()).writeString("" + str);
 		modsDialog.setup();
@@ -165,7 +168,7 @@ public class ModMetaDialog extends BaseDialog {
 		Fields.get("minGameVersion").setText("" + num);
 
 		for (String item : arr) {
-			Fields.get(item).setText(jsonValue.getString(item, "").replaceAll("[\\n\\r]", "\\n"));
+			Fields.get(item).setText(packString(jsonValue.getString(item, "")));
 		}
 
 		show();

@@ -12,7 +12,7 @@ import modmake.ui.styles;
 import modmake.util.ContentSeq;
 
 import static modmake.IntUI.frag;
-import static modmake.components.dataHandle.settings;
+import static modmake.components.DataHandle.settings;
 
 public class ModMake extends Mod {
 	public ModMake() {

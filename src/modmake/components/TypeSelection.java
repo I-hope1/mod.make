@@ -26,7 +26,7 @@ public class TypeSelection {
 	}
 
 	public TypeSelection(Class<?> _type, String _typeName, Seq<Class<?>> types, boolean other) {
-		var typesIni = dataHandle.types;
+		var typesIni = DataHandle.types;
 		this.type = _type;
 		this.typeName = _typeName;
 		this.table = new Table(Tex.clear, t -> {

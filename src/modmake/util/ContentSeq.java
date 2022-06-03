@@ -16,7 +16,7 @@ import mindustry.world.draw.DrawBlock;
 
 import java.lang.reflect.*;
 
-import static modmake.components.dataHandle.settings;
+import static modmake.components.DataHandle.settings;
 
 public class ContentSeq {
 	public static ContentParser parser;

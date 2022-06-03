@@ -10,7 +10,7 @@ import modmake.IntVars;
 
 import static modmake.IntVars.mod;
 import static modmake.IntVars.modName;
-import static modmake.components.dataHandle.settings;
+import static modmake.components.DataHandle.settings;
 
 // 更新日志弹窗
 public class UpdateData extends BaseDialog {

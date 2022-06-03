@@ -2,8 +2,14 @@ package modmake.util;
 
 import arc.func.Func;
 import arc.func.Prov;
+import arc.util.serialization.Jval;
 
 public class Tools {
+	// 通过Jval转义
+	public static String trope(String s) {
+		return Jval.read('"' + s.replaceAll("\\\\\"", "\\\"") + '"').asString().replaceAll("[\\n\\r]", "\n").replaceAll("\"", "\\\"");
+	}
+
 	public static <T, R> R nullCheck(T obj, Func<T, R> func) {
 		if (obj != null) return func.get(obj);
 		return null;

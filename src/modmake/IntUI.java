@@ -26,7 +26,7 @@ import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import modmake.components.dataHandle;
+import modmake.components.DataHandle;
 import modmake.ui.Frag;
 import modmake.ui.dialog.*;
 import modmake.ui.img.ImgEditor;
@@ -39,6 +39,8 @@ import java.util.regex.Pattern;
 
 import static mindustry.Vars.content;
 import static modmake.IntVars.mod;
+import static modmake.util.BuildContent.packString;
+import static modmake.util.BuildContent.unpackString;
 
 public class IntUI {
 	public static Frag frag = new Frag();
@@ -53,6 +55,8 @@ public class IntUI {
 	public static JsonDialog jsonDialog = new JsonDialog();
 	public static Editor editor = new Editor();
 	public static ModDialog modDialog = new ModDialog();
+
+	public static NameDialog nameDialog = new NameDialog();
 
 	public static ObjectMap<String, TextureRegionDrawable> icons = new ObjectMap<>();
 
@@ -107,7 +111,7 @@ public class IntUI {
 	public static Dialog showTextArea(TextField text) {
 		BaseDialog dialog = new BaseDialog("");
 		dialog.title.remove();
-		var area = new TextArea(text.getText().replaceAll("\\n", "\n"));
+		var area = new TextArea(unpackString(text.getText()));
 		dialog.cont.add(area).grow();
 		if (Vars.mobile) area.removeInputDialog();
 
@@ -137,7 +141,7 @@ public class IntUI {
 		}}).grow();
 		dialog.buttons.button("@ok", Icon.ok, () -> {
 			dialog.hide();
-			text.setText(area.getText().replaceAll("[\r\n]", "\\n"));
+			text.setText(packString(area.getText()));
 		}).grow();
 
 		return dialog.show();
@@ -282,8 +286,8 @@ public class IntUI {
 
 			var pattern = Pattern.compile("(?i)" + text);
 			list.each(item -> text.isEmpty() || pattern.matcher("" + item).find()
-					|| pattern.matcher(dataHandle.types.get("" + item, () -> "" + item)).find(), item -> {
-				p.button(dataHandle.types.get("" + item, () -> "" + item), Styles.cleart, () -> {
+					|| pattern.matcher(DataHandle.types.get("" + item, () -> "" + item)).find(), item -> {
+				p.button(DataHandle.types.get("" + item, () -> "" + item), Styles.cleart, () -> {
 					cons.get(item);
 					hide.run();
 				}).size(width, height).disabled(Objects.equals(holder.get(), "" + item)).row();

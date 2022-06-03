@@ -25,7 +25,7 @@ import modmake.components.AddFieldBtn;
 import modmake.components.MyMod;
 import modmake.components.TypeSelection;
 import modmake.components.constructor.MyObject;
-import modmake.components.dataHandle;
+import modmake.components.DataHandle;
 import modmake.util.Classes;
 import modmake.util.Fields;
 
@@ -34,7 +34,7 @@ import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
 import static arc.Core.bundle;
-import static modmake.components.dataHandle.formatPrint;
+import static modmake.components.DataHandle.formatPrint;
 import static modmake.util.ContentSeq.cTypeMap;
 import static modmake.util.ContentSeq.types;
 import static modmake.util.Tools.*;
@@ -119,7 +119,7 @@ public class Editor extends BaseDialog {
 
 	public void buildJson(Fi file) {
 
-		MyObject obj = as(dataHandle.parse(file.readString()));
+		MyObject obj = as(DataHandle.parse(file.readString()));
 		result.value = () -> "" + obj;
 		result.obj = obj;
 
@@ -311,6 +311,7 @@ public class Editor extends BaseDialog {
 			for (var bundle1 : arr) {
 				join.add(bundle1 + "");
 			}
+
 			return join + "";
 		};
 	}
