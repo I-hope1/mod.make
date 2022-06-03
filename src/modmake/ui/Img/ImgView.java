@@ -28,7 +28,7 @@ import static mindustry.Vars.mobile;
 import static mindustry.Vars.ui;
 import static modmake.IntUI.imgDialog;
 import static modmake.IntUI.imgEditor;
-import static modmake.components.dataHandle.settings;
+import static modmake.components.DataHandle.settings;
 
 public class ImgView extends Element implements GestureDetector.GestureListener {
 	MyEditorTool tool = MyEditorTool.pencil;
