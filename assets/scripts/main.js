@@ -6,14 +6,9 @@ const loadMod = (() => {
 	let loadModM = clazz.getDeclaredMethod("loadMod", Fi, java.lang.Boolean.TYPE)
 	loadModM.setAccessible(true)
 
-	let checkWarnings = clazz.getDeclaredMethod("checkWarnings")
-	checkWarnings.setAccessible(true)
+	let mods = Vars.mods.list();
 
-	let field = clazz.getDeclaredField("mods")
-	field.setAccessible(true)
-	let mods = field.get(Vars.mods);
-
-	field = clazz.getDeclaredField("parser")
+	let field = clazz.getDeclaredField("parser")
 	field.setAccessible(true)
 	let parser = field.get(Vars.mods)
 
@@ -43,6 +38,7 @@ const loadMod = (() => {
 
 			//return the *actual* pixmap regions, not the disposed ones.
 			getPixmap(region) {
+				Log.info(region.name)
 				let out = find(region.name)
 				//this should not happen in normal situations
 				if (out == null) return this.error;
@@ -61,7 +57,7 @@ const loadMod = (() => {
 	function* gen(mod) {
 		let fi = mod.root
 
-		let _mod = loadModM.invoke(Vars.mods, fi, true)
+		let _mod = ACLASS.lastMod
 		mods.add(_mod)
 		_mod.state = Packages.mindustry.mod.Mods.ModState.enabled;
 
@@ -69,9 +65,7 @@ const loadMod = (() => {
 		Vars.content.createBaseContent()
 		yield;
 
-		Vars.content.createModContent()
-		yield;
-		yield;
+		ACLASS.loadContent()
 		yield;
 		let wrong = _mod.hasContentErrors()
 		lastMod = _mod
@@ -142,28 +136,19 @@ const loadMod = (() => {
 	    	if (v == null || v.done) {
 		    	el.remove()
     			el.update(null)
-    			Vars.ui.loadfrag.hide()
-                Vars.ui.showInfo("加载" + (v != null && v.value ? "成功" : "失败"))
-			    // Vars.ui.loadfrag.table
-			    if (settings.getBool("display_exception")) {
-			    	checkWarnings.invoke(Vars.mods)
-			    }
-			    if (lastMod != null) {
-			    	mods.remove(lastMod)
-			    }
     		}
     	})
     	Core.scene.add(el);
 		return true;
 	}
 })()
+let AtlasRegion = TextureAtlas.AtlasRegion
 
 let scripts = Vars.mods.scripts;
 let { scope } = scripts;
-const ACLASS = Packages.rhino.NativeJavaClass(scope, Vars.mods.mainLoader().loadClass("modmake.ui.dialog.ModsDialog")).ACLASS;
+const ACLASS = Packages.rhino.NativeJavaClass(scope, Vars.mods.mainLoader().loadClass("modmake.util.LoadMod"), true);
 ACLASS.boolf = boolf(loadMod)
-let settings = ACLASS.settings
+let { settings } = ACLASS
 Events.run(ClientLoadEvent, () => {
 	lastAtlas = Core.atlas;
-//	Log.info("lastAtlas: " + lastAtlas)
 })
