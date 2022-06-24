@@ -6,7 +6,6 @@ import arc.func.Cons2;
 import arc.func.Prov;
 import arc.graphics.Color;
 import arc.scene.style.TextureRegionDrawable;
-import arc.scene.ui.Image;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.TextField;
 import arc.scene.ui.Tooltip;
@@ -35,7 +34,6 @@ import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
 import static arc.Core.bundle;
-import static modmake.IntUI.icons;
 import static modmake.components.DataHandle.formatPrint;
 import static modmake.util.ContentSeq.cTypeMap;
 import static modmake.util.ContentSeq.types;
@@ -88,10 +86,11 @@ public class Editor extends BaseDialog {
 		cont.row();
 		cont.pane(p -> pane = p).fillX().fillY().grow().row();
 
-		checkBtn = new TextButton("检查", Styles.defaultt);
+		// to do
+		/*checkBtn = new TextButton("检查", Styles.defaultt);
 		checkBtn.add(new Image(icons.get("inspect-code"))).size(32);
         checkBtn.getCells().reverse();
-        checkBtn.clicked(result::check);
+        checkBtn.clicked(result::check);*/
 
 		buttons.button("$back", Icon.left, this::hide).size(220, 70);
 

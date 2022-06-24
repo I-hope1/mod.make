@@ -82,17 +82,17 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			Consumer.cont = cont;
 			var all = Consumer.all;
 			new Consumer<>("power", "power", "" + value.get("power"), (t, v) -> {
-				var field = new TextField(myIsNaN(v) ? "0" : Float.parseFloat(v) + "");
+				var field = new TextField(myIsNaN(v) ? "0" : toNumber(v) + "");
 				t.add(field).row();
 				t.image().fillX().color(Pal.accent);
-				return () -> myIsNaN(field.getText()) ? 0f : Float.parseFloat(field.getText());
+				return () -> myIsNaN(field.getText()) ? 0f : toNumber(field.getText());
 			}, box -> all.get("powerBuffered") != null && all.get("powerBuffered").enable);
 
 			new Consumer<>("powerBuffered", "powerBuffered", "" + value.get("powerBuffered"), (t, v) -> {
-				var field = new TextField(myIsNaN(v) ? "0" : "" + Float.parseFloat(v));
+				var field = new TextField(myIsNaN(v) ? "0" : "" + toNumber(v));
 				t.add(field).row();
 				t.image().fillX().color(Pal.accent);
-				return () -> myIsNaN(field.getText()) ? 0 : Float.parseFloat(field.getText());
+				return () -> myIsNaN(field.getText()) ? 0 : toNumber(field.getText());
 			}, box -> all.get("power") != null && all.get("power").enable);
 
 			var itemObj = ((Prov<MyObject>) () -> {
@@ -248,7 +248,6 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 		}
 
 	}
-
 	public boolean myIsNaN(String str) {
 		try {
 			double d = toNumber(str);

@@ -22,6 +22,7 @@ import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
 import modmake.ui.styles;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 
 import static mindustry.Vars.*;
@@ -477,15 +478,17 @@ public class ImgEditorDialog extends Dialog {
 
 		Table colorTable = new Table();
 		blockSelection.add(colorTable).row();
-		Field[] fields = Color.class.getDeclaredFields();
+
+		Field[] fields = Color.class.getFields();
+		AccessibleObject.setAccessible(fields, true);
+		Color color;
 		for (Field field : fields) {
-			field.setAccessible(true);
-			Object color = null;
 			try {
-				color = field.get(null);
-			} catch (Exception ignored) {}
-			if (!(color instanceof Color)) continue;
-			Color c = (Color) color;
+				color = (Color) field.get(null);
+			} catch (Exception ignored) {
+				continue;
+			}
+			Color c = color;
 
 			if (!searchText.isEmpty() && !field.getName().toLowerCase().contains(searchText.toLowerCase())
 			) continue;
@@ -507,17 +510,16 @@ public class ImgEditorDialog extends Dialog {
 		int j = 0;
 		Table palTable = new Table();
 		blockSelection.add(palTable).row();
-		fields = Pal.class.getDeclaredFields();
+		fields = Pal.class.getFields();
+		AccessibleObject.setAccessible(fields, true);
 		for (Field field : fields) {
-			field.setAccessible(true);
-			Object color = null;
 			try {
-				color = field.get(null);
+				color = (Color) field.get(null);
 			} catch (Exception e) {
 				Log.err(e);
+				continue;
 			}
-			if (!(color instanceof Color)) continue;
-			Color c = (Color) color;
+			Color c = color;
 
 			if (!searchText.isEmpty() && !field.getName().toLowerCase().contains(searchText.toLowerCase())
 			) continue;
@@ -535,7 +537,7 @@ public class ImgEditorDialog extends Dialog {
 		}
 
 		if (i + j == 0) {
-			blockSelection.add("@none").color(Color.lightGray).padLeft(80f).padTop(10f);
+			blockSelection.add("@none").color(Color.lightGray).padLeft(80).padTop(10);
 		}
 	}
 

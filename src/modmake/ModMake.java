@@ -10,20 +10,34 @@ import modmake.ui.content.ModMakeContent;
 import modmake.ui.content.SettingContent;
 import modmake.ui.styles;
 import modmake.util.ContentSeq;
+import modmake.util.Reflect;
 
 import static modmake.IntUI.frag;
 import static modmake.components.DataHandle.settings;
 
 public class ModMake extends Mod {
 	public ModMake() {
+		new Reflect();
+
+		/*try {
+			Field id = Team.class.getDeclaredField("id");
+			id.setAccessible(true);
+			Reflect.removeFinal(id);
+			id.set(Team.get(4), 100);
+		} catch (Throwable e) {
+			Log.err(e);
+		}*/
+
 		Events.run(EventType.ClientLoadEvent.class, () -> {
 			new SettingContent();
 			new ModMakeContent();
 
 			try {
 //				LoadMod.init();
+
 				ContentSeq.load();
-			} catch (Exception e) {
+//				Reflect.load();
+			} catch (Throwable e) {
 				Vars.ui.showException("加载ContentSeq出现异常", e);
 			}
 			styles.load();

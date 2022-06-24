@@ -180,6 +180,7 @@ public class DataHandle {
 			return reader.parse(Jval.read(str).toString(Jformat.plain));
 			// return reader.parse(str);
 		} catch (Exception err) {
+			Log.info(str);
 			Log.err(err);
 			return null;
 		}

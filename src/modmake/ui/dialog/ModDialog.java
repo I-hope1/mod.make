@@ -17,7 +17,6 @@ import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import mindustry.ui.dialogs.LanguageDialog;
 import modmake.IntUI;
 import modmake.IntVars;
 import modmake.components.IntTab;
@@ -25,8 +24,8 @@ import modmake.components.MyMod;
 import modmake.components.constructor.MyObject;
 import modmake.ui.styles;
 import modmake.util.ContentSeq;
+import modmake.util.Reflect;
 
-import java.lang.reflect.Field;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -42,7 +41,7 @@ public class ModDialog extends BaseDialog {
 	}
 
 	// 语言
-	public ObjectMap<String, String> bundles = new ObjectMap<>();
+	public ObjectMap<String, String> bundles;
 
 	Table desc;
 	float w = !Core.graphics.isPortrait() ? 520 : Vars.mobile ? 410 : 440;
@@ -50,12 +49,11 @@ public class ModDialog extends BaseDialog {
 	public void load() {
 		jsonDialog.load();
 
-		Field field;
 		try {
-			field = LanguageDialog.class.getDeclaredField("displayNames");
-			field.setAccessible(true);
-			bundles = (ObjectMap<String, String>) field.get(ui.language);
-		} catch (Exception e) {
+			bundles = (ObjectMap<String, String>) Reflect.getValue(ui.language, "displayNames", ObjectMap.class);
+//			Log.info(bundles);
+		} catch (Throwable e) {
+			bundles = new ObjectMap<>();
 			Log.err(e);
 		}
 

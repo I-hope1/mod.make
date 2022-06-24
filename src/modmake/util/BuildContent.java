@@ -5,7 +5,6 @@ import arc.func.Cons;
 import arc.func.Cons2;
 import arc.func.Func;
 import arc.func.Prov;
-import arc.graphics.Camera;
 import arc.graphics.Color;
 import arc.input.KeyCode;
 import arc.scene.event.InputEvent;
@@ -37,7 +36,6 @@ import modmake.components.TypeSelection;
 import modmake.components.build.BClasses;
 import modmake.components.build.BKeys;
 import modmake.components.build.inspect.IClasses;
-import modmake.components.build.inspect.IExceptionType;
 import modmake.components.build.inspect.IKeys;
 import modmake.components.build.inspect.Inspect;
 import modmake.components.constructor.MyArray;
@@ -410,21 +408,33 @@ public class BuildContent {
 	build(Class<?> type, Fields fields, Table table, Object k, Object v, boolean isArray) {
 		if (type == null) return;
 		final boolean[] unknown = {false};
-		String[] extensionText = {""};
+//		String[] extensionText = {""};
 		String strK = "" + k;
 		Object[] value = {v};
-		table.table(Tex.pane, left -> {
+		if (true) {
+			table.table(Tex.pane, left -> {
+				left.add("未知", Color.yellow).padRight(5);
+			}).visible(() -> {
+				return unknown[0] = !isArray && (type != UnitType.class
+						|| !UnitTypeExFields.contains(strK)) && settings.getBool("point_out_unknown_field")
+						&& !json.getFields(type).containsKey(strK);
+			});
+		}
+		/*table.table(Tex.pane, left -> {
 			left.add("未知", Color.yellow).visible(() -> {
 				return unknown[0] = !isArray && (type != UnitType.class
 						|| !UnitTypeExFields.contains(strK)) && settings.getBool("point_out_unknown_field")
 						&& !json.getFields(type).containsKey(strK);
 			}).padRight(5);
 			left.label(() -> extensionText[0]).padRight(5).visible(() -> {
-				var ex = inspectMap.get(k).get(v);
+				var inspect = inspectMap.get(k);
+				if (inspect == null) return true;
+				var ex = inspect.get(v);
+				if (ex == null) return true;
 				extensionText[0] = ex.message;
 				return ex.type != IExceptionType.NONE;
 			}).padRight(5);;
-		}).padRight(5).visible(() -> unknown[0] || !extensionText[0].isEmpty());
+		}).padRight(5).visible(() -> unknown[0]);*/
 
 		var map = fields.map;
 
@@ -526,7 +536,6 @@ public class BuildContent {
 		}).padLeft(4).growX().right();
 
 		table.row();
-		Camera
 	}
 
 	public static void

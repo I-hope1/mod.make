@@ -15,6 +15,7 @@ import static modmake.components.DataHandle.settings;
 // 更新日志弹窗
 public class UpdateData extends BaseDialog {
 	Mods.ModMeta meta = IntVars.mod.meta;
+
 	float w = Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) / 3f,
 			h = w / 9 * 16;
 

@@ -8,6 +8,7 @@ import arc.util.Strings;
 import mindustry.ui.dialogs.BaseDialog;
 
 import static modmake.IntUI.imgEditor;
+import static modmake.util.BuildContent.parseInt;
 
 public class ImgResizeDialog extends BaseDialog {
 	public static int minSize = 10, maxSize = 32 * 16, increment = 50;
