@@ -1,20 +1,19 @@
 package modmake.util;
 
-import arc.struct.ObjectMap;
 import arc.util.Log;
+import modmake.ModMake;
 import sun.misc.Unsafe;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
 
 public class Reflect {
-	static ObjectMap<String, Field> map = new ObjectMap<>();
-	public static Unsafe unsafe;
+	static HashMap<String, Field> map = new HashMap<>();
 	public static MethodHandles.Lookup lookup;
 	public static MethodHandle modifiers;
-//	public static Reflect self = new Reflect();
 
 	public static Field getField(Class<?> clazz, String name) throws NoSuchFieldException {
 		if (map.containsKey(clazz.getName() + "." + name)) return map.get(clazz.getName() + "." + name);
@@ -24,21 +23,27 @@ public class Reflect {
 		return f;
 	}
 
-	public static void removeFinal(Field field) throws Throwable {
-		modifiers.invoke(field, field.getModifiers() & ~Modifier.FINAL);
-	}
-
 	public static void setValue(Object o, String name, Object val) throws Throwable {
-		lookup.findSetter(o.getClass(), name, val.getClass()).invoke(o, val);
-//		unsafe.putObject(o, Modifier.isStatic(field.getModifiers()) ? unsafe.staticFieldOffset(field) : unsafe.objectFieldOffset(field), val);
+//		lookup.findSetter(o.getClass(), name, val.getClass()).invoke(o, val);
+		Field f = getField(o.getClass(), name);
+		f.set(o, val);
 	}
 
-	public static Object getValue(Object o, String name, Class<?> clazz) throws Throwable {
-		return lookup.findGetter(o.getClass(), name, clazz).invoke(o);
-//		return unsafe.getObject(o, Modifier.isStatic(field.getModifiers()) ? unsafe.staticFieldOffset(field) : unsafe.objectFieldOffset(field));
+	public static <T> T getValue(Object o, String name, Class<?> clazz) throws Throwable {
+//		return (T)lookup.findGetter(o.getClass(), name, clazz).invoke(o);
+		Field f = getField(o.getClass(), name);
+		if (f.getType() != clazz) return null;
+		return (T) f.get(o);
 	}
 
-	{
+	public static Unsafe unsafe;
+
+	public static void removeFinal(Field field) throws Throwable {
+		unsafe.putObject(field, unsafe.objectFieldOffset(field), field.getModifiers() & ~Modifier.FINAL);
+	}
+
+	// init
+	public static void load() {
 		try {
 			Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
 			theUnsafe.setAccessible(true);
@@ -46,18 +51,11 @@ public class Reflect {
 
 			Field module = Class.class.getDeclaredField("module");
 			long offset = unsafe.objectFieldOffset(module);
-			unsafe.putObject(Reflect.class, offset, Object.class.getModule());
+			unsafe.putObject(ModMake.class, offset, Object.class.getModule());
 
-			Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-			offset = unsafe.staticFieldOffset(field);
-			lookup = (MethodHandles.Lookup) unsafe.getObject(MethodHandles.Lookup.class, offset);
-
-			modifiers = lookup.findSetter(Field.class, "modifiers", int.class);
-
-//			Scriptable scope = Vars.mods.getScripts().scope;
-//			ScriptableObject.putProperty(scope, "aaa", Context.javaToJS(unsafe, scope));
 		} catch (Exception e) {
 			Log.err(e);
 		}
+
 	}
 }

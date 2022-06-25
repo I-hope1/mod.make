@@ -27,6 +27,7 @@ import static mindustry.Vars.ui;
 import static modmake.util.ContentSeq.parser;
 
 public class LoadMod {
+
 	public static Method loadMod, checkWarnings;
 	public static AsyncExecutor async = new AsyncExecutor();
 	public static Seq<LoadedMod> mods;
@@ -37,7 +38,6 @@ public class LoadMod {
 //	public static Cons<MyMod> imgLoad;
 	public static StringMap settings = DataHandle.settings;
 	public static Boolf<MyMod> boolf;
-
 
 	public static void init() throws Exception {
 		loadMod = Mods.class.getDeclaredMethod("loadMod", Fi.class, java.lang.Boolean.TYPE);
@@ -124,6 +124,7 @@ public class LoadMod {
 		};*/
 	}
 
+
 	public static LoadedMod loadContent() {
 		content.setCurrentMod(null);
 
@@ -144,7 +145,7 @@ public class LoadMod {
 
 		Seq<LoadRun> runs = new Seq<>();
 
-		var mod = currentMod;
+		MyMod mod = currentMod;
 		if (mod.root.child("content").exists()) {
 			Fi contentRoot = mod.root.child("content");
 			for (ContentType type : ContentType.all) {

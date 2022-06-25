@@ -18,6 +18,7 @@ public class Fields {
 	private static Drawable[] backgrounds;
 	public MyObject map;
 	public Table table;
+
 	public Class<?> type;
 
 	public Fields(MyObject value, Prov<Class<?>> type, Table table) throws IllegalArgumentException, NullPointerException {

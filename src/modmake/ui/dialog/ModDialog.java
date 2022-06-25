@@ -50,7 +50,7 @@ public class ModDialog extends BaseDialog {
 		jsonDialog.load();
 
 		try {
-			bundles = (ObjectMap<String, String>) Reflect.getValue(ui.language, "displayNames", ObjectMap.class);
+			bundles = Reflect.getValue(ui.language, "displayNames", ObjectMap.class);
 //			Log.info(bundles);
 		} catch (Throwable e) {
 			bundles = new ObjectMap<>();

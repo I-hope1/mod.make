@@ -8,7 +8,6 @@ import arc.graphics.g2d.TextureRegion;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
-import arc.util.Log;
 import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
@@ -41,11 +40,6 @@ public class ModsDialog extends BaseDialog {
 		modDialog.load();
 		modMetaDialog.load();
 
-		try {
-			LoadMod.init();
-		} catch (Exception e) {
-			Log.err(e);
-		}
 		addCloseListener();
 
 		style = Styles.defaultt;

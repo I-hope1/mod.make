@@ -15,8 +15,8 @@ import static mindustry.Vars.ui;
 
 public class IntVars {
 	public static String modName = "mod-make";
-	public static Fi data = Vars.mods.locateMod(modName).root.child("data");
 	public static LoadedMod mod = Vars.mods.locateMod(modName);
+	public static Fi data = mod.root.child("data");
 
 	public static void async(String text, Runnable runnable, Runnable callback) {
 		ui.loadfrag.show(text);

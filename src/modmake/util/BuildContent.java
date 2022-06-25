@@ -40,6 +40,7 @@ import modmake.components.build.inspect.IKeys;
 import modmake.components.build.inspect.Inspect;
 import modmake.components.constructor.MyArray;
 import modmake.components.constructor.MyObject;
+import modmake.ui.MyTextField;
 import modmake.ui.styles;
 
 import java.lang.reflect.Field;
@@ -85,8 +86,8 @@ public class BuildContent {
 	public static void load() {
 		filterClass = new BClasses();
 		filterKeys = new BKeys();
-		inspectKeys = new IKeys();
-		inspectClass = new IClasses();
+//		inspectKeys = new IKeys();
+//		inspectClass = new IClasses();
 	}
 
 	public static int parseInt(String s) {
@@ -389,12 +390,12 @@ public class BuildContent {
 	public static Prov<String> fail(Table t, Object v, Class<?> vType) {
 		if (vType == null) vType = String.class;
 //		Log.info(v);
-		var field = new TextField(packString("" + v));
+		var field = new MyTextField(packString("" + v));
 		if (String.class.isAssignableFrom(vType)) IntUI.longPress(field, 600, longPress -> {
 			if (longPress) IntUI.showTextArea(field);
 		});
 		if (Vars.mobile) field.removeInputDialog();
-		t.add(field).growX();
+		t.add(field);
 		Class<?> finalVType = vType;
 		return () -> {
 			var txt = !field.getText().replace("\\s*", "").isBlank() ? field.getText() : "";
@@ -489,7 +490,7 @@ public class BuildContent {
 				}
 				if (filterClass.containsKey(vType)) {
 					var ret = filterClass.get(vType).get(finalTable[0], v, vType, null);
-					if (ret != null) inspectMap.put(k, inspectClass.get(vType));
+//					if (ret != null) inspectMap.put(k, inspectClass.get(vType));
 					return ret;
 				}
 			} catch (Exception e) {
@@ -498,7 +499,7 @@ public class BuildContent {
 			}
 			if (filterKeys.containsKey(strK)) {
 				var ret = filterKeys.get(strK).get(finalTable[0], v, type);
-				if (ret != null) inspectMap.put(k, inspectKeys.get(strK));
+//				if (ret != null) inspectMap.put(k, inspectKeys.get(strK));
 				return ret;
 			}
 			return null;
