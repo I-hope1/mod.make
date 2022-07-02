@@ -14,7 +14,6 @@ import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
 import modmake.util.Tools;
 
-import java.util.Objects;
 import java.util.StringJoiner;
 
 import static modmake.IntUI.modsDialog;
@@ -24,8 +23,10 @@ import static modmake.util.BuildContent.unpackString;
 import static rhino.ScriptRuntime.toNumber;
 
 public class ModMetaDialog extends BaseDialog {
+	int __MinGameVersion__ = 105;
 	Fi modsDirectory = Vars.dataDirectory.child("mods(I hope...)").child("mods");
 	String[] arr = {"name", "displayName", "description", "author", "version", "main", "repo"};
+	String lastFiName;
 
 	public boolean isNaN(String str) {
 		try {
@@ -82,7 +83,7 @@ public class ModMetaDialog extends BaseDialog {
 			b.button("$back", Icon.left, this::hide).size(210, 64);
 			b.button("$ok", Icon.ok, () -> {
 				Fi mod = modsDirectory.child(Fields.get("fileName").getText());
-				if (!Objects.equals(mod.path(), file.parent().path()) && mod.exists()) {
+				if (!mod.name().equals(lastFiName) && mod.path().equals(file.parent().path()) && mod.exists()) {
 					Vars.ui.showConfirm("覆盖", "同名文件已存在\n是否要覆盖", () -> {
 						mod.deleteDirectory();
 						write(mod);
@@ -153,11 +154,11 @@ public class ModMetaDialog extends BaseDialog {
 		closeOnBack();
 	}
 
-	int __MinGameVersion__ = 105;
 
 	public void show(Fi f) {
 		modsDirectory.child("tmp").deleteDirectory();
 		file = f;
+		lastFiName = f.parent().name();
 		isNull = !f.exists();
 		if (isNull) file.writeString("");
 		jsonValue = hjsonParse(file.readString());

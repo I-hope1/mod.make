@@ -51,8 +51,8 @@ import static mindustry.Vars.ui;
 import static modmake.components.AddFieldBtn.defaultValue;
 import static modmake.components.AddFieldBtn.filter;
 import static modmake.components.DataHandle.*;
-import static modmake.util.ContentSeq.getGenericType;
-import static modmake.util.ContentSeq.otherTypes;
+import static modmake.util.load.ContentSeq.getGenericType;
+import static modmake.util.load.ContentSeq.otherTypes;
 import static modmake.util.Tools.nullCheck;
 import static modmake.util.Tools.trope;
 
@@ -172,6 +172,7 @@ public class BuildContent {
 			// 复制
 			t.button("", Icon.copy, styles.cleart, () -> {
 				Core.app.setClipboardText("" + value);
+				ui.showInfoFade("已复制");
 			}).padRight(2);
 			// 粘贴
 			t.button("", Icon.paste, styles.cleart, () -> ui.showConfirm(
@@ -179,6 +180,7 @@ public class BuildContent {
 						String txt = Core.app.getClipboardText();
 						try {
 							paste.get(parse(txt));
+							ui.showInfoFade("已粘贴");
 						} catch (Exception e) {
 							catchF.run();
 							ui.showException("无法粘贴", e);

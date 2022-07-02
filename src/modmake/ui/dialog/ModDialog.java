@@ -8,23 +8,26 @@ import arc.scene.event.HandCursorListener;
 import arc.scene.event.VisibilityListener;
 import arc.scene.ui.Button;
 import arc.scene.ui.Dialog;
+import arc.scene.ui.Label;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Log;
+import arc.util.serialization.Jval;
 import mindustry.Vars;
 import mindustry.gen.Icon;
+import mindustry.graphics.Pal;
+import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
 import modmake.IntVars;
 import modmake.components.IntTab;
 import modmake.components.MyMod;
-import modmake.components.constructor.MyObject;
 import modmake.ui.styles;
-import modmake.util.ContentSeq;
-import modmake.util.Reflect;
+import modmake.util.load.ContentSeq;
+import modmake.util.MyReflect;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -36,9 +39,14 @@ import static modmake.components.DataHandle.*;
 import static modmake.util.Tools.or;
 
 public class ModDialog extends BaseDialog {
+	public MyMod currentMod;
+
 	public ModDialog() {
 		super("");
+		title.setStyle(lstyle);
 	}
+
+	public static Label.LabelStyle lstyle = new Label.LabelStyle(Fonts.def, Color.white);
 
 	// 语言
 	public ObjectMap<String, String> bundles;
@@ -50,7 +58,7 @@ public class ModDialog extends BaseDialog {
 		jsonDialog.load();
 
 		try {
-			bundles = Reflect.getValue(ui.language, "displayNames", ObjectMap.class);
+			bundles = MyReflect.getValue(ui.language, "displayNames");
 //			Log.info(bundles);
 		} catch (Throwable e) {
 			bundles = new ObjectMap<>();
@@ -60,6 +68,7 @@ public class ModDialog extends BaseDialog {
 		buttons.defaults().size(210, 64);
 		buttons.button("@back", Icon.left, () -> {
 			hide();
+			currentMod = null;
 			modsDialog.show();
 		}).size(210, 64);
 
@@ -123,7 +132,7 @@ public class ModDialog extends BaseDialog {
 				selfText[0] = text;
 
 				if (ok[0]) {
-					p.getCells().forEach(e -> {
+					p.getCells().each(e -> {
 						var elem = e.get();
 						elem.change();
 					});
@@ -131,13 +140,11 @@ public class ModDialog extends BaseDialog {
 				}
 				ok[0] = true;
 				p.clearChildren();
-//			int count = 0;
 				Seq<Fi> all = content.findAll();
 //				IntVars.async("加载content", () -> {
 					for (var i = 0; i < all.size; i++) {
 						final Fi[] json = {all.get(i)};
 						if (!json[0].extEquals("hjson") && !json[0].extEquals("json")) continue;
-//					if (count++ > 10) Thread.yield();
 						var btn = new Button(Styles.defaultb);
 						btn.defaults().growX().pad(2).padLeft(4).minWidth(w - 10).left();
 
@@ -207,7 +214,6 @@ public class ModDialog extends BaseDialog {
 								jsonDialog.addListener(listener);
 							}
 						});
-
 					}
 //				}, () -> {});
 			});
@@ -226,12 +232,12 @@ public class ModDialog extends BaseDialog {
 							t.add(name).growX();
 						}).growX().row();
 						var table = new Table();
-						Seq<Object> values = new Seq<>();
+						Seq<Jval> values = new Seq<>();
 						final int[] selected = {0};
 						final int[] j = {0};
 						boolean[] ok = {false};
 						Seq<Button> btns = new Seq<>();
-						ObjectMap<String, MyObject<Object, Object>> map = or(framework.get(content.name()), ObjectMap::new);
+						ObjectMap<String, Jval> map = or(framework.get(content.name()), ObjectMap::new);
 						map.each((key, value) -> {
 							if (!ok[0]) {
 								int k = j[0];
@@ -239,7 +245,7 @@ public class ModDialog extends BaseDialog {
 									btns.get(selected[0]).setChecked(false);
 									btns.get(selected[0] = k).setChecked(true);
 								}).size(150, 64).get());
-								values.add("");
+								values.add(Jval.valueOf(""));
 								if (++j[0] % 2 == 0) table.row();
 							}
 							ok[0] = true;
@@ -260,7 +266,7 @@ public class ModDialog extends BaseDialog {
 						buttons.button("$back", this::hide).size(150, 64);
 						buttons.button("$ok", () -> {
 							Fi file = content.child(name.getText() + ".hjson");
-							file.writeString("" + values.get(selected[0]));
+							file.writeString(values.get(selected[0]).toString(Jval.Jformat.hjson));
 							// dialog.hide();
 							ref.setup.get(selectedContent[0]);
 							hide();
@@ -279,22 +285,29 @@ public class ModDialog extends BaseDialog {
 
 		Fi spritesDirectory1 = mod.root.child("sprites");
 		Fi spritesDirectory2 = mod.root.child("sprites-override");
+
+		t.image().color(Pal.accent).growX().row();
 		t.button("查看图片库1", () -> {
-			spriteDialog.hiddenRun = (() -> ref.setup.get(selectedContent[0]));
+			spriteDialog.hiddenRun = () -> {
+				ref.setup.get(selectedContent[0]);
+//				mod.loadSprites();
+			};
 			spriteDialog.setup(spritesDirectory1);
 		}).growX().row();
 		t.button("查看图片库2", () -> {
 			spriteDialog.hiddenRun = () -> ref.setup.get(selectedContent[0]);
 			spriteDialog.setup(spritesDirectory2);
-		}).growX();
+		}).growX().row();
+		t.button("加载图片库", mod::loadSprites).growX().row();
 
 		return t;
 	}
 
 
-	Fi current = null;
-
 	public ModDialog show(MyMod mod) {
+		currentMod = mod;
+		if ("打开项目加载一次".equals(settings.get("auto_load_sprites"))) mod.loadSprites();
+
 		var meta = mod.meta;
 		var displayName = "" + mod.displayName();
 		title.setText(displayName);

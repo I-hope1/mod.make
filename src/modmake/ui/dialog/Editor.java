@@ -35,8 +35,8 @@ import java.util.regex.Pattern;
 
 import static arc.Core.bundle;
 import static modmake.components.DataHandle.formatPrint;
-import static modmake.util.ContentSeq.cTypeMap;
-import static modmake.util.ContentSeq.types;
+import static modmake.util.load.ContentSeq.cTypeMap;
+import static modmake.util.load.ContentSeq.types;
 import static modmake.util.Tools.*;
 
 @SuppressWarnings("ALL")

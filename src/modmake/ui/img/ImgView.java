@@ -1,13 +1,13 @@
 package modmake.ui.img;
 
 import arc.Core;
-import arc.func.Cons;
 import arc.graphics.Color;
+import arc.graphics.Pixmap;
+import arc.graphics.Texture;
 import arc.graphics.g2d.Draw;
-import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.ScissorStack;
-import arc.graphics.gl.FrameBuffer;
+import arc.graphics.g2d.TextureRegion;
 import arc.input.GestureDetector;
 import arc.input.KeyCode;
 import arc.math.Mathf;
@@ -20,7 +20,6 @@ import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Scl;
 import arc.struct.Seq;
 import arc.util.Tmp;
-import mindustry.editor.MapEditor;
 import mindustry.graphics.Pal;
 import mindustry.input.Binding;
 import mindustry.ui.GridImage;
@@ -29,10 +28,9 @@ import static mindustry.Vars.mobile;
 import static mindustry.Vars.ui;
 import static modmake.IntUI.imgDialog;
 import static modmake.IntUI.imgEditor;
-import static modmake.components.DataHandle.settings;
 
 public class ImgView extends Element implements GestureDetector.GestureListener {
-	MyEditorTool tool = MyEditorTool.pencil;
+	ImgEditorTool tool = ImgEditorTool.pencil;
 	private float offsetx, offsety;
 	private float zoom = 1f;
 	public boolean settingsChange = false;
@@ -40,21 +38,21 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	private final GridImage image = new GridImage(0, 0);
 	private final Vec2 vec = new Vec2();
 	private final Rect rect = new Rect();
-	private final Vec2[][] brushPolygons = new Vec2[MapEditor.brushSizes.length][0];
+	private final Vec2[][] brushPolygons = new Vec2[ImgEditor.brushSizes.length][0];
 
 	public static boolean showTransparentCanvas = false;
 	boolean drawing;
 	int lastx, lasty;
 	int startx, starty;
 	float mousex, mousey;
-	MyEditorTool lastTool;
+	ImgEditorTool lastTool;
 	public Select select = new Select();
-	FrameBuffer buffer = new FrameBuffer(Core.graphics.getWidth(), Core.graphics.getHeight(), true);
+	public TextureRegion cont = new TextureRegion(), background;
 
 	public ImgView() {
 
-		for (int i = 0; i < MapEditor.brushSizes.length; i++) {
-			float size = MapEditor.brushSizes[i];
+		for (int i = 0, len = ImgEditor.brushSizes.length; i < len; i++) {
+			float size = ImgEditor.brushSizes[i];
 			float mod = size % 1f;
 			brushPolygons[i] = Geometry.pixelCircle(size, (index, x, y) -> Mathf.dst(x, y, index - mod, index - mod) <= size - 0.5f);
 		}
@@ -91,12 +89,12 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 				if (button == KeyCode.mouseRight) {
 					lastTool = tool;
-					tool = MyEditorTool.eraser;
+					tool = ImgEditorTool.eraser;
 				}
 
 				if (button == KeyCode.mouseMiddle) {
 					lastTool = tool;
-					tool = MyEditorTool.zoom;
+					tool = ImgEditorTool.zoom;
 				}
 
 				mousex = x;
@@ -124,15 +122,15 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 				Point2 p = project(x, y);
 
-				if (tool == MyEditorTool.line) {
+				if (tool == ImgEditorTool.line) {
 					tool.touchedLine(startx, starty, p.x, p.y);
 				}
-				if (tool == MyEditorTool.select) {
+				if (tool == ImgEditorTool.select) {
 					tool.selected(startx, starty, p.x, p.y);
 				}
 
-				if (tool.edit && imgEditor.flushOp() && settings.getBool("auto_save_image")) {
-					imgEditor.save();
+				if (tool.edit) {
+					imgEditor.flushOp();
 				}
 
 				if ((button == KeyCode.mouseMiddle || button == KeyCode.mouseRight) && lastTool != null) {
@@ -154,11 +152,11 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 					Bresenham2.line(lastx, lasty, p.x, p.y, (cx, cy) -> tool.touched(cx, cy));
 				}
 
-				if (tool == MyEditorTool.select) {
+				if (tool == ImgEditorTool.select) {
 					tool.drag(p.x - lastx, p.y - lasty);
 				}
 
-				if (tool == MyEditorTool.line && tool.mode == 1) {
+				if (tool == ImgEditorTool.line && tool.mode == 1) {
 					if (Math.abs(p.x - firstTouch.x) > Math.abs(p.y - firstTouch.y)) {
 						lastx = p.x;
 						lasty = firstTouch.y;
@@ -174,11 +172,11 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		});
 	}
 
-	public MyEditorTool getTool() {
+	public ImgEditorTool getTool() {
 		return tool;
 	}
 
-	public void setTool(MyEditorTool tool) {
+	public void setTool(ImgEditorTool tool) {
 		this.tool = tool;
 	}
 
@@ -196,7 +194,9 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 	public void reset() {
 		center();
-		tool = MyEditorTool.pencil;
+		tool = ImgEditorTool.pencil;
+		cont = null;
+		background = null;
 	}
 
 	@Override
@@ -212,7 +212,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 		if (Core.input.keyTap(KeyCode.shiftLeft)) {
 			lastTool = tool;
-			tool = MyEditorTool.pick;
+			tool = ImgEditorTool.pick;
 		}
 
 		if (Core.input.keyRelease(KeyCode.shiftLeft) && lastTool != null) {
@@ -227,7 +227,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	}
 
 	private void clampZoom() {
-		zoom = Mathf.clamp(zoom, 0.2f, 20f);
+		zoom = Mathf.clamp(zoom, 0.6f, Math.max(imgEditor.width(), imgEditor.height()) / 10f);
 	}
 
 	public Point2 project(float x, float y) {
@@ -293,52 +293,51 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			settingsChange = false;
 			buffer.dispose();
 			buffer.bind();*/
-			imgEditor.tiles().each(tile -> {
-				float x = leftBottom.x + tile.x * unit;
-				float y = leftBottom.y + tile.y * unit;
-				Color color = tile.color();
-				if (color.a < 1 && showTransparentCanvas) {
-					float x1 = x + unit * .25f, x2 = x + unit * .75f;
-					float y1 = y + unit * .25f, y2 = y + unit * .75f;
-					float _unit = unit / 2f;
-					Draw.color(Color.gray);
-					Fill.rect(x1, y1, _unit, _unit);
-					Fill.rect(x2, y2, _unit, _unit);
-					Draw.color(Color.lightGray);
-					Fill.rect(x1, y2, _unit, _unit);
-					Fill.rect(x2, y1, _unit, _unit);
-				}
-				Draw.color(color);
-				Fill.rect(x + unit / 2f, y + unit / 2f, unit, unit);
-			});
-		/*	FrameBuffer.unbind();
-		} else {
-			buffer.begin();
-			buffer.end();
-		}*/
+		Draw.color();
+		if (background == null && showTransparentCanvas) rebuildBackground();
+		if (background != null) Draw.rect(background, centerx, centery, sclwidth, sclheight);
+		if (cont == null) {
+			cont = new TextureRegion(new Texture(imgEditor.pixmap()), imgEditor.width(), imgEditor.height());
+		}
+		if (cont.texture == null) rebuildCont();
+		Draw.rect(cont, centerx, centery, sclwidth, sclheight);
+
+		// 选择渲染
 		if (select.any()) {
 			/*TmpTile first = select.all.first(), last = select.all.peek();
 			float firstX = leftBottom.x + (first.x) * unit, firstY = leftBottom.y + (first.y) * unit;
 			float lastX = leftBottom.x + (last.x) * unit, lastY = leftBottom.y + (last.y) * unit;
 			Draw.color(Color.gray.cpy().a(0.7f));
 			Fill.rect(firstX, firstY, lastX - firstX, lastY - firstY);*/
-			Seq<Runnable> runs = new Seq<>();
-			select.each(tile -> {
-				float x = leftBottom.x + tile.x * unit;
-				float y = leftBottom.y + tile.y * unit;
-				// 阴影
-				Draw.color(0, 0, 0, 0.7f);
-				Draw.rect(Core.atlas.find("circle-shadow"), x + unit / 2f, y + unit / 2f, unit * 2, unit * 2);
+			TextureRegion region = select.textureRegion;
+			float width = unit * region.width;
+			float height = unit * region.height;
+			float bx = leftBottom.x + unit * select.offsetX;
+			float by = leftBottom.y + unit * select.offsetY;
+			float offset = width / (float) Math.sqrt(zoom) / 15f;
+			float minX = bx - offset / 2f - 1, maxX = bx + width + offset / 2f + 1;
+			float minY = by - offset / 2f - 1, maxY = by + height + offset / 2f + 1;
+			int divisions = Math.max(region.width, region.height) * 2;
+			Lines.stroke(offset);
+			Draw.color(Color.gray);
+			Lines.dashLine(minX, minY, minX, maxY, divisions);
+			Lines.dashLine(maxX, minY, maxX, maxY, divisions);
+			Lines.dashLine(minX, minY, maxX, minY, divisions);
+			Lines.dashLine(minX, maxY, maxX, maxY, divisions);
+			Lines.stroke(offset / 2);
+			Draw.color(Pal.accent);
+			Lines.dashLine(minX, minY, minX, maxY, divisions);
+			Lines.dashLine(maxX, minY, maxX, maxY, divisions);
+			Lines.dashLine(minX, minY, maxX, minY, divisions);
+			Lines.dashLine(minX, maxY, maxX, maxY, divisions);
+//			Lines.stroke(unit / 4f);
+//			Lines.dashLine(bx, by, by + unit * (width + 0.6f), by + unit * (height + 0.6f),
+//					(width + height) / 3);
+			Draw.color();
 
-				// 储存到一个Seq
-				runs.add(() -> {
-					tile.draw(x, y, unit);
-				});
-			});
-			for (var r : runs) {
-				r.run();
-			}
-			runs.clear();
+			Draw.rect(region, leftBottom.x + unit * select.offsetX + width / 2f,
+					leftBottom.y + unit * select.offsetY + height / 2f,
+					width, height);
 		}
 
 		Draw.reset();
@@ -370,7 +369,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		Lines.stroke(Scl.scl(2f));
 
 //		if (tool != MyEditorTool.fill) {
-		if (tool == MyEditorTool.line && drawing) {
+		if (tool == ImgEditorTool.line && drawing) {
 			Vec2 v1 = unproject(startx, starty).add(x, y);
 			float sx = v1.x, sy = v1.y;
 			Vec2 v2 = unproject(lastx, lasty).add(x, y);
@@ -379,14 +378,14 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			Lines.poly(brushPolygons[index], v2.x, v2.y, scaling);
 		}
 
-		if ((tool.edit || tool == MyEditorTool.line && !drawing) && (!mobile || drawing)) {
+		if ((tool.edit || tool == ImgEditorTool.line && !drawing) && (!mobile || drawing)) {
 			Point2 p = project(mousex, mousey);
 			Vec2 v = unproject(p.x, p.y).add(x, y);
 
 			//pencil square outline
-			if (tool == MyEditorTool.pencil && tool.mode == 1) {
+			if (tool == ImgEditorTool.pencil && tool.mode == 1) {
 				Lines.square(v.x + scaling / 2f, v.y + scaling / 2f, scaling * imgEditor.brushSize);
-			} else if (tool == MyEditorTool.select && tool.mode == -1 && drawing) {
+			} else if (tool == ImgEditorTool.select && tool.mode == -1 && drawing) {
 				Vec2 v1 = unproject(startx, starty).add(x, y).cpy();
 				Vec2 v2 = unproject(p.x, p.y).add(x, y);
 				float x1, x2, y1, y2;
@@ -407,6 +406,9 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 				x2 += unit;
 				y2 += unit;
 				Lines.rect(x1, y1, x2 - x1, y2 - y1);
+			} else if (tool == ImgEditorTool.fill || tool == ImgEditorTool.select) {
+//				Lines.stroke(3);
+				Lines.square(v.x + unit / 2, v.y + unit / 2, unit / 2);
 			} else {
 				Lines.poly(brushPolygons[index], v.x, v.y, scaling);
 			}
@@ -431,10 +433,40 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		ScissorStack.pop();
 	}
 
+	public void rebuildCont() {
+//		var pixmap = imgEditor.pixmap().flipY();
+		/*int w = imgEditor.width(), h = imgEditor.height();
+		var pixmap = new Pixmap(w, h);
+		imgEditor.tiles().each(tile -> {
+			int x = tile.x, y = h - tile.y - 1;
+			Color color = new Color(tile.color().rgba());
+			pixmap.setRaw(x, y, color.rgba());
+		});*/
+//		if (cont.texture != null) cont.texture.dispose();
+		cont = new TextureRegion(new Texture(imgEditor.pixmap()));
+//		cont.flip(false, true);
+	}
+
+	public void rebuildBackground() {
+		int w = imgEditor.width() * 2, h = imgEditor.height() * 2;
+		var pixmap = new Pixmap(w, h);
+		int lightGray = Color.lightGray.rgba();
+		int gray = Color.gray.rgba();
+		for (int x = 0; x <= w; x += 2) {
+			for (int y = 0; y <= h; y += 2) {
+				pixmap.setRaw(x, y, lightGray);
+				pixmap.setRaw(x + 1, y, gray);
+				pixmap.setRaw(x, y + 1, gray);
+				pixmap.setRaw(x + 1, y + 1, lightGray);
+			}
+		}
+		background = new TextureRegion(new Texture(pixmap));
+	}
+
 	public boolean active() {
 		return Core.scene != null && Core.scene.getKeyboardFocus() != null
 				&& Core.scene.getKeyboardFocus().isDescendantOf(imgDialog)
-				&& imgDialog.isShown() && tool == MyEditorTool.zoom &&
+				&& imgDialog.isShown() && tool == ImgEditorTool.zoom &&
 				Core.scene.hit(Core.input.mouse().x, Core.input.mouse().y, true) == this;
 	}
 
@@ -465,76 +497,57 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 	}
 
-	public static class TmpTile {
-		public int x, y;
-		final Color color;
-
-		public TmpTile(ImgEditor.Tile tile) {
-			x = tile.x;
-			y = tile.y;
-			color = tile.color();
-		}
-
-		public void cover() {
-			var tile = imgEditor.tile(x, y);
-			if (tile != null) tile.color(color);
-		}
-
-		public void draw(float x, float y, float unit) {
-//			Drawf.light(x + unit / 2f, y + unit / 2f, unit * 2, color, 0.7f);
-			if (color.a < 1 && showTransparentCanvas) {
-				float x1 = x + unit * .25f, x2 = x + unit * .75f;
-				float y1 = y + unit * .25f, y2 = y + unit * .75f;
-				float _unit = unit / 2f;
-				Draw.color(Color.gray);
-				Fill.rect(x1, y1, _unit, _unit);
-				Fill.rect(x2, y2, _unit, _unit);
-				Draw.color(Color.lightGray);
-				Fill.rect(x1, y2, _unit, _unit);
-				Fill.rect(x2, y1, _unit, _unit);
-			}
-			Draw.alpha(1f);
-			Draw.color(color);
-			Fill.rect(x + unit / 2f, y + unit / 2f, unit, unit);
-		}
-
-		@Override
-		public String toString() {
-			return "{" + x +
-					", " + y +
-					"}";
-		}
-	}
-
 	public static class Select {
 
-		public final Seq<TmpTile> all = new Seq<>();
-		public boolean selectTransparent = false, cut = true;
+		public boolean selectTransparent = false, cut = false;
+		public int offsetX, offsetY;
+		public Pixmap pixmap;
+		public TextureRegion textureRegion = null;
+		Seq<ImgEditor.Tile> toClear = new Seq<>();
 
 		public void cover() {
-			all.each(TmpTile::cover);
-			imgEditor.save();
-			all.clear();
-			MyEditorTool.select.mode = -1;
+			if (pixmap == null) return;
+			pixmap.each((x, y) -> {
+				var tile = imgEditor.tile(x + offsetX, y + offsetY);
+				if (tile != null) {
+					tile.color(pixmap.getRaw(x, y));
+				}
+			});
+			clear();
+			imgEditor.flushOp();
+			ImgEditorTool.select.mode = -1;
 		}
 
-		public void add(ImgEditor.Tile tile) {
-			if (tile.color().a > 0 || selectTransparent) {
-				all.add(new TmpTile(tile));
-				if (cut) tile.color(Color.clear);
-			}
+		public void init(int startX, int startY, int toX, int toY) {
+			startX = imgEditor.clampX(startX);
+			startY = imgEditor.clampY(startY);
+			toX = imgEditor.clampX(toX);
+			toY = imgEditor.clampY(toY);
+
+			offsetX = startX;
+			offsetY = startY;
+			int width = Math.abs(toX - startX + 1), height = Math.abs(toY - startY + 1);
+			pixmap = new Pixmap(width, height);
+			toClear.clear();
+			pixmap.each((x, y) -> {
+				var tile = imgEditor.tileRaw(x + offsetX, y + offsetY);
+				if (tile != null) {
+					pixmap.setRaw(x, y, tile.colorRgba());
+					if (cut) toClear.add(tile);
+				}
+			});
+			if (cut) toClear.each(t -> t.color(Color.clearRgba));
+			textureRegion = new TextureRegion(new Texture(pixmap));
+			textureRegion.flip(false, true);
 		}
 
 		public boolean any() {
-			return all.any();
-		}
-
-		public void each(Cons<TmpTile> cons) {
-			all.each(cons);
+			return textureRegion != null;
 		}
 
 		public void clear() {
-			all.clear();
+			pixmap = null;
+			textureRegion = null;
 		}
 	}
 }

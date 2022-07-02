@@ -2,11 +2,13 @@ package modmake.ui.dialog;
 
 import arc.files.Fi;
 import arc.func.Cons;
+import arc.graphics.Pixmap;
 import arc.graphics.Texture;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.ui.Button;
 import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
+import arc.struct.ObjectMap;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.gen.Icon;
@@ -14,8 +16,8 @@ import mindustry.gen.Tex;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
+import modmake.components.MyMod;
 
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 import static modmake.IntUI.*;
@@ -24,6 +26,8 @@ public class SpriteDialog extends BaseDialog {
 	Table p;
 	public Runnable hiddenRun = null;
 	public Fi root;
+
+	public ObjectMap<String, Pixmap> spriteMap;
 
 	public SpriteDialog() {
 		super("图片库");
@@ -52,12 +56,16 @@ public class SpriteDialog extends BaseDialog {
 						f.copyTo(toFile);
 						try {
 							buildImage(p, toFile);
+							spriteMap.put(toFile.nameWithoutExtension(), new Pixmap(toFile));
 						} catch (Exception err) {
 							Vars.ui.showException("文件可能损坏", err);
 						}
 					};
-					if (toFile.exists()) Vars.ui.showConfirm("$confirm", "是否要覆盖", go);
-					else go.run();
+					if (toFile.exists()) {
+						Vars.ui.showConfirm("$confirm", "是否要覆盖", go);
+					} else {
+						go.run();
+					}
 				})
 		)).size(210, 64);
 
@@ -72,9 +80,15 @@ public class SpriteDialog extends BaseDialog {
 	}
 
 	public void setup(Fi all) {
-		root = all;
 		cont.clearChildren();
+		root = all;
 		if (all != null) {
+			MyMod mod = modDialog.currentMod;
+			if (root.name().equals("sprites")) {
+				spriteMap = mod.sprites1;
+			} else if (root.name().equals("sprites-override")) {
+				spriteMap = mod.sprites2;
+			}
 			searchTable(cont, (p, text) -> {
 				p.clearChildren();
 				this.p = p;
@@ -94,7 +108,7 @@ public class SpriteDialog extends BaseDialog {
 
 
 	public void buildImage(Table table, Fi fi) {
-		if (!Objects.equals(fi.extension(), "png")) return;
+		if (!fi.extEquals("png")) return;
 		Fi[] file = {fi};
 		/*table.table(t -> {
 			t.left();
@@ -197,6 +211,7 @@ public class SpriteDialog extends BaseDialog {
 				b.image(Icon.trash);
 			}, Styles.defaultb, () -> {
 				file[0].delete();
+				spriteMap.remove(file[0].nameWithoutExtension());
 				t.remove();
 			}).growX().growY();
 		};

@@ -1,16 +1,21 @@
 
 importPackage(Packages.arc.files);
+
+
 let lastAtlas = null;
+let scripts = Vars.mods.scripts;
+let { scope } = scripts;
+let loader = Vars.mods.mainLoader()
+let NativeJavaClass = Packages.rhino.NativeJavaClass
+/*const ModMake = Packages.rhino.NativeJavaClass(scope, loadClass("modmake.ModMake"), true);
+ModMake.runnable = () => {*/
+
+const ContentSeq = NativeJavaClass(scope, loader.loadClass("modmake.util.load.ContentSeq"), true);
+
 const loadMod = (() => {
-	let clazz = Vars.mods.getClass()
-	let loadModM = clazz.getDeclaredMethod("loadMod", Fi, java.lang.Boolean.TYPE)
-	loadModM.setAccessible(true)
 
 	let mods = Vars.mods.list();
-
-	let field = clazz.getDeclaredField("parser")
-	field.setAccessible(true)
-	let parser = field.get(Vars.mods)
+	let parser = ContentSeq.parser
 
 	let AtlasRegion = TextureAtlas.AtlasRegion
 
@@ -19,7 +24,7 @@ const loadMod = (() => {
 
 		let atlas = Core.atlas = extend(TextureAtlas, {
 			find(name) {
-				var base = map.has(name) ? map.get(name) : shadow.find(name);
+				var base = map.containsKey(name) ? map.get(name) : shadow.find(name);
 
 				if (base == this.error) {
 					if (typeof arguments[1] == "string") return this.find(arguments[1])
@@ -33,12 +38,11 @@ const loadMod = (() => {
 			},
 
 			has(s) {
-				return shadow.has(s) || this.isFound(map.get(s) || null)
+				return shadow.has(s) || this.isFound(map.getNull(s) || null)
 			},
 
 			//return the *actual* pixmap regions, not the disposed ones.
 			getPixmap(region) {
-				Log.info(region.name)
 				let out = find(region.name)
 				//this should not happen in normal situations
 				if (out == null) return this.error;
@@ -58,8 +62,6 @@ const loadMod = (() => {
 		let fi = mod.root
 
 		let _mod = ACLASS.lastMod
-		mods.add(_mod)
-		_mod.state = Packages.mindustry.mod.Mods.ModState.enabled;
 
 		Vars.content.clear()
 		Vars.content.createBaseContent()
@@ -68,23 +70,18 @@ const loadMod = (() => {
 		ACLASS.loadContent()
 		yield;
 		let wrong = _mod.hasContentErrors()
-		lastMod = _mod
 
-		if (settings.getBool("load_sprites") && mod.spritesFi() != null) {
-			let spritesFi = mod.spritesFi();
-
-			let map = new Map()
-			spritesFi.walk(cons(f => {
-				try {
-					let region = new AtlasRegion(new TextureRegion(new Texture(f)))
-					region.name = _mod.meta.name + "-" + f.nameWithoutExtension()
-					map.set(region.name, region);
-				} catch (err) {
-					Log.err(err)
-				}
-			}))
-			yield;
-			if (map) loadSprites(map)
+		let ls = settings.getBool("load_sprites")
+		let li = settings.getBool("load_icons")
+		if (li) {
+			ACLASS.loadIcons()
+		}
+		if (ls) {
+			let map = mod.spriteAll()
+//			Log.info(map)
+			if (!map.isEmpty()) {
+				loadSprites(map)
+			}
 		}
 		yield;
 
@@ -144,11 +141,11 @@ const loadMod = (() => {
 })()
 let AtlasRegion = TextureAtlas.AtlasRegion
 
-let scripts = Vars.mods.scripts;
-let { scope } = scripts;
-const ACLASS = Packages.rhino.NativeJavaClass(scope, Vars.mods.mainLoader().loadClass("modmake.util.LoadMod"), true);
+const ACLASS = NativeJavaClass(scope, loader.loadClass("modmake.util.load.LoadMod"), true);
 ACLASS.boolf = boolf(loadMod)
+// ACLASS.boolf = boolf(() => false)
 let { settings } = ACLASS
+
 Events.run(ClientLoadEvent, () => {
 	lastAtlas = Core.atlas;
 })

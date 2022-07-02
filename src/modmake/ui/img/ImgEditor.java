@@ -5,19 +5,23 @@ import arc.func.Boolf;
 import arc.func.Cons;
 import arc.graphics.Color;
 import arc.graphics.Pixmap;
+import arc.graphics.Pixmaps;
 import arc.math.Mathf;
 import arc.struct.Seq;
+import modmake.IntVars;
+import modmake.util.img.MyPixmapIO;
 
 import java.util.ArrayList;
 
 import static mindustry.Vars.ui;
 import static modmake.IntUI.imgDialog;
+import static modmake.IntUI.view;
+import static modmake.components.DataHandle.settings;
 import static modmake.ui.img.ImgEditorDialog.Img;
 
 public class ImgEditor {
-	public static final float[] brushSizes = {1f, 1.5f, 2f, 3f, 4f, 5f, 9f, 15f, 20f};
+	public static final float[] brushSizes = {1f, 1.5f, 2f, 3f, 4f, 5f, 9f, 15f, 20f, 30f};
 	public final Stack stack = new Stack();
-	private boolean loading;
 	public float brushSize = 1.0f;
 	public Color drawColor;
 	public Fi currentFi = null;
@@ -29,25 +33,18 @@ public class ImgEditor {
 		drawColor = Color.black;
 	}
 
-	public boolean isLoading() {
-		return loading;
-	}
-
 	public void beginEdit(int width, int height) {
 		currentFi = null;
 		reset();
-		loading = true;
+//		if (tiles != null) tiles.pixmap.dispose();
 		tiles = new Tiles(width, height);
-
-		loading = false;
 	}
 
 	public void beginEdit(Img img) {
 		currentFi = img.file;
 		reset();
-		loading = true;
+//		if (tiles != null) tiles.pixmap.dispose();
 		tiles = new Tiles(img.pixmap);
-		loading = false;
 	}
 
 	public void beginEdit(Fi fi) {
@@ -72,9 +69,7 @@ public class ImgEditor {
 	}
 
 	public void load(Runnable r) {
-		loading = true;
 		r.run();
-		loading = false;
 	}
 
 	private void reset() {
@@ -86,7 +81,7 @@ public class ImgEditor {
 
 	public void save() {
 		try {
-			new Img(tiles().pixmap).toFile(currentFi);
+			MyPixmapIO.write(pixmap(), currentFi);
 			ui.showInfoFade("@editor.saved");
 		} catch (Exception e) {
 			ui.showException(e);
@@ -94,7 +89,11 @@ public class ImgEditor {
 	}
 
 	public Tile tile(int x, int y) {
-		return tiles.getn(x, y);
+		return tiles.get(x, y);
+	}
+
+	public Tile tileRaw(int x, int y) {
+		return tiles.getRaw(x, y);
 	}
 
 	public Pixmap pixmap() {
@@ -115,16 +114,15 @@ public class ImgEditor {
 
 		for (int rx = -clamped; rx <= clamped; ++rx) {
 			for (int ry = -clamped; ry <= clamped; ++ry) {
-				if (Mathf.within((float) rx, (float) ry, brushSize - 0.5F + 1.0E-4F)) {
+				if (Mathf.within((float) rx, (float) ry, brushSize - 0.5f + 0.0004F)) {
 					int wx = x + rx;
 					int wy = y + ry;
 					if (wx >= 0 && wy >= 0 && wx < width() && wy < height()) {
-						drawer.get(tile(wx, wy));
+						drawer.get(tileRaw(wx, wy));
 					}
 				}
 			}
 		}
-
 	}
 
 	public void drawSquare(int x, int y, Cons<Tile> drawer) {
@@ -135,7 +133,7 @@ public class ImgEditor {
 				int wx = x + rx;
 				int wy = y + ry;
 				if (wx >= 0 && wy >= 0 && wx < width() && wy < height()) {
-					drawer.get(tile(wx, wy));
+					drawer.get(tileRaw(wx, wy));
 				}
 			}
 		}
@@ -145,14 +143,19 @@ public class ImgEditor {
 	public void resize(int width, int height) {
 		stack.clear();
 		clearOp();
-		Pixmap previous = tiles.pixmap;
+		Pixmap pixmap = Pixmaps.resize(pixmap(), width, height);
+//		pixmap().dispose();
+		// TODO dispose
+		tiles = new Tiles(pixmap);
+		/*Pixmap previous = tiles.pixmap;
 		int offsetX = (width - width()) / 2;
 		int offsetY = (height - height()) / 2;
 		loading = true;
 		tiles.resize(width, height);
-		tiles.pixmap.draw(previous, offsetX, offsetY);
+		tiles.pixmap.draw(previous, offsetX, offsetY);*/
 
-		loading = false;
+		view.rebuildCont();
+
 	}
 
 	public void clearOp() {
@@ -175,14 +178,16 @@ public class ImgEditor {
 		return stack.canRedo();
 	}
 
-	public boolean flushOp() {
+	public void flushOp() {
 		if (!currentOp.isEmpty()) {
 			stack.addUndo(currentOp.copy());
 			stack.list2.clear();
+			/*currentOp.each(t -> {
+			});*/
 			currentOp.clear();
-			return true;
+			view.rebuildCont();
+			if (settings.getBool("auto_save_image")) save();
 		}
-		return false;
 	}
 
 	public static void addTileOp(TileData t) {
@@ -194,7 +199,7 @@ public class ImgEditor {
 	}
 
 	public void drawBlocksReplace(int x, int y) {
-		drawBlocks(x, y, tile -> tile.color() != Color.clear);
+		drawBlocks(x, y, tile -> tile.colorRgba() != Color.clearRgba);
 	}
 
 	public void drawBlocks(int x, int y, boolean square, Boolf<Tile> tester) {
@@ -203,11 +208,13 @@ public class ImgEditor {
 				tile.color(drawColor);
 			}
 		};
-		if (square) {
-			drawSquare(x, y, drawer);
-		} else {
-			drawCircle(x, y, drawer);
-		}
+		IntVars.async(null, () -> {
+			if (square) {
+				drawSquare(x, y, drawer);
+			} else {
+				drawCircle(x, y, drawer);
+			}
+		}, () -> {}, false);
 	}
 
 	public void drawBlocks(int x, int y, Boolf<Tile> tester) {
@@ -215,7 +222,14 @@ public class ImgEditor {
 	}
 
 	public void drawBlocks(int x, int y) {
-		drawBlocks(x, y, false, tile -> tile.color() != drawColor);
+		drawBlocks(x, y, false, tile -> tile.colorRgba() != drawColor.rgba());
+	}
+
+	public int clampX(int x) {
+		return Mathf.clamp(x, 0, width() - 1);
+	}
+	public int clampY(int y) {
+		return Mathf.clamp(y, 0, height() - 1);
 	}
 
 	public static class Tiles {
@@ -224,15 +238,27 @@ public class ImgEditor {
 		public int w, h;
 
 		public Tiles(Pixmap pixmap) {
+			this(pixmap, pixmap.width, pixmap.height);
+		}
+
+		public Tiles(Pixmap pixmap, int w, int h) {
 			this.pixmap = pixmap;
-			resize(pixmap.width, pixmap.height);
+			this.w = w;
+			this.h = h;
+
+			tiles = new Tile[w][h];
+			for (int i = 0; i < w; i++) {
+				for (int j = 0; j < h; j++) {
+					tiles[i][j] = new Tile(pixmap, i, j);
+				}
+			}
 		}
 
 		public Tiles(int w, int h) {
-			this(new Pixmap(w, h));
+			this(new Pixmap(w, h), w, h);
 		}
 
-		public Tiles resize(int w, int h) {
+		/*public void resize(int w, int h) {
 			this.w = w;
 			this.h = h;
 			tiles = new Tile[w][h];
@@ -244,17 +270,20 @@ public class ImgEditor {
 					}
 				}
 			}
-			return this;
-		}
+		}*/
 
 		public boolean in(int x, int y) {
 			return x >= 0 && x < w && y >= 0 && y < h;
 		}
 
-		public Tile getn(int x, int y) {
+		public Tile get(int x, int y) {
 			if (in(x, y)) return tiles[x][y];
 			return null;
 //			throw new IllegalArgumentException(x + "," + y + "不在" + w + "," + h + "里");
+		}
+
+		public Tile getRaw(int x, int y) {
+			return tiles[x][y];
 		}
 
 		public void each(Cons<Tile> cons) {
@@ -267,11 +296,11 @@ public class ImgEditor {
 	}
 
 	public static class TileData {
-		public Color color;
+		public int color;
 		public int x, y;
 
 		public TileData(Tile t) {
-			this.color = t.color();
+			this.color = t.colorRgba();
 			this.x = t.x;
 			this.y = t.y;
 		}
@@ -288,27 +317,45 @@ public class ImgEditor {
 		}
 
 		public void color(Color c) {
-			if (color().equals(c)) return;
+			if (colorRgba() == c.rgba()) return;
+			color(c.rgba());
+			/*addTileOp(new TileData(this));
+			pixmap.setRaw(x, pixmap.height - y - 1, c.rgba());*/
+		}
+
+		public void color(int color) {
 			addTileOp(new TileData(this));
-			pixmap.setRaw(x, pixmap.height - y - 1, c.rgba());
+			pixmap.setRaw(x, pixmap.height - y - 1, color);
+//			Pixmaps.drawPixel(view.cont.texture, x, pixmap.height - y - 1, color);
+		}
+
+		public int colorRgba() {
+			return pixmap.getRaw(x, pixmap.height - y - 1);
 		}
 
 		public Color color() {
-			return new Color(pixmap.get(x, pixmap.height - y - 1));
+			return new Color(colorRgba());
 		}
 
 	}
 
 	public class Stack {
+		public static final int maxSize = Integer.MAX_VALUE;
 		protected ArrayList<Seq<TileData>> list1 = new ArrayList<>();
 		protected ArrayList<Seq<TileData>> list2 = new ArrayList<>();
 
 		public void addUndo(Seq<TileData> seq) {
 			list1.add(seq);
+			while (list1.size() > maxSize) {
+				list1.remove(0);
+			}
 		}
 
 		public void addRedo(Seq<TileData> seq) {
 			list2.add(seq);
+			while (list2.size() > maxSize) {
+				list2.remove(0);
+			}
 		}
 
 		public void clear() {
@@ -335,13 +382,16 @@ public class ImgEditor {
 		}
 
 		public Seq<TileData> setPixmap(Seq<TileData> seq) {
-			Pixmap p = tiles.pixmap;
 			var seq2 = new Seq<TileData>();
+
 			seq.each(t -> {
-				seq2.add(new TileData(tile(t.x, t.y)));
-				p.set(t.x, p.height - t.y - 1, t.color);
+				var tile = tileRaw(t.x, t.y);
+				seq2.add(new TileData(tile));
+				tile.color(t.color);
 			});
+//			view.cont.texture.draw(pixmap());
 			seq.clear();
+			view.rebuildCont();
 			return seq2;
 		}
 

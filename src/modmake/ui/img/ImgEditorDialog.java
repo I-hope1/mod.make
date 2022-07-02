@@ -13,28 +13,28 @@ import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
 import arc.util.*;
 import mindustry.editor.MapEditor;
-import mindustry.game.Rules;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
+import modmake.components.MyMod;
 import modmake.ui.styles;
+import modmake.util.img.MyPixmapIO;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 
 import static mindustry.Vars.*;
-import static modmake.IntUI.icons;
-import static modmake.IntUI.imgEditor;
+import static modmake.IntUI.*;
 
 public class ImgEditorDialog extends Dialog {
 	public ImgView view;
 	private ImgResizeDialog resizeDialog;
 	private ScrollPane pane;
 	private final BaseDialog menu;
-	private Table blockSelection;
+	private Table colorSelection;
 	public Runnable hiddenRun = null;
 	private boolean saved = false; //currently never read
 	private boolean shownWithImg = false;
@@ -87,10 +87,12 @@ public class ImgEditorDialog extends Dialog {
 			menu.hide();
 		}).size(swidth * 2f + 10, 60f);
 
-		resizeDialog = new ImgResizeDialog((x, y) -> {
-			if (!(imgEditor.width() == x && imgEditor.height() == y)) {
+		resizeDialog = new ImgResizeDialog((width, height) -> {
+			if (!(imgEditor.width() == width && imgEditor.height() == height)) {
 				ui.loadAnd(() -> {
-					imgEditor.resize(x, y);
+					view.select.cover();
+					imgEditor.resize(width, height);
+					view.background = null;
 				});
 			}
 		});
@@ -118,9 +120,6 @@ public class ImgEditorDialog extends Dialog {
 			imgEditor.stack.clear();
 			Core.scene.setScrollFocus(view);
 			if (!shownWithImg) {
-				//clear units, rules and other unnecessary stuff
-				logic.reset();
-				state.rules = new Rules();
 				imgEditor.beginEdit(32, 32);
 			}
 			shownWithImg = false;
@@ -134,6 +133,7 @@ public class ImgEditorDialog extends Dialog {
 			if (hiddenRun != null) hiddenRun.run();
 			imgEditor.clearOp();
 			imgEditor.stack.clear();
+//			imgEditor.pixmap().dispose();
 			platform.updateRPC();
 			if (!Core.settings.getBool("landscape")) platform.endForceLandscape();
 		});
@@ -178,6 +178,16 @@ public class ImgEditorDialog extends Dialog {
 
 	@Override
 	public void hide() {
+
+		if (modDialog.currentMod != null && imgEditor.currentFi != null) {
+			MyMod mod = modDialog.currentMod;
+			Fi fi = imgEditor.currentFi;
+			if (spriteDialog.root.name().equals("sprites")) {
+				mod.sprites1.put(fi.nameWithoutExtension(), new Pixmap(fi));
+			} else if (spriteDialog.root.name().equals("sprites-override")) {
+				mod.sprites2.put(fi.nameWithoutExtension(), new Pixmap(fi));
+			}
+		}
 		super.hide(Actions.sequence(Actions.alpha(0f)));
 	}
 
@@ -213,7 +223,7 @@ public class ImgEditorDialog extends Dialog {
 				ButtonGroup<ImageButton> group = new ButtonGroup<>();
 				Table[] lastTable = {null};
 
-				Cons<MyEditorTool> addTool = tool -> {
+				Cons<ImgEditorTool> addTool = tool -> {
 
 					ImageButton button = new ImageButton(
 							(Icon.icons.containsKey(tool.name()) ? Icon.icons : icons).get(tool.name()), Styles.clearTogglei);
@@ -296,14 +306,14 @@ public class ImgEditorDialog extends Dialog {
 
 				ImageButton grid = tools.button(Icon.grid, Styles.clearTogglei, () -> view.setGrid(!view.isGrid())).get();
 
-				addTool.get(MyEditorTool.zoom);
+				addTool.get(ImgEditorTool.zoom);
 
 				tools.row();
 
 				ImageButton undo = tools.button(Icon.undo, Styles.cleari, imgEditor::undo).get();
 				ImageButton redo = tools.button(Icon.redo, Styles.cleari, imgEditor::redo).get();
 
-				addTool.get(MyEditorTool.pick);
+				addTool.get(ImgEditorTool.pick);
 
 				tools.row();
 
@@ -314,15 +324,15 @@ public class ImgEditorDialog extends Dialog {
 				redo.update(() -> redo.getImage().setColor(redo.isDisabled() ? Color.gray : Color.white));
 				grid.update(() -> grid.setChecked(view.isGrid()));
 
-				addTool.get(MyEditorTool.line);
-				addTool.get(MyEditorTool.pencil);
-				addTool.get(MyEditorTool.eraser);
+				addTool.get(ImgEditorTool.line);
+				addTool.get(ImgEditorTool.pencil);
+				addTool.get(ImgEditorTool.eraser);
 
 				tools.row();
 
-				addTool.get(MyEditorTool.fill);
-				addTool.get(MyEditorTool.spray);
-				addTool.get(MyEditorTool.select);
+				addTool.get(ImgEditorTool.fill);
+				addTool.get(ImgEditorTool.spray);
+				addTool.get(ImgEditorTool.select);
 
 //				ImageButton rotate = tools.button(Icon.right, Styles.cleari, () -> imgEditor.rotation = (imgEditor.rotation + 1) % 4).get();
 //				rotate.getImage().update(() -> {
@@ -373,7 +383,9 @@ public class ImgEditorDialog extends Dialog {
 				mid.table(t -> {
 					t.defaults().growX();
 					t.button("@editor.center", Icon.move, Styles.cleart, view::center).margin(6).row();
-					t.check("显示透明画布", ImgView.showTransparentCanvas, b -> ImgView.showTransparentCanvas = b);
+					t.check("显示透明画布", ImgView.showTransparentCanvas, b -> {
+						ImgView.showTransparentCanvas = b;
+					});
 				}).growX().top();
 
 				mid.row();
@@ -397,7 +409,7 @@ public class ImgEditorDialog extends Dialog {
 				}
 			}
 		} else {
-			for (MyEditorTool tool : MyEditorTool.all) {
+			for (ImgEditorTool tool : ImgEditorTool.all) {
 				if (Core.input.keyTap(tool.key)) {
 					view.setTool(tool);
 					break;
@@ -441,8 +453,8 @@ public class ImgEditorDialog extends Dialog {
 	}
 
 	private void addBlockSelection(Table cont) {
-		blockSelection = new Table();
-		pane = new ScrollPane(blockSelection);
+		colorSelection = new Table();
+		pane = new ScrollPane(colorSelection);
 		pane.setFadeScrollBars(false);
 		pane.setOverscroll(true, false);
 		pane.exited(() -> {
@@ -453,14 +465,14 @@ public class ImgEditorDialog extends Dialog {
 
 		cont.table(search -> {
 			search.image(Icon.zoom).padRight(8);
-			search.field("", this::rebuildBlockSelection)
+			search.field("", this::rebuildColorSelection)
 					.name("imgEditor/search").maxTextLength(maxNameLength).get().setMessageText("@players.search");
 		}).pad(-2);
 		cont.row();
 		cont.table(Tex.underline, extra -> {
 			extra.left();
 			Image img;
-			extra.add(img = new Image(Tex.whiteui, imgEditor.drawColor)).size(42);
+			extra.add(img = new Image(Tex.whiteui, imgEditor.drawColor)).size(42).padRight(4f);
 			img.update(() -> img.setColor(imgEditor.drawColor));
 			extra.label(() -> imgEditor.drawColor + "").growX().growY();
 		}).growX().left().get().clicked(() -> ui.picker.show(imgEditor.drawColor,
@@ -468,16 +480,16 @@ public class ImgEditorDialog extends Dialog {
 		cont.row();
 		cont.add(pane).expandY().growX().top().left();
 
-		rebuildBlockSelection("");
+		rebuildColorSelection("");
 	}
 
-	private void rebuildBlockSelection(String searchText) {
-		blockSelection.clear();
+	private void rebuildColorSelection(String searchText) {
+		colorSelection.clear();
 
 		int i = 0;
 
 		Table colorTable = new Table();
-		blockSelection.add(colorTable).row();
+		colorSelection.add(colorTable).row();
 
 		Field[] fields = Color.class.getFields();
 		AccessibleObject.setAccessible(fields, true);
@@ -505,11 +517,11 @@ public class ImgEditorDialog extends Dialog {
 			}
 		}
 
-		blockSelection.image().color(Color.lightGray).growX().row();
+		colorSelection.image().color(Color.lightGray).growX().row();
 
 		int j = 0;
 		Table palTable = new Table();
-		blockSelection.add(palTable).row();
+		colorSelection.add(palTable).row();
 		fields = Pal.class.getFields();
 		AccessibleObject.setAccessible(fields, true);
 		for (Field field : fields) {
@@ -528,7 +540,7 @@ public class ImgEditorDialog extends Dialog {
 			button.getStyle().imageUp = styles.whiteui.tint(c);
 			button.clicked(() -> imgEditor.drawColor = c);
 			button.resizeImage(8 * 4f);
-			button.update(() -> button.setChecked(imgEditor.drawColor == c));
+			button.update(() -> button.setChecked(imgEditor.drawColor.rgba() == c.rgba()));
 			palTable.add(button).size(50f).tooltip(field.getName());
 
 			if (++j % 4 == 0) {
@@ -537,7 +549,7 @@ public class ImgEditorDialog extends Dialog {
 		}
 
 		if (i + j == 0) {
-			blockSelection.add("@none").color(Color.lightGray).padLeft(80).padTop(10);
+			colorSelection.add("@none").color(Color.lightGray).padLeft(80).padTop(10);
 		}
 	}
 
@@ -555,7 +567,8 @@ public class ImgEditorDialog extends Dialog {
 		}
 
 		public void toFile(Fi fi) {
-			fi.writePng(pixmap);
+			MyPixmapIO.write(pixmap, fi);
+//			PixmapIO.writeApix(fi, pixmap);
 		}
 	}
 }

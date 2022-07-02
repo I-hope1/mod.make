@@ -17,7 +17,7 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.components.MyMod;
 import modmake.ui.styles;
-import modmake.util.LoadMod;
+import modmake.util.load.LoadMod;
 
 import java.util.Objects;
 
@@ -121,8 +121,8 @@ public class ModsDialog extends BaseDialog {
 		}
 	}
 
-	Fi dataDirectory = Vars.dataDirectory.child("mods(I hope...)");
-	Fi modsDirectory = dataDirectory.child("mods");
+	public static final Fi dataDirectory = Vars.dataDirectory.child("mods(I hope...)");
+	public static final Fi modsDirectory = dataDirectory.child("mods");
 	TextButton.TextButtonStyle style;
 	float margin;
 
@@ -170,6 +170,7 @@ public class ModsDialog extends BaseDialog {
 					title.add().growX().left();
 				});
 				b.table(right -> {
+//					right.fillParent = true;
 					right.right();
 					right.button(Icon.edit, Styles.clearPartiali, () -> {
 						modMetaDialog.show(mod.root.child("mod.json").exists()
@@ -202,7 +203,7 @@ public class ModsDialog extends BaseDialog {
 						} else upload.run();
 					}).size(50).disabled(__ -> Vars.state.isGame() && settings.getBool("auto_load_mod"));
 					right.button(Icon.link, Styles.clearPartiali, () -> Core.app.openFolder(mod.root.absolutePath())).size(50);
-				}).growX().right().padRight(-8).padTop(-8);
+				}).growX().right().padRight(-8).padTop(-8).fill();
 			}, styles.clearpb, () -> {
 				hide();
 				modDialog.show(mod);

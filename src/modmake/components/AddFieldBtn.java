@@ -18,7 +18,7 @@ import modmake.IntUI;
 import modmake.components.constructor.MyArray;
 import modmake.components.constructor.MyObject;
 import modmake.util.BuildContent;
-import modmake.util.ContentSeq;
+import modmake.util.load.ContentSeq;
 import modmake.util.Fields;
 
 import java.lang.reflect.Field;

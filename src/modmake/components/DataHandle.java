@@ -29,7 +29,7 @@ import static modmake.IntVars.data;
 import static modmake.ui.dialog.MySettingsDialog.CheckSetting;
 
 public class DataHandle {
-	public static ObjectMap<String, ObjectMap<String, MyObject<Object, Object>>> framework;
+	public static ObjectMap<String, ObjectMap<String, Jval>> framework;
 	public static ObjectMap<String, String> types;
 	public static StringMap content, settings;
 
@@ -37,7 +37,7 @@ public class DataHandle {
 	public final static Json json = new Json();
 
 	public static class _Class {
-		public MyObject<Object, Object> value;
+		public Jval value;
 		public boolean ok = false;
 	}
 
@@ -46,27 +46,29 @@ public class DataHandle {
 		framework = new ObjectMap<>();
 		Fi[] fiList = data.child("framework").list();
 		for (Fi fi : fiList) {
-			var map = new ObjectMap<String, Prov<MyObject<Object, Object>>>();
+			var map = new ObjectMap<String, Prov<Jval>>();
 			fi.walk(f -> {
 				String str = f.readString();
 				String parent = getParent(str);
 				final var obj = new _Class();
-				obj.value = parse(str);
+				obj.value = Jval.read(str);
 				map.put(f.nameWithoutExtension(), () -> {
 					if (parent.isEmpty()) return obj.value;
 					var func = map.get(parent);
+					var value = obj.value;
 					if (func != null && !obj.ok) {
 						obj.ok = true;
-						func.get().each((k, v) -> {
-							if (!obj.value.has(k)) {
-								obj.value.put(k, v);
+						var parentValue = func.get();
+						if (value.isObject()) {
+							for (var entry : parentValue.asObject()) {
+								if (!value.has(entry.key)) value.put(entry.key, parentValue.get(entry.key));
 							}
-						});
+						}
 					}
 					return obj.value;
 				});
 			});
-			var tmp = new ObjectMap<String, MyObject<Object, Object>>();
+			var tmp = new ObjectMap<String, Jval>();
 			map.each((key, value) -> {
 				tmp.put(key, value.get());
 			});
@@ -112,16 +114,20 @@ public class DataHandle {
 		Fi fi = Vars.dataDirectory.child("mods(I hope...)").child("settings.txt");
 		if (!fi.exists()) fi.writeString("");
 		var map = StringMap.of();
-		Matcher m = Pattern.compile("[\\w-]+?\\s*:\\s*\\w+").matcher(fi.readString());
+		var value = reader.parse(Jval.read(fi.readString()).toString(Jformat.plain));
+		for (JsonValue entry = value.child; entry != null; entry = entry.next) {
+			map.put(entry.name, entry.asString());
+		}
+		/*Matcher m = Pattern.compile("[\\w-]+?\\s*:\\s*\\w+").matcher(fi.readString());
 		Seq<String> all = new Seq<>();
-		// 将所有符合正则表达式的子串（电话号码）全部输出
+		// 将所有符合正则表达式的子串全部输出
 		while (m.find()) {
 			all.add(m.group());
 		}
 		all.each(type -> {
 			var a = type.split("\\s*:\\s*");
 			map.put(a[0], a[1]);
-		});
+		});*/
 		settings = new StringMap(map) {
 			public String put(String k, String v) {
 				super.put(k, v);
@@ -142,10 +148,14 @@ public class DataHandle {
 
 	}
 
+	// to load static
+	public static void load(){}
+
 	public static String getParent(String str) {
 		if (str.startsWith("//")) {
 			// [\u4e00-\u9fa5]为中文
-			return str.replaceAll("//\\s+extend\\s+([\\u4e00-\\u9fa5]+)[^\\n]+", "$1");
+			Matcher m = Pattern.compile("^//\\s+extend\\s+([\\u4e00-\\u9fa5]+)").matcher(str);
+			if (m.find()) return m.group(1);
 		}
 		return "";
 	}
@@ -177,7 +187,7 @@ public class DataHandle {
 
 //		if (!Pattern.compile("^\\s*[\\[{]").matcher(str).find()) str = "{\n" + str + "\n}";
 		try {
-			return reader.parse(Jval.read(str).toString(Jformat.plain));
+			return json.fromJson(null, Jval.read(str).toString(Jformat.plain));
 			// return reader.parse(str);
 		} catch (Exception err) {
 			Log.info(str);

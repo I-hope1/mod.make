@@ -1,6 +1,5 @@
 package modmake.ui.dialog;
 
-import arc.Core;
 import arc.Events;
 import arc.func.Boolc;
 import arc.func.Boolp;
@@ -36,7 +35,7 @@ public class MySettingsDialog extends BaseDialog {
 	public MySettingsDialog() {
 		super("设置");
 
-		cont.pane(p -> p.add(pane).width(400).get()).fillX();
+		cont.pane(Styles.nonePane, p -> p.add(pane).width(400).get()).fillX();
 		pane.left().defaults().left();
 
 		addCloseButton();
@@ -187,6 +186,7 @@ public class MySettingsDialog extends BaseDialog {
 	}
 
 	public static ObjectMap<String, Setting> all = new ObjectMap<>();
+
 	static {
 		addSetting("基础", null,
 				new CheckSetting("display-content-sprite", true, b -> {}),
@@ -204,12 +204,17 @@ public class MySettingsDialog extends BaseDialog {
 						Seq.with("hjsonMin", "hjson", "jsonMin", "json"))
 		);
 
+		addSetting("图集", null,
+				new RadioSetting("auto_load_sprites", "不加载", Seq.with("启动时加载一次", "打开项目加载一次", "不自动加载"))
+				, new SliderSetting("max_load_sprite_size", 10000, 0, 100000, 100, v -> (v / 1024) + " [lightgray]KB")
+		);
+
 		addSetting("加载mod", () -> !settings.getBool("auto_load_mod"),
 				new CheckSetting("load_sprites", false, b -> {}),
+				new CheckSetting("load_icons", false, b -> {}),
 				new CheckSetting("display_exception", true, b -> {}));
 // new _Slider("loadMod", "compiling_times_per_second", "每秒最多编译次数", 1000, 500, 10000, 10, v => v + "/次");
 	}
-
 
 
 	public abstract static class Setting {
@@ -280,12 +285,14 @@ public class MySettingsDialog extends BaseDialog {
 	}
 
 	public static class RadioSetting extends Setting {
-//		ButtonGroup<CheckBox> group = new ButtonGroup<>();
+		//		ButtonGroup<CheckBox> group = new ButtonGroup<>();
 		Seq<String> children;
 		String value;
+
 		public RadioSetting(String name, Seq<String> children) {
 			this(name, children.get(0), children);
 		}
+
 		public RadioSetting(String name, String def, Seq<String> children) {
 			super(name);
 			this.children = children;
@@ -300,6 +307,8 @@ public class MySettingsDialog extends BaseDialog {
 		public void add(Table table) {
 			table.add(title).row();
 			table.table(t -> {
+				t.left().defaults().left();
+				Table[] cont = {t.table().get()};
 				int[] c = {0};
 				children.each(child -> {
 					String title = bundle.get("setting." + child + ".name", child);
@@ -307,12 +316,13 @@ public class MySettingsDialog extends BaseDialog {
 					box.changed(() -> settings.put(name, value = child));
 					box.update(() -> box.setChecked(Objects.equals(value, child)));
 //					group.add(box);
-					t.add(box).padRight(2f);
+					cont[0].add(box).padRight(4f);
 					if (++c[0] % 2 == 0) {
 						t.row();
+						cont[0] = t.table().get();
 					}
 				});
-			}).padLeft(4f);
+			}).padLeft(4f).row();
 		}
 	}
 
@@ -340,7 +350,6 @@ public class MySettingsDialog extends BaseDialog {
 			Table content = new Table();
 			content.add(title, Styles.outlineLabel).left().growX().wrap();
 			content.add(value).padLeft(10f).right();
-			content.margin(3f, 33f, 3f, 33f);
 			content.touchable = Touchable.disabled;
 
 			slider.changed(() -> {
@@ -349,7 +358,7 @@ public class MySettingsDialog extends BaseDialog {
 			});
 			slider.change();
 
-			var cell = table.stack(slider, content).width(Math.min(Core.graphics.getWidth() / 1.2f, 460f)).left().padTop(4f);
+			var cell = table.stack(slider, content).growX().left().padTop(4f);
 			addDesc(cell.get());
 			table.row();
 		}

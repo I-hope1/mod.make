@@ -4,6 +4,8 @@ import arc.Core;
 import arc.func.Cons2;
 import arc.func.Prov;
 import arc.graphics.Color;
+import arc.graphics.g2d.TextureRegion;
+import arc.scene.style.Drawable;
 import arc.scene.ui.Button;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
@@ -18,19 +20,23 @@ import mindustry.entities.bullet.BulletType;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.type.*;
+import mindustry.ui.Styles;
 import mindustry.world.blocks.Attributes;
 import mindustry.world.blocks.units.UnitFactory;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.meta.Attribute;
+import modmake.IntUI;
+import modmake.IntVars;
 import modmake.components.constructor.MyArray;
 import modmake.components.constructor.MyObject;
 import modmake.ui.styles;
 import modmake.util.Fields;
-import modmake.util.Tools;
 
 import java.lang.reflect.Field;
 
+import static modmake.IntUI.modDialog;
 import static modmake.util.BuildContent.*;
+import static modmake.util.Tools.or;
 
 public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
@@ -60,7 +66,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 					});
 				}).padLeft(4).growX().right();
 			})).growX().row();
-			var obj = Tools.or((MyObject) value, MyObject::new);
+			var obj = or((MyObject) value, MyObject::new);
 			obj.each(add);
 
 			cont.button("$add", Icon.add, () -> add.get(null, 0)).growX().minWidth(100);
@@ -131,7 +137,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 				stack[0] = (value + "").split("/");
 			} else if (value instanceof MyObject) {
 				var obj = (MyObject) value;
-				stack[0] = new String[]{"" + obj.get("liquid"), "" + obj.get("amount")};
+				stack[0] = new String[]{"" + or(obj.get("liquid"), defaultClass.get(Liquid.class)), "" + or(obj.get("amount"), 0)};
 			} else {
 				stack[0] = new String[]{"liquid", "0"};
 			}
@@ -160,7 +166,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			Cons2<String, Object>[] add = new Cons2[]{null};
 			add[0] = (k, v) -> {
 				var tab = Fields.build(i[0]++, t -> {
-					Prov<?> key = get(classes.get(0)).get(t, Tools.or(k, () -> defaultClass.get(classes.get(0))), null, null);
+					Prov<?> key = get(classes.get(0)).get(t, or(k, () -> defaultClass.get(classes.get(0))), null, null);
 					Table[] foldt = foldTable();
 					t.add(foldt[0]);
 					map.put(
@@ -181,7 +187,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 				tab.defaults().growX();
 				group.add(tab).growX().row();
 			};
-			ObjectMap obj = Tools.or((ObjectMap) value, MyObject::new);
+			ObjectMap obj = or((ObjectMap) value, MyObject::new);
 			obj.each(add[0]);
 
 			cont.button("$add", Icon.add, () -> add[0].get(null, null)).growX().minWidth(100);
@@ -190,7 +196,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 		});
 
 		put(UnitFactory.UnitPlan.class, (table, value, __, ___) -> {
-			MyObject map = Tools.or((MyObject) value, MyObject::new);
+			MyObject map = or((MyObject) value, MyObject::new);
 			Table cont = new Table(Tex.button);
 			table.add(cont).fillX();
 			cont.add(Core.bundle.get("unit", "unit"));
@@ -209,6 +215,25 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			return () -> map;
 		});
 
+		put(TextureRegion.class, (table, value, __, ___) -> {
+			final String[] v = {"" + value};
+			Button[] btn = {null};
+			TextureRegion region = new TextureRegion();
+			region.texture = IntVars.find(v[0]).texture;
+
+			table.button(b -> {
+				btn[0] = b;
+				b.image(region).size(45, 45);
+				b.add(v[0]);
+			}, Styles.defaultb, () -> {
+				IntUI.createDialog("__",
+						"选择图像", "从图片库选择图片", Icon.zoom, (Runnable) () -> {
+							IntUI.showSelectImageTableWithFunc(btn[0], modDialog.currentMod.keys, () -> v[0],
+									val -> v[0] = val, 50, 42, 5, val -> (Drawable) IntVars.find(val), true);
+						});
+			});
+			return () -> v[0];
+		});
 		/*put(TextureRegion.class, (table, value, __, ___) -> {
 
 		});*/

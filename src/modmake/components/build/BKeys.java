@@ -32,7 +32,7 @@ import modmake.util.Tools;
 import static mindustry.Vars.ui;
 import static modmake.IntVars.modName;
 import static modmake.util.BuildContent.*;
-import static modmake.util.ContentSeq.otherTypes;
+import static modmake.util.load.ContentSeq.otherTypes;
 import static rhino.ScriptRuntime.isNaN;
 import static rhino.ScriptRuntime.toNumber;
 
@@ -57,7 +57,8 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 
 	public void setup() {
 		put("category", (table, value, __) -> {
-			String[] val = {"" + Tools.or(Category.valueOf(value + ""), Category.distribution)};
+			String[] val = {"" + Tools.or(categories.find(c -> c.name().equals(value + "")),
+					Category.distribution)};
 
 			var btn = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.clearPartial2i));
 			var style = btn.getStyle();
@@ -81,14 +82,14 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			Consumer.object = value;
 			Consumer.cont = cont;
 			var all = Consumer.all;
-			new Consumer<>("power", "power", "" + value.get("power"), (t, v) -> {
+			new Consumer<>("power", "power", value.get("power"), (t, v) -> {
 				var field = new TextField(myIsNaN(v) ? "0" : toNumber(v) + "");
 				t.add(field).row();
 				t.image().fillX().color(Pal.accent);
 				return () -> myIsNaN(field.getText()) ? 0f : toNumber(field.getText());
 			}, box -> all.get("powerBuffered") != null && all.get("powerBuffered").enable);
 
-			new Consumer<>("powerBuffered", "powerBuffered", "" + value.get("powerBuffered"), (t, v) -> {
+			new Consumer<>("powerBuffered", "powerBuffered", value.get("powerBuffered"), (t, v) -> {
 				var field = new TextField(myIsNaN(v) ? "0" : "" + toNumber(v));
 				t.add(field).row();
 				t.image().fillX().color(Pal.accent);
@@ -211,6 +212,7 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 		public boolean enable;
 		public final String name;
 		public final Cell<?> cell;
+		public final CheckBox box;
 
 		public Consumer(String name, String key, V obj, Func2<Table, V, Prov<T>> _func, Boolf<CheckBox> disabledProv) {
 			this.enable = obj != null;
@@ -219,6 +221,7 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			table.defaults().growX().left();
 
 			Cell<CheckBox> c = cont.check(Core.bundle.get("consumes." + name, name), enable, this::setup);
+			box = c.get();
 			if (disabledProv != null) c.disabled(disabledProv);
 			c.row();
 			var cell = cont.add().growX().left().padLeft(10);
@@ -244,10 +247,15 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 		}
 
 		public void check() {
-			if (!enable) object.remove(name);
+			if (box.isDisabled()) object.remove(name);
 		}
 
 	}
+
+	public boolean myIsNaN(Object obj) {
+		return myIsNaN("" + obj);
+	}
+
 	public boolean myIsNaN(String str) {
 		try {
 			double d = toNumber(str);

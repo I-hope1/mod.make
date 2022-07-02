@@ -1,6 +1,9 @@
 package modmake.ui.dialog;
 
 import arc.func.Cons;
+import arc.input.KeyCode;
+import arc.scene.event.InputEvent;
+import arc.scene.event.InputListener;
 import arc.scene.ui.Dialog;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Cell;
@@ -27,6 +30,17 @@ public class NameDialog extends Dialog {
 		this.okCons = okCons;
 		if (valid != null) namef.setValidator(valid);
 		namef.setText(text);
+		namef.setMessageText("请输入");
+		namef.addListener(new InputListener(){
+			@Override
+			public boolean keyUp(InputEvent event, KeyCode keycode) {
+				if (keycode == KeyCode.enter) {
+					okCons.get(namef.getText());
+					hide();
+				}
+				return false;
+			}
+		});
 		show();
 	}
 

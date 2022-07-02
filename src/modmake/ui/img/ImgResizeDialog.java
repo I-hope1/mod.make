@@ -1,5 +1,6 @@
 package modmake.ui.img;
 
+import arc.Core;
 import arc.func.Intc2;
 import arc.math.Mathf;
 import arc.scene.ui.TextField;
@@ -7,11 +8,11 @@ import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import mindustry.ui.dialogs.BaseDialog;
 
-import static modmake.IntUI.imgEditor;
-import static modmake.util.BuildContent.parseInt;
+import static modmake.IntUI.*;
 
 public class ImgResizeDialog extends BaseDialog {
-	public static int minSize = 10, maxSize = 32 * 16, increment = 50;
+    // just advice
+	public static int minSize = 1, maxSize = 1000;
 
     int width, height;
 
@@ -33,13 +34,21 @@ public class ImgResizeDialog extends BaseDialog {
                 table.field((w ? width : height) + "", TextField.TextFieldFilter.digitsOnly, value -> {
                     int val = Integer.parseInt(value);
                     if(w) width = val; else height = val;
-                }).valid(value -> Strings.canParsePositiveInt(value) && Integer.parseInt(value) <= maxSize && Integer.parseInt(value) >= minSize).maxTextLength(3);
+                }).valid(value -> {
+                    if (!Strings.canParsePositiveInt(value)) return true;
+                    int i = Integer.parseInt(value);
+                    return i <= maxSize && i >= minSize;
+                }).maxTextLength(4);
 
                 table.row();
             }
             cont.row();
             cont.add(table);
 
+        });
+
+        hidden(() -> {
+            Core.scene.setKeyboardFocus(imgDialog);
         });
 
         buttons.defaults().size(200f, 50f);

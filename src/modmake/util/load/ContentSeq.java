@@ -1,4 +1,4 @@
-package modmake.util;
+package modmake.util.load;
 
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -11,6 +11,8 @@ import mindustry.entities.units.AIController;
 import mindustry.mod.ContentParser;
 import mindustry.type.Weapon;
 import mindustry.world.draw.DrawBlock;
+import modmake.util.Classes;
+import modmake.util.MyReflect;
 
 import java.lang.reflect.*;
 
@@ -32,9 +34,9 @@ public class ContentSeq {
 	);
 
 	public static void load() throws Throwable {
-		parser = Reflect.getValue(Vars.mods, "parser", ContentParser.class);
-		parserObjectMap = Reflect.getValue(parser, "parsers", ObjectMap.class);
-		ObjectMap<Class<?>, ContentType> map = Reflect.getValue(parser, "contentTypes", ObjectMap.class);
+		parser = MyReflect.getValue(Vars.mods, "parser");
+		parserObjectMap = MyReflect.getValue(parser, "parsers");
+		ObjectMap<Class<?>, ContentType> map = MyReflect.getValue(parser, "contentTypes");
 		// 手动init
 		if (contentTypes.isEmpty()) {
 			Method init = ContentParser.class.getDeclaredMethod("init");
@@ -83,6 +85,7 @@ public class ContentSeq {
 		parserObjectMap.put(ContentType.planet, Proxy.newProxyInstance(_TypeParser.getClassLoader(),
 				new Class<?>[]{_TypeParser},
 				handler));*/
+
 
 		Classes.each((k, type) -> {
 			if (!settings.getBool("display_deprecated") && type.isAnnotationPresent(Deprecated.class)) return;

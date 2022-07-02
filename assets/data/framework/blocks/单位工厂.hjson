@@ -2,7 +2,7 @@
 name: "单位构建工厂"
 size: 3
 consumes: {
-power: 6
+	power: 6
 }
 plans: []
 category: units
