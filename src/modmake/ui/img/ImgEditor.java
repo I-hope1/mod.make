@@ -6,25 +6,21 @@ import arc.func.Cons;
 import arc.graphics.Color;
 import arc.graphics.Pixmap;
 import arc.math.Mathf;
-import arc.struct.Seq;
 import modmake.IntVars;
 import modmake.util.img.MyPixmapIO;
-
-import java.util.ArrayList;
+import modmake.util.img.Stack;
 
 import static mindustry.Vars.ui;
-import static modmake.IntUI.imgDialog;
-import static modmake.IntUI.view;
+import static modmake.IntUI.*;
 import static modmake.components.DataHandle.settings;
 import static modmake.ui.img.ImgEditorDialog.Img;
 
 public class ImgEditor {
 	public static final float[] brushSizes = {1f, 1.5f, 2f, 3f, 4f, 5f, 9f, 15f, 20f, 30f};
-	public final Stack stack = new Stack();
+	public final Stack stack = new Stack(this);
 	public float brushSize = 1.0f;
 	public Color drawColor;
 	public Fi currentFi = null;
-	public static final Seq<TileData> currentOp = new Seq<>();
 	private Tiles tiles;
 
 	public ImgEditor() {
@@ -160,7 +156,7 @@ public class ImgEditor {
 	}
 
 	public void clearOp() {
-		currentOp.clear();
+		stack.tmp = null;
 	}
 
 	public void undo() {
@@ -180,19 +176,17 @@ public class ImgEditor {
 	}
 
 	public void flushOp() {
-		if (!currentOp.isEmpty()) {
-			stack.addUndo(currentOp.copy());
-			stack.list2.clear();
+//		if (!currentOp.isEmpty()) {
+		if (stack.tmp != null) {
+//			stack.addUndo(currentOp.copy());
+			stack.addUndo(stack.tmp);
+			stack.tmp = null;
+			stack.redoes.clear();
 			/*currentOp.each(t -> {
 			});*/
-			currentOp.clear();
 //			view.rebuildCont();
 			if (settings.getBool("auto_save_image")) save();
 		}
-	}
-
-	public static void addTileOp(TileData t) {
-		currentOp.add(t);
 	}
 
 	public Tiles tiles() {
@@ -296,21 +290,6 @@ public class ImgEditor {
 		}
 	}
 
-	public static class TileData {
-		public int color;
-		public int x, y;
-
-		public TileData(Tile t) {
-			this.color = t.colorRgba();
-			this.x = t.x;
-			this.y = t.y;
-		}
-
-		public TileData(int color, int x, int y) {
-
-		}
-	}
-
 	public static class Tile {
 		public MyPixmap pixmap;
 		public int x, y;
@@ -344,67 +323,6 @@ public class ImgEditor {
 
 	}
 
-	public class Stack {
-		public static final int maxSize = Integer.MAX_VALUE - 1;
-		protected ArrayList<Seq<TileData>> list1 = new ArrayList<>();
-		protected ArrayList<Seq<TileData>> list2 = new ArrayList<>();
-
-		public void addUndo(Seq<TileData> seq) {
-			list1.add(seq);
-			while (list1.size() > maxSize) {
-				list1.remove(0);
-			}
-		}
-
-		public void addRedo(Seq<TileData> seq) {
-			list2.add(seq);
-			while (list2.size() > maxSize) {
-				list2.remove(0);
-			}
-		}
-
-		public void clear() {
-			list1.clear();
-			list2.clear();
-		}
-
-		public void undo() {
-			if (canUndo()) {
-				var seq = list1.remove(list1.size() - 1);
-				addRedo(setPixmap(seq));
-			}
-		}
-
-		public boolean canUndo() {
-			return list1.size() > 0;
-		}
-
-		public void redo() {
-			if (canRedo()) {
-				var seq = list2.remove(list2.size() - 1);
-				addUndo(setPixmap(seq));
-			}
-		}
-
-		public Seq<TileData> setPixmap(Seq<TileData> seq) {
-			var seq2 = new Seq<TileData>();
-
-			seq.each(t -> {
-				var tile = tileRaw(t.x, t.y);
-				seq2.add(new TileData(tile));
-				tile.color(t.color);
-			});
-//			view.cont.texture.draw(pixmap());
-			seq.clear();
-			view.rebuildCont();
-			return seq2;
-		}
-
-		public boolean canRedo() {
-			return list2.size() > 0;
-		}
-	}
-
 	public static class MyPixmap extends Pixmap {
 
 		public MyPixmap(int width, int height) {
@@ -418,7 +336,12 @@ public class ImgEditor {
 		@Override
 		public void setRaw(int x, int y, int color) {
 			if (color == getRaw(x, y)) return;
-			addTileOp(new TileData(color, x, y));
+//			addTileOp(new TileData(color, x, y));
+			if (imgEditor.stack.tmp == null) {
+				var out = new Pixmap(width, height);
+				out.draw(this);
+				imgEditor.stack.tmp = out.pixels;
+			}
 			super.setRaw(x, y, color);
 		}
 

@@ -23,6 +23,7 @@ import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import mindustry.ui.dialogs.SettingsMenuDialog;
+import modmake.util.img.Stack;
 
 import java.util.Objects;
 
@@ -199,14 +200,18 @@ public class MySettingsDialog extends BaseDialog {
 				new CheckSetting("display_deprecated", false, b -> {}),
 				new CheckSetting("point_out_unknown_field", false, b -> {}),
 				new CheckSetting("colorful_table", false, b -> {}),
-				new CheckSetting("auto_save_image", false, b -> {}),
 				new RadioSetting("format", "json",
 						Seq.with("hjsonMin", "hjson", "jsonMin", "json"))
 		);
 
 		addSetting("图集", null,
+				new CheckSetting("auto_save_image", false, b -> {}),
 				new RadioSetting("auto_load_sprites", "不加载", Seq.with("启动时加载一次", "打开项目加载一次", "不自动加载"))
 				, new SliderSetting("max_load_sprite_size", 10000, 0, 100000, 100, v -> (v / 1024) + " [lightgray]KB")
+				, new SliderSetting("max_img_stack_buffer_size", 15, 0, 100, 1, v -> {
+					Stack.maxSize = v;
+					return v + "";
+				})
 		);
 
 		addSetting("加载mod", () -> !settings.getBool("auto_load_mod"),
@@ -305,7 +310,7 @@ public class MySettingsDialog extends BaseDialog {
 
 		@Override
 		public void add(Table table) {
-			table.add(title).row();
+			table.add(title, Color.gold).row();
 			table.table(t -> {
 				t.left().defaults().left();
 				Table[] cont = {t.table().get()};
@@ -344,7 +349,7 @@ public class MySettingsDialog extends BaseDialog {
 			Slider slider = new Slider(min, max, step, false);
 			if (bp != null) slider.update(() -> slider.setDisabled(bp.get()));
 
-			slider.setValue(settings.getInt(name));
+			slider.setValue(settings.getInt(name, def));
 
 			Label value = new Label("", Styles.outlineLabel);
 			Table content = new Table();
