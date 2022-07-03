@@ -4,7 +4,6 @@ import arc.Core;
 import arc.files.Fi;
 import arc.func.Cons;
 import arc.graphics.Color;
-import arc.graphics.Pixmap;
 import arc.input.KeyCode;
 import arc.math.geom.Vec2;
 import arc.scene.actions.Actions;
@@ -20,6 +19,7 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
 import modmake.components.MyMod;
+import modmake.ui.img.ImgEditor.MyPixmap;
 import modmake.ui.styles;
 import modmake.util.img.MyPixmapIO;
 
@@ -36,7 +36,7 @@ public class ImgEditorDialog extends Dialog {
 	private final BaseDialog menu;
 	private Table colorSelection;
 	public Runnable hiddenRun = null;
-	private boolean saved = false; //currently never read
+	//currently never read
 	private boolean shownWithImg = false;
 
 	public ImgEditorDialog() {
@@ -114,7 +114,6 @@ public class ImgEditorDialog extends Dialog {
 
 		shown(() -> {
 
-			saved = true;
 			if (!Core.settings.getBool("landscape")) platform.beginForceLandscape();
 			imgEditor.clearOp();
 			imgEditor.stack.clear();
@@ -125,8 +124,6 @@ public class ImgEditorDialog extends Dialog {
 			shownWithImg = false;
 
 			Time.runTask(10f, platform::updateRPC);
-
-			view.select.clear();
 		});
 
 		hidden(() -> {
@@ -160,7 +157,6 @@ public class ImgEditorDialog extends Dialog {
 		}
 
 		menu.hide();
-		saved = true;
 		state.rules.editor = isEditor;
 	}
 
@@ -183,9 +179,9 @@ public class ImgEditorDialog extends Dialog {
 			MyMod mod = modDialog.currentMod;
 			Fi fi = imgEditor.currentFi;
 			if (spriteDialog.root.name().equals("sprites")) {
-				mod.sprites1.put(fi.nameWithoutExtension(), new Pixmap(fi));
+				mod.sprites1.put(fi.nameWithoutExtension(), new MyPixmap(fi));
 			} else if (spriteDialog.root.name().equals("sprites-override")) {
-				mod.sprites2.put(fi.nameWithoutExtension(), new Pixmap(fi));
+				mod.sprites2.put(fi.nameWithoutExtension(), new MyPixmap(fi));
 			}
 		}
 		super.hide(Actions.sequence(Actions.alpha(0f)));
@@ -555,14 +551,14 @@ public class ImgEditorDialog extends Dialog {
 
 	public static class Img {
 		public Fi file;
-		public Pixmap pixmap;
+		public MyPixmap pixmap;
 
 		public Img(Fi fi) {
 			file = fi;
-			pixmap = new Pixmap(fi);
+			pixmap = new MyPixmap(fi);
 		}
 
-		public Img(Pixmap pixmap) {
+		public Img(MyPixmap pixmap) {
 			this.pixmap = pixmap;
 		}
 

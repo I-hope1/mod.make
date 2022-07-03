@@ -56,16 +56,17 @@ public enum ImgEditorTool {
 			if (!imgEditor.tiles().in(x, y)) return;
 
 //			Pixmap pix = imgEditor.pixmap();
+			int h = imgEditor.height() - 1;
 			if (this.mode == -1) {
 //				imgEditor.drawBlocks(x, y);
 				int clamped = (int) imgEditor.brushSize;
-				imgEditor.pixmap().fillCircle(x, y, clamped, imgEditor.drawColor.rgba());
+				imgEditor.pixmap().fillCircle(x, h - y, clamped, imgEditor.drawColor.rgba());
 			} else if (this.mode == 0) {
 				imgEditor.drawBlocksReplace(x, y);
 //				imgEditor.tile(x, y).color(imgEditor.drawColor);
 			} else if (this.mode == 1) {
 				int clamped = (int) imgEditor.brushSize;
-				imgEditor.pixmap().fillRect(x - clamped, y - clamped, clamped * 2, clamped * 2, imgEditor.drawColor.rgba());
+				imgEditor.pixmap().fillRect(x - clamped, h - y - clamped, clamped * 2, clamped * 2, imgEditor.drawColor.rgba());
 //				imgEditor.drawBlocks(x, y, true, tile -> true);
 //				imgEditor.tile(x, y).color(imgEditor.drawColor);
 			}
@@ -82,10 +83,11 @@ public enum ImgEditorTool {
 			/*imgEditor.drawCircle(x, y, tile -> {
 				tile.color(Color.clear);
 			});*/
+			y = imgEditor.height() - 1 - y;
 			imgEditor.pixmap().fillCircle(x, y, (int) imgEditor.brushSize, Color.clearRgba);
 		}
 	},
-	fill(KeyCode.g, "replaceall") {
+	fill(KeyCode.g, "replaceall", "fillall") {
 		IntSeq stack;
 
 		{
@@ -95,8 +97,11 @@ public enum ImgEditorTool {
 
 		public void touched(int x, int y) {
 			if (imgEditor.tiles().in(x, y)) {
-				Tile tile = imgEditor.tileRaw(x, y);
-				int destx = tile.colorRgba();
+				if (mode == 1) {
+					imgEditor.pixmap().fill(imgEditor.drawColor.rgba());
+					return;
+				}
+				int destx = imgEditor.tileRaw(x, y).colorRgba();
 				if (destx == imgEditor.drawColor.rgba()) {
 					return;
 				}

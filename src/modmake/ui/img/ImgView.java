@@ -18,7 +18,6 @@ import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Scl;
-import arc.struct.Seq;
 import arc.util.Tmp;
 import mindustry.graphics.Pal;
 import mindustry.input.Binding;
@@ -47,7 +46,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	float mousex, mousey;
 	ImgEditorTool lastTool;
 	public Select select = new Select();
-	public TextureRegion cont = new TextureRegion(), background;
+	public TextureRegion cont, background;
 
 	public ImgView() {
 
@@ -195,8 +194,10 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	public void reset() {
 		center();
 		tool = ImgEditorTool.pencil;
+		select.clear();
 		cont = null;
 		background = null;
+		System.gc();
 	}
 
 	@Override
@@ -297,9 +298,11 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		if (background == null && showTransparentCanvas) rebuildBackground();
 		if (background != null) Draw.rect(background, centerx, centery, sclwidth, sclheight);
 		if (cont == null) {
-			cont = new TextureRegion(new Texture(imgEditor.pixmap()), imgEditor.width(), imgEditor.height());
+			cont = new TextureRegion(new Texture(imgEditor.width(), imgEditor.height()));
 		}
-		if (cont.texture == null) rebuildCont();
+//		if (cont.texture == null) {
+		rebuildCont();
+//		}
 		Draw.rect(cont, centerx, centery, sclwidth, sclheight);
 
 		// 选择渲染
@@ -408,7 +411,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 				Lines.rect(x1, y1, x2 - x1, y2 - y1);
 			} else if (tool == ImgEditorTool.fill || tool == ImgEditorTool.select) {
 //				Lines.stroke(3);
-				Lines.square(v.x + unit / 2, v.y + unit / 2, unit / 2);
+				Lines.square(v.x + scaling / 2, v.y + scaling / 2, scaling / 2f);
 			} else {
 				Lines.poly(brushPolygons[index], v.x, v.y, scaling);
 			}
@@ -443,7 +446,8 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			pixmap.setRaw(x, y, color.rgba());
 		});*/
 //		if (cont.texture != null) cont.texture.dispose();
-		cont = new TextureRegion(new Texture(imgEditor.pixmap()));
+//		cont = new TextureRegion(new Texture(imgEditor.pixmap()));
+		cont.texture.draw(imgEditor.pixmap());
 //		cont.flip(false, true);
 	}
 
@@ -452,12 +456,13 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		var pixmap = new Pixmap(w, h);
 		int lightGray = Color.lightGray.rgba();
 		int gray = Color.gray.rgba();
+//		if (w % 2 == 1) w--;
 		for (int x = 0; x <= w; x += 2) {
 			for (int y = 0; y <= h; y += 2) {
-				pixmap.setRaw(x, y, lightGray);
-				pixmap.setRaw(x + 1, y, gray);
-				pixmap.setRaw(x, y + 1, gray);
-				pixmap.setRaw(x + 1, y + 1, lightGray);
+				pixmap.set(x, y, lightGray);
+				pixmap.set(x + 1, y, gray);
+				pixmap.set(x, y + 1, gray);
+				pixmap.set(x + 1, y + 1, lightGray);
 			}
 		}
 		background = new TextureRegion(new Texture(pixmap));
@@ -502,8 +507,11 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		public boolean selectTransparent = false, cut = false;
 		public int offsetX, offsetY;
 		public Pixmap pixmap;
-		public TextureRegion textureRegion = null;
-		Seq<ImgEditor.Tile> toClear = new Seq<>();
+		public TextureRegion textureRegion =  new TextureRegion();
+
+		{
+//			textureRegion.set(Pixmaps.blankTexture());
+		}
 
 		public void cover() {
 			if (pixmap == null) return;
@@ -528,26 +536,26 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			offsetY = startY;
 			int width = Math.abs(toX - startX + 1), height = Math.abs(toY - startY + 1);
 			pixmap = new Pixmap(width, height);
-			toClear.clear();
+//			toClear.clear();
 			pixmap.each((x, y) -> {
 				var tile = imgEditor.tileRaw(x + offsetX, y + offsetY);
 				if (tile != null) {
 					pixmap.setRaw(x, y, tile.colorRgba());
-					if (cut) toClear.add(tile);
+					if (cut) tile.color(Color.clearRgba);
 				}
 			});
-			if (cut) toClear.each(t -> t.color(Color.clearRgba));
-			textureRegion = new TextureRegion(new Texture(pixmap));
+//			if (cut) toClear.each(t -> t.color(Color.clearRgba));
+			textureRegion.set(new Texture(pixmap));
 			textureRegion.flip(false, true);
 		}
 
 		public boolean any() {
-			return textureRegion != null;
+			return textureRegion.texture != null;
 		}
 
 		public void clear() {
 			pixmap = null;
-			textureRegion = null;
+			textureRegion.texture = null;
 		}
 	}
 }

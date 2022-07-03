@@ -5,7 +5,6 @@ import arc.func.Boolf;
 import arc.func.Cons;
 import arc.graphics.Color;
 import arc.graphics.Pixmap;
-import arc.graphics.Pixmaps;
 import arc.math.Mathf;
 import arc.struct.Seq;
 import modmake.IntVars;
@@ -52,7 +51,7 @@ public class ImgEditor {
 		if (fi.exists()) {
 			img = new Img(fi);
 		} else {
-			img = new Img(new Pixmap(32, 32));
+			img = new Img(new MyPixmap(32, 32));
 			img.file = fi;
 		}
 		try {
@@ -62,7 +61,7 @@ public class ImgEditor {
 		}
 	}
 
-	public void beginEdit(Pixmap pixmap) {
+	public void beginEdit(MyPixmap pixmap) {
 		currentFi = null;
 		reset();
 		tiles = new Tiles(pixmap);
@@ -74,7 +73,7 @@ public class ImgEditor {
 
 	private void reset() {
 		clearOp();
-		brushSize = 1.0F;
+		brushSize = 1.0f;
 		drawColor = Color.clear;
 		imgDialog.view.reset();
 	}
@@ -96,7 +95,7 @@ public class ImgEditor {
 		return tiles.getRaw(x, y);
 	}
 
-	public Pixmap pixmap() {
+	public MyPixmap pixmap() {
 		return tiles.pixmap;
 	}
 
@@ -143,11 +142,13 @@ public class ImgEditor {
 	public void resize(int width, int height) {
 		stack.clear();
 		clearOp();
-		Pixmap pixmap = Pixmaps.resize(pixmap(), width, height);
+//		Pixmap pixmap = Pixmaps.resize(pixmap(), width, height);
+		MyPixmap pixmap = new MyPixmap(width, height);
+        pixmap.draw(pixmap(), width / 2 - pixmap().width / 2, height / 2 - pixmap().height / 2);
 //		pixmap().dispose();
 		// TODO dispose
 		tiles = new Tiles(pixmap);
-		/*Pixmap previous = tiles.pixmap;
+		/*MyPixmap previous = tiles.pixmap;
 		int offsetX = (width - width()) / 2;
 		int offsetY = (height - height()) / 2;
 		loading = true;
@@ -185,7 +186,7 @@ public class ImgEditor {
 			/*currentOp.each(t -> {
 			});*/
 			currentOp.clear();
-			view.rebuildCont();
+//			view.rebuildCont();
 			if (settings.getBool("auto_save_image")) save();
 		}
 	}
@@ -234,14 +235,14 @@ public class ImgEditor {
 
 	public static class Tiles {
 		public Tile[][] tiles;
-		public Pixmap pixmap;
+		public MyPixmap pixmap;
 		public int w, h;
 
-		public Tiles(Pixmap pixmap) {
+		public Tiles(MyPixmap pixmap) {
 			this(pixmap, pixmap.width, pixmap.height);
 		}
 
-		public Tiles(Pixmap pixmap, int w, int h) {
+		public Tiles(MyPixmap pixmap, int w, int h) {
 			this.pixmap = pixmap;
 			this.w = w;
 			this.h = h;
@@ -255,14 +256,14 @@ public class ImgEditor {
 		}
 
 		public Tiles(int w, int h) {
-			this(new Pixmap(w, h), w, h);
+			this(new MyPixmap(w, h), w, h);
 		}
 
 		/*public void resize(int w, int h) {
 			this.w = w;
 			this.h = h;
 			tiles = new Tile[w][h];
-			if (pixmap == null || pixmap.width != w || pixmap.height != h) pixmap = new Pixmap(w, h);
+			if (pixmap == null || pixmap.width != w || pixmap.height != h) pixmap = new MyPixmap(w, h);
 			for (int i = 0; i < w; i++) {
 				for (int j = 0; j < h; j++) {
 					if (tiles[i][j] == null) {
@@ -304,27 +305,31 @@ public class ImgEditor {
 			this.x = t.x;
 			this.y = t.y;
 		}
+
+		public TileData(int color, int x, int y) {
+
+		}
 	}
 
 	public static class Tile {
-		public Pixmap pixmap;
+		public MyPixmap pixmap;
 		public int x, y;
 
-		public Tile(Pixmap pixmap, int x, int y) {
+		public Tile(MyPixmap pixmap, int x, int y) {
 			this.x = x;
 			this.y = y;
 			this.pixmap = pixmap;
 		}
 
 		public void color(Color c) {
-			if (colorRgba() == c.rgba()) return;
+//			if (colorRgba() == c.rgba()) return;
 			color(c.rgba());
 			/*addTileOp(new TileData(this));
 			pixmap.setRaw(x, pixmap.height - y - 1, c.rgba());*/
 		}
 
 		public void color(int color) {
-			addTileOp(new TileData(this));
+//			addTileOp(new TileData(this));
 			pixmap.setRaw(x, pixmap.height - y - 1, color);
 //			Pixmaps.drawPixel(view.cont.texture, x, pixmap.height - y - 1, color);
 		}
@@ -340,7 +345,7 @@ public class ImgEditor {
 	}
 
 	public class Stack {
-		public static final int maxSize = Integer.MAX_VALUE;
+		public static final int maxSize = Integer.MAX_VALUE - 1;
 		protected ArrayList<Seq<TileData>> list1 = new ArrayList<>();
 		protected ArrayList<Seq<TileData>> list2 = new ArrayList<>();
 
@@ -397,6 +402,36 @@ public class ImgEditor {
 
 		public boolean canRedo() {
 			return list2.size() > 0;
+		}
+	}
+
+	public static class MyPixmap extends Pixmap {
+
+		public MyPixmap(int width, int height) {
+			super(width, height);
+		}
+
+		public MyPixmap(Fi file) {
+			super(file);
+		}
+
+		@Override
+		public void setRaw(int x, int y, int color) {
+			if (color == getRaw(x, y)) return;
+			addTileOp(new TileData(color, x, y));
+			super.setRaw(x, y, color);
+		}
+
+		@Override
+		public void set(int x, int y, int color) {
+			if (in(x, y)) {
+				setRaw(x, y, color);
+			}
+		}
+
+		@Override
+		public void fill(int color) {
+			super.fill(color);
 		}
 	}
 }
