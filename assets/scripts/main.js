@@ -6,6 +6,7 @@ let lastAtlas = null;
 let scripts = Vars.mods.scripts;
 let { scope } = scripts;
 let loader = Vars.mods.mainLoader()
+loader.loadClass("modmake.ui.dialog.MySettingsDialog")
 let NativeJavaClass = Packages.rhino.NativeJavaClass
 /*const ModMake = Packages.rhino.NativeJavaClass(scope, loadClass("modmake.ModMake"), true);
 ModMake.runnable = () => {*/
@@ -63,7 +64,7 @@ const loadMod = (() => {
 
 		let _mod = ACLASS.lastMod
 
-		Vars.content.clear()
+		Vars.content = new ContentLoader()
 		Vars.content.createBaseContent()
 		yield;
 
@@ -149,3 +150,7 @@ let { settings } = ACLASS
 Events.run(ClientLoadEvent, () => {
 	lastAtlas = Core.atlas;
 })
+
+let lastReq = require
+const hjson = require("hjson/hjson")
+Log.debug(hjson.stringify(hjson.parse("a: 2//2\nb: 2\nc: {b: 1, d:3}", {keepWsc:true}), {keepWsc:true}))

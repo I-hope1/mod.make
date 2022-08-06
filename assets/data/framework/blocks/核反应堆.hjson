@@ -3,13 +3,11 @@ name: 核反应堆
 type: NuclearReactor
 consumes: {
 	items: {
-		items: [{
-			item: copper,
-			amount: 1
-		}]
+		item: copper
 	}
 	liquid: {
-		liquid: water, amount: 0.1
+		liquid: water,
+		amount: 0.1
 	}
 }
 itemDuration: 120

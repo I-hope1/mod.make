@@ -11,6 +11,7 @@ import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.ui.Styles;
 import modmake.components.MyMod;
+import modmake.ui.styles;
 
 import static modmake.IntUI.editor;
 
@@ -35,13 +36,13 @@ public class JsonDialog extends Dialog {
 		p.add("$editor.sourceCode", Color.gray).padRight(10).padTop(0).row();
 		p.table(t -> {
 			t.right();
-			t.button(Icon.paste, Styles.clearPartiali, () -> Vars.ui
+			t.button(Icon.paste, styles.clearPartiali, () -> Vars.ui
 					.showConfirm("粘贴", "是否要粘贴", () -> {
 						file.writeString(Core.app.getClipboardText());
 						label.setText(getText());
 					})
 			).padRight(2);
-			t.button(Icon.copy, Styles.clearPartiali, () -> {
+			t.button(Icon.copy, styles.clearPartiali, () -> {
 				Core.app.setClipboardText(this.file.readString());
 			});
 		}).growX().right().row();
@@ -71,7 +72,7 @@ public class JsonDialog extends Dialog {
 
 	public String getText() {
 		return file.readString().replaceAll("\\r", "\n").replaceAll("\\t", "  ")
-				.replaceAll("\\[\\s*([\\s.]*?)\\s*]", "[ $1 ]");
+				.replaceAll("\\[(#?\\w+)]", "[\u0001$1]");
 	}
 
 

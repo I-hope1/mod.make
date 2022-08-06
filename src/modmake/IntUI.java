@@ -2,36 +2,30 @@ package modmake;
 
 import arc.Core;
 import arc.func.*;
-import arc.graphics.Color;
-import arc.graphics.Texture;
+import arc.graphics.*;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Interp;
 import arc.scene.Element;
 import arc.scene.actions.Actions;
-import arc.scene.event.ClickListener;
-import arc.scene.event.InputEvent;
-import arc.scene.style.Drawable;
-import arc.scene.style.TextureRegionDrawable;
+import arc.scene.event.ChangeListener.ChangeEvent;
+import arc.scene.event.*;
+import arc.scene.style.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
-import arc.util.Align;
-import arc.util.Time;
-import arc.util.Tmp;
+import arc.struct.*;
+import arc.util.*;
 import mindustry.Vars;
-import mindustry.ctype.ContentType;
-import mindustry.ctype.UnlockableContent;
-import mindustry.gen.Icon;
-import mindustry.gen.Tex;
+import mindustry.ctype.*;
+import mindustry.gen.*;
+import mindustry.graphics.Pal;
+import mindustry.type.*;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import modmake.components.DataHandle;
-import modmake.ui.Frag;
+import mindustry.world.Block;
+import modmake.components.*;
+import modmake.ui.*;
 import modmake.ui.dialog.*;
-import modmake.ui.img.ImgEditor;
-import modmake.ui.img.ImgEditorDialog;
-import modmake.ui.img.ImgView;
+import modmake.ui.img.*;
 import modmake.util.Tools;
 
 import java.util.Objects;
@@ -39,8 +33,7 @@ import java.util.regex.Pattern;
 
 import static mindustry.Vars.content;
 import static modmake.IntVars.mod;
-import static modmake.util.BuildContent.packString;
-import static modmake.util.BuildContent.unpackString;
+import static modmake.util.BuildContent.*;
 
 public class IntUI {
 	public static Frag frag = new Frag();
@@ -53,6 +46,7 @@ public class IntUI {
 	public static ModsDialog modsDialog = new ModsDialog();
 	public static ModMetaDialog modMetaDialog = new ModMetaDialog();
 	public static JsonDialog jsonDialog = new JsonDialog();
+	public static ContentSpriteDialog contentSpriteDialog = new ContentSpriteDialog();
 	public static Editor editor = new Editor();
 	public static ModDialog modDialog = new ModDialog();
 
@@ -109,12 +103,12 @@ public class IntUI {
 		dialog.show();
 	}
 
-	public static Dialog showTextArea(TextField text) {
+	public static void showTextArea(TextField text) {
 		BaseDialog dialog = new BaseDialog("");
 		dialog.title.remove();
-		var area = new TextArea(unpackString(text.getText()));
-		dialog.cont.add(area).grow();
-		if (Vars.mobile) area.removeInputDialog();
+		var areaTable = new TextAreaTable(unpackString(text.getText()));
+		dialog.cont.add(areaTable).grow();
+		var area = areaTable.getArea();
 
 		dialog.addCloseListener();
 		dialog.buttons.defaults().growX();
@@ -143,9 +137,10 @@ public class IntUI {
 		dialog.buttons.button("@ok", Icon.ok, () -> {
 			dialog.hide();
 			text.setText(packString(area.getText()));
+			text.fire(new ChangeEvent());
 		}).grow();
 
-		return dialog.show();
+		dialog.show();
 	}
 
 
@@ -213,7 +208,7 @@ public class IntUI {
 	 * @param searchable 可选，启用后会添加一个搜索框
 	 */
 	public static <T extends Button> Table
-	showSelectTable(T button, Cons3<Table, Runnable, String> f, Boolean searchable) {
+	showSelectTable(T button, Cons3<Table, Runnable, String> f, boolean searchable) {
 		if (button == null) {
 			throw new NullPointerException("button cannot be null");
 		}
@@ -285,7 +280,10 @@ public class IntUI {
 		return showSelectTable(button, (Table p, Runnable hide, String text) -> {
 			p.clearChildren();
 
-			var pattern = Pattern.compile("(?i)" + text);
+			Pattern pattern;
+			try {
+				pattern = Pattern.compile("(?i)" + text);
+			} catch (Exception e) {return;}
 			list.each(item -> text.isEmpty() || pattern.matcher("" + item).find()
 					|| pattern.matcher(DataHandle.types.get("" + item, () -> "" + item)).find(), item -> {
 				p.button(DataHandle.types.get("" + item, () -> "" + item), Styles.cleart, () -> {
@@ -321,10 +319,13 @@ public class IntUI {
 			p.defaults().size(size);
 
 			int c = 0;
+			Pattern pattern;
+			try {
+				pattern = Pattern.compile(text, Pattern.CASE_INSENSITIVE);
+			} catch (Exception e) {return;}
 			for (int i = 0; i < items.size; i++) {
 				T1 item = items.get(i);
 				// 过滤不满足条件的
-				var pattern = Pattern.compile(text, Pattern.CASE_INSENSITIVE);
 				if (!Objects.equals(text, "") && !(item instanceof String && pattern.matcher("" + item).find())
 						&& !Tools.<UnlockableContent, Boolean>as(item,
 						unlock -> pattern.matcher(unlock.name).find() ||
@@ -332,11 +333,11 @@ public class IntUI {
 					continue;
 				}
 
-				ImageButton btn = p.button(Tex.whiteui, Styles.clearToggleTransi, imageSize, () -> {
+				ImageButton btn = p.button(Tex.whiteui, styles.clearToggleTransi, imageSize, () -> {
 					cons.get(item);
 					hide.run();
 				}).size(size).get();
-//				if (!Vars.mobile)
+				//				if (!Vars.mobile)
 				btn.addListener(new Tooltip(t -> t.background(Tex.button)
 						.add(item + "")));
 				btn.getStyle().imageUp = icons.get(i);
@@ -377,11 +378,69 @@ public class IntUI {
 		return showSelectImageTableWithIcons(button, items, icons, holder, cons, size, imageSize, cols, searchable);
 	}
 
+	public static <T extends Button> void allContentSelection(T btn, Seq<UnlockableContent> all, Prov<UnlockableContent> holder, Cons<UnlockableContent> cons,
+	                                                          float size, int imageSize, boolean searchable) {
+		Table[] tableArr = {new Table(), new Table(), new Table(),
+				new Table(), new Table(), new Table()};
+		int length = tableArr.length;
+		showSelectTable(btn, (p, hide, v) -> {
+			p.clearChildren();
+			p.image(Tex.whiteui, Pal.accent).growX().height(3).pad(4).row();
+
+			var cont = p.table().get();
+
+			Pattern reg;
+			try {
+				reg = Pattern.compile(v, Pattern.CASE_INSENSITIVE);
+			} catch (Exception e) {
+				return;
+			}
+			var cols = Vars.mobile ? 6 : 10;
+			// 清空
+			for (Table table1 : tableArr) table1.clearChildren();
+			Content current = holder.get();
+
+			// 遍历所有tech
+			for (var content : all) {
+				if (!reg.matcher(content.name).find() && !reg.matcher(content.localizedName).find()) continue;
+
+				var index = content instanceof Item ? 0
+						: content instanceof Liquid ? 1
+						: content instanceof Block ? 2
+						: content instanceof UnitType ? 3
+						: content instanceof SectorPreset ? 4
+						: 5;
+				var table1 = tableArr[index];
+				ImageButton button = table1.button(new TextureRegionDrawable(content.uiIcon),
+						styles.clearToggleTransi, imageSize, () -> {
+							cons.get(content);
+							hide.run();
+						}).size(size).get();
+				if (current != null) button.setChecked(current == content);
+
+				//						if (!Vars.mobile)
+				button.addListener(new Tooltip(tool -> tool.background(Tex.button)
+						.add(content.localizedName)));
+
+				if (table1.getChildren().size % cols == 0) {
+					table1.row();
+				}
+			}
+
+			for (int j = 0; j < length; j++) {
+				Table table1 = tableArr[j];
+				cont.add(table1).growX().left().row();
+				if (table1.getChildren().size != 0 && j < length - 2) {
+					cont.image(Tex.whiteui, Pal.accent).growX().height(3).pad(4).row();
+				}
+			}
+		}, true);
+	}
 
 	public static <T extends UnlockableContent> Prov<String> selectionWithField(Table table, Seq<T> items, String current, int size, int imageSize, int cols, boolean searchable) {
 		var field = new TextField(current);
 		table.add(field).fillX();
-		var btn = table.button(Icon.pencilSmall, Styles.clearFulli, () -> {}).size(40).padLeft(-1).get();
+		var btn = table.button(Icon.pencilSmall, styles.clearFulli, () -> {}).size(40).padLeft(-1).get();
 		btn.clicked(() -> showSelectImageTable(btn, items,
 				() -> content.getByName(ContentType.item, field.getText()),
 				item -> field.setText(item.name), size, imageSize,
@@ -393,10 +452,11 @@ public class IntUI {
 
 	public static BaseDialog test(Element el) {
 		return new BaseDialog("test") {{
-			cont.pane(p -> p.add(el)).growX().growY();
+			cont.pane(p -> p.add(el)).grow();
 			addCloseButton();
 			show();
 		}};
 	}
+
 
 }

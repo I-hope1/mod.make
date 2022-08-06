@@ -7,7 +7,9 @@ import mindustry.ctype.ContentType;
 import mindustry.entities.Effect;
 import mindustry.entities.abilities.Ability;
 import mindustry.entities.bullet.BulletType;
-import mindustry.entities.units.AIController;
+import mindustry.entities.pattern.ShootPattern;
+import mindustry.entities.units.UnitController;
+import mindustry.graphics.g3d.GenericMesh;
 import mindustry.mod.ContentParser;
 import mindustry.type.Weapon;
 import mindustry.world.draw.DrawBlock;
@@ -22,6 +24,7 @@ public class ContentSeq {
 	public static ContentParser parser;
 	public static ObjectMap<ContentType, Object> parserObjectMap;
 	public static ObjectMap<Class<?>, ContentType> contentTypes = new ObjectMap<>();
+	// types -> type
 	public static ObjectMap<String, String> cTypeMap = new ObjectMap<>();
 	public static ObjectMap<String, Seq<Class<?>>> types = new ObjectMap<>();
 	public static ObjectMap<Class<?>, Seq<Class<?>>> otherTypes = ObjectMap.of(
@@ -30,8 +33,12 @@ public class ContentSeq {
 			Ability.class, new Seq<>(),
 			Effect.class, new Seq<>(),
 			Weapon.class, new Seq<>(),
-			AIController.class, new Seq<>()
+			GenericMesh.class, new Seq<>(),
+			UnitController.class, new Seq<>(),
+			ShootPattern.class, new Seq<>()
 	);
+
+//	public static ObjectMap<String, Color> colors = new ObjectMap<>();
 
 	public static void load() throws Throwable {
 		parser = MyReflect.getValue(Vars.mods, "parser");
@@ -54,9 +61,9 @@ public class ContentSeq {
 				String type_s = _type.endsWith("s") ? _type : cType + "s";
 				cTypeMap.put(type_s, _type);
 			}
-//			if (parserObjectMap.containsKey(contentType)) {
+			//			if (parserObjectMap.containsKey(contentType)) {
 			types.put(cType + "", new Seq<>());
-//			}
+			//			}
 		});
 
 		/*Class<?> _TypeParser = Seq.with(ContentParser.class.getDeclaredClasses()).find(c -> c.getSimpleName().equals("TypeParser"));
@@ -124,4 +131,6 @@ public class ContentSeq {
 		}
 		return classes;
 	}
+
+
 }

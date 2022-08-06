@@ -22,6 +22,10 @@ public class MyReflect {
 		long offset = Modifier.isStatic(field.getModifiers()) ? unsafe.staticFieldOffset(field) : unsafe.objectFieldOffset(field);
 		unsafe.putObject(o, offset, val);
 	}
+	public static void setValue(Object o, String name, Object val) throws Exception {
+		Field f = getField(o.getClass(), name);
+		f.set(o, val);
+	}
 
 	public static <T> T getValue(Object o, String name/*, Class<?> clazz*/) throws Throwable {
 		Field f = getField(o.getClass(), name);
@@ -41,15 +45,6 @@ public class MyReflect {
 			Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
 			theUnsafe.setAccessible(true);
 			unsafe = (Unsafe) theUnsafe.get(null);
-
-			/*Field module = Class.class.getDeclaredField("module");
-			long offset = unsafe.objectFieldOffset(module);
-			unsafe.putObject(ModMake.class, offset, Object.class.getModule());*/
-
-			/*Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-			offset = unsafe.staticFieldOffset(field);
-			lookup = (MethodHandles.Lookup) unsafe.getObject(MethodHandles.Lookup.class, offset);*/
-
 		} catch (Exception e) {
 			Log.err(e);
 		}

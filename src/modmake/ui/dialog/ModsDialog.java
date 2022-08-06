@@ -172,17 +172,17 @@ public class ModsDialog extends BaseDialog {
 				b.table(right -> {
 //					right.fillParent = true;
 					right.right();
-					right.button(Icon.edit, Styles.clearPartiali, () -> {
+					right.button(Icon.edit, styles.clearPartiali, () -> {
 						modMetaDialog.show(mod.root.child("mod.json").exists()
 								? mod.root.child("mod.json") : mod.root.child("mod.hjson"));
 					}).size(50);
-					right.button(Icon.trash, Styles.clearPartiali, () ->
+					right.button(Icon.trash, styles.clearPartiali, () ->
 							ui.showConfirm("$confirm", "$mod.remove.confirm", () -> {
 								file.deleteDirectory();
 								setup();
 							})
 					).size(50).row();
-					right.button(Icon.upload, Styles.clearPartiali, () -> {
+					right.button(Icon.upload, styles.clearPartiali, () -> {
 						Fi dir = Vars.modDirectory;
 						boolean enable = settings.getBool("auto_load_mod");
 						Runnable upload = () -> {
@@ -202,7 +202,7 @@ public class ModsDialog extends BaseDialog {
 							ui.showConfirm("替换", "同名文件已存在\n是否要替换", upload);
 						} else upload.run();
 					}).size(50).disabled(__ -> Vars.state.isGame() && settings.getBool("auto_load_mod"));
-					right.button(Icon.link, Styles.clearPartiali, () -> Core.app.openFolder(mod.root.absolutePath())).size(50);
+					right.button(Icon.link, styles.clearPartiali, () -> Core.app.openFolder(mod.root.absolutePath())).size(50);
 				}).growX().right().padRight(-8).padTop(-8).fill();
 			}, styles.clearpb, () -> {
 				hide();

@@ -1,0 +1,17 @@
+
+name: test
+parent: sun
+mesh: {
+	type: NoiseMesh
+	seed: 2820980
+	divisions: 5
+	radius: 29
+	octaves: 4
+	color1: cccfcfd
+	colorOct: 8
+	colorScale: 6
+}
+sectorSize: 4
+radius: 16
+rotateTime: 10
+lightColor: ffcccc

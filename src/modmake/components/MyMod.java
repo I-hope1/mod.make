@@ -55,7 +55,7 @@ public class MyMod {
 			if (all.exists()) all.walk(f -> {
 //				if (Objects.equals(f.name(), ".hidden")) Log.info(f.readString());
 				if (!f.extEquals("png") || f.file().length() > max) return;
-				keys.add(name() + "-" + f.nameWithoutExtension());
+				keys1.add(name() + "-" + f.nameWithoutExtension());
 //				Log.info(f.nameWithoutExtension());
 				try {
 					sprites1.put(f.nameWithoutExtension(), new Pixmap(f));
@@ -65,7 +65,7 @@ public class MyMod {
 			all = root.child("sprites-override");
 			if (all.exists()) all.walk(f -> {
 				if (!f.extEquals("png") || f.file().length() > max) return;
-				keys.add(f.nameWithoutExtension());
+				keys2.add(f.nameWithoutExtension());
 //				Log.info(f.nameWithoutExtension());
 				try {
 					sprites2.put(f.nameWithoutExtension(), new Pixmap(f));
@@ -100,7 +100,8 @@ public class MyMod {
 		return pixmap;
 	}*/
 
-	public Seq<String> keys = new Seq<>();
+	public Seq<String> keys1 = new Seq<>();
+	public Seq<String> keys2 = new Seq<>();
 	public ObjectMap<String, Pixmap> sprites1 = new ObjectMap<>();
 	public ObjectMap<String, Pixmap> sprites2 = new ObjectMap<>();
 

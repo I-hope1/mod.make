@@ -5,21 +5,16 @@ import arc.files.Fi;
 import arc.func.Cons2;
 import arc.func.Prov;
 import arc.graphics.Color;
-import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.TextField;
-import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
-import mindustry.Vars;
-import mindustry.content.TechTree;
+import arc.util.Time;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
-import mindustry.graphics.Pal;
 import mindustry.type.*;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import mindustry.world.Block;
 import modmake.IntUI;
 import modmake.components.AddFieldBtn;
 import modmake.components.DataHandle;
@@ -28,18 +23,20 @@ import modmake.components.TypeSelection;
 import modmake.components.constructor.MyObject;
 import modmake.util.Classes;
 import modmake.util.Fields;
+import modmake.util.Tools;
 
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
 import static arc.Core.bundle;
+import static mindustry.Vars.ui;
 import static modmake.components.DataHandle.formatPrint;
+import static modmake.util.Tools.as;
 import static modmake.util.load.ContentSeq.cTypeMap;
 import static modmake.util.load.ContentSeq.types;
-import static modmake.util.Tools.*;
 
-@SuppressWarnings("ALL")
+//@SuppressWarnings("ALL")
 public class Editor extends BaseDialog {
 	TextField fileName;
 	Table topTable;
@@ -47,7 +44,7 @@ public class Editor extends BaseDialog {
 	TextButton checkBtn;
 	Result result = new Result();
 
-	class Result {
+	static class Result {
 		public Prov<String> value, typeNameProv;
 		Prov<Class<?>> typeProv;
 		// for json
@@ -61,7 +58,7 @@ public class Editor extends BaseDialog {
 			return typeNameProv == null ? null : typeNameProv.get();
 		}
 
-		public void check(){}
+		public void check() {}
 	}
 
 	Fi file;
@@ -153,7 +150,11 @@ public class Editor extends BaseDialog {
 		// 转换为首字母大小
 		typeName = typeName.substring(0, 1).toUpperCase() + typeName.substring(1);
 
-		var selection = new TypeSelection(Classes.get(typeName), typeName, types.get(parentName), true);
+		String finalTypeName = typeName;
+		var selection = new TypeSelection(Tools.or(Classes.get(typeName), () -> {
+			Time.runTask(1, () -> ui.showException(new ClassNotFoundException("无法找到类: " + finalTypeName)));
+			return Object.class;
+		}), typeName, types.get(parentName), true);
 		pane.add(selection.table).padBottom(4).row();
 		result.typeProv = selection::type;
 		result.typeNameProv = selection::typeName;
@@ -165,8 +166,12 @@ public class Editor extends BaseDialog {
 			t.add(table).fillX().pad(4).row();
 
 			// 添加接口
-			t.add(new AddFieldBtn(obj, fields, () -> Classes.get(selection.typeName()))).fillX().growX();
-			t.row();
+			try {
+				t.add(new AddFieldBtn(obj, fields, () -> Classes.get(selection.typeName()))).fillX().growX();
+			} catch (Exception e) {
+				ui.showException(e);
+			}
+			/*t.row();
 			// 研究
 			t.table(research -> {
 				var k = "research";
@@ -197,7 +202,6 @@ public class Editor extends BaseDialog {
 
 
 					var reg = Pattern.compile(v, Pattern.CASE_INSENSITIVE);
-					int i = 0;
 					var cols = Vars.mobile ? 6 : 10;
 
 					// 遍历所有tech
@@ -213,14 +217,14 @@ public class Editor extends BaseDialog {
 								: 5;
 						var table1 = tableArr[index];
 						var button = table1.button(new TextureRegionDrawable(content.uiIcon),
-								Styles.clearToggleTransi, 32, () -> {
+								styles.clearToggleTransi, 32, () -> {
 									obj.put(k, content.name);
 									btn.setText(content.localizedName);
 									hide.run();
 								}).size(42).get();
 						button.update(() -> button.setChecked(obj.get(k, "").equals(content.name)));
 
-//						if (!Vars.mobile)
+						//						if (!Vars.mobile)
 						button.addListener(new Tooltip(tool -> tool.background(Tex.button)
 								.add(content.localizedName)));
 
@@ -238,12 +242,10 @@ public class Editor extends BaseDialog {
 					}
 				}, true));
 				research.add(btn).size(150, 60);
-			}).fillX();
+			}).fillX();*/
 		}).fillX().row();
 
 		fields.map.each((k, v) -> {
-			if ((k + "").equals("research")) return;
-
 			fields.add(null, k);
 		});
 
@@ -258,7 +260,7 @@ public class Editor extends BaseDialog {
 		}
 		Seq<Bundle> arr = new Seq<>();
 		Cons2<String, String> fun = (from, to) -> {
-			var table = cont.table(Tex.button, (t -> {
+			var table = cont.table(Tex.button, t -> {
 				if (from.equals("#")) {
 					t.add("#").padRight(6);
 					var field = new TextField(to);
@@ -286,10 +288,10 @@ public class Editor extends BaseDialog {
 				bundle.name = from;
 				field1.changed(() -> bundle.name = field1.getText());
 				arr.add(bundle);
-			})).get();
+			}).get();
 			var index = arr.size - 1;
 			IntUI.doubleClick(table, () -> {
-				Vars.ui.showConfirm("$confirm", Core.bundle.format("confirm.remove",
+				ui.showConfirm("$confirm", Core.bundle.format("confirm.remove",
 								arr.get(index).name), () -> {
 							table.remove();
 							arr.remove(index);
@@ -339,9 +341,9 @@ public class Editor extends BaseDialog {
 		else if (ext.equalsIgnoreCase("properties")) buildPro(file);
 
 		else {
-			var area = pane.area(file.readString(), (t -> {
+			var area = pane.area(file.readString(), t -> {
 
-			})).size(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) - 200).get();
+			}).size(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) - 200).get();
 			result.value = () -> area.getText().replaceAll("\\r", "\n");
 		}
 
@@ -355,11 +357,13 @@ public class Editor extends BaseDialog {
 		var typeName = result.typeName();
 		var type = result.type();
 		if (type != null) {
+			//noinspection StatementWithEmptyBody
 			if (UnitType.class.isAssignableFrom(type) ||
 					Item.class.isAssignableFrom(type) ||
 					Liquid.class.isAssignableFrom(type) ||
 					StatusEffect.class.isAssignableFrom(type) ||
-					SectorPreset.class.isAssignableFrom(type)) {} else if (!obj.has("type"))
+					SectorPreset.class.isAssignableFrom(type) ||
+					Planet.class.isAssignableFrom(type)) {} else if (!obj.has("type"))
 				obj.put("type", typeName);
 		}
 

@@ -3,11 +3,14 @@ package modmake.components.constructor;
 import arc.func.Cons;
 import arc.func.Prov;
 import arc.struct.Seq;
+import arc.util.Log;
 
 import java.util.ArrayList;
 import java.util.StringJoiner;
 
 public class MyArray<E> extends MyObject<Integer, E> {
+	// 存储数据
+//	ArrayList<Integer> list = new ArrayList<>();
 	int j = -1;
 
 	public MyArray() {
@@ -32,7 +35,7 @@ public class MyArray<E> extends MyObject<Integer, E> {
 //	}
 
 	public void put(E v) {
-		super.put(++j, v);
+		super.put(nextId(), v);
 //		Log.err(new Exception("" + (v instanceof Prov ? ((Prov<?>) v).get() : v)));
 //		Log.info("put" + v);
 	}
@@ -45,7 +48,7 @@ public class MyArray<E> extends MyObject<Integer, E> {
 		var str = new StringJoiner(", ");
 		each(item -> {
 			Object val = item instanceof Prov ? ((Prov<?>) item).get() : item;
-			str.add(val + "");
+			str.add(String.valueOf(val));
 		});
 		return "[\n" + str + "\n]";
 	}
@@ -55,6 +58,10 @@ public class MyArray<E> extends MyObject<Integer, E> {
 		MyArray<E> array = new MyArray<>();
 		each(v -> array.put(v));
 		return array;
+	}
+
+	public int nextId() {
+		return ++j;
 	}
 
 	public ArrayList<E> toArray() {

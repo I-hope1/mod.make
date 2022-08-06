@@ -16,20 +16,22 @@ import static modmake.util.Tools.or;
 
 public class Fields {
 	private static Drawable[] backgrounds;
-	public MyObject map;
+	public MyObject<Object, Object> map;
 	public Table table;
 
 	public Class<?> type;
+	public int i = 0;
+	public int nextId(){
+		return i++;
+	}
 
-	public Fields(MyObject value, Prov<Class<?>> type, Table table) throws IllegalArgumentException, NullPointerException {
+	public Fields(MyObject<Object, Object> value, Prov<Class<?>> type, Table table) throws IllegalArgumentException, NullPointerException {
 		if (value == null) throw new NullPointerException("'value' can't be null");
 
 		this.table = table;
 		this.type = type.get();
 		this.map = value;
 	}
-
-	int i = 0;
 	ObjectMap<Object, Cell<Table>> data = new ObjectMap<>();
 
 	public void add(Table table, Object key) {
@@ -40,7 +42,7 @@ public class Fields {
 		if (value != null && !map.has(key)) {
 			map.put(key, value);
 		}
-		var t = or(table, () -> json(this, i++, key));
+		var t = or(table, () -> json(this, nextId(), key));
 		t.name = "" + key;
 		t.defaults().fillX();
 		data.put(key, this.table.add(t).fillX());

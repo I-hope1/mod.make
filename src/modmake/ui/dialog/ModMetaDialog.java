@@ -23,7 +23,7 @@ import static modmake.util.BuildContent.unpackString;
 import static rhino.ScriptRuntime.toNumber;
 
 public class ModMetaDialog extends BaseDialog {
-	int __MinGameVersion__ = 105;
+	int __MinGameVersion__ = 136;
 	Fi modsDirectory = Vars.dataDirectory.child("mods(I hope...)").child("mods");
 	String[] arr = {"name", "displayName", "description", "author", "version", "main", "repo"};
 	String lastFiName;

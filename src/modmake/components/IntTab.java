@@ -4,6 +4,7 @@ import arc.graphics.Color;
 import arc.math.Interp;
 import arc.scene.actions.Actions;
 import arc.scene.ui.Image;
+import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import modmake.ui.styles;
@@ -13,21 +14,22 @@ import modmake.ui.styles;
  */
 public class IntTab {
 
-	public Table main, title, cont;
+	public Table main, title;
 	public Seq<String> names;
 	public Seq<Color> colors;
 	public Seq<Table> tables;
 	public float totalWidth;
+	public ScrollPane pane;
 
 	protected void init() {
 		if (main != null)
 			return;
 		title = new Table();
-		cont = new Table();
 		main = new Table(t -> {
 			t.defaults().growX();
 			t.add(title).growX().row();
-			var c = t.pane(cont);
+			pane = new ScrollPane(null);
+			var c = t.add(pane);
 			if (totalWidth == -1){
 				c.growX();
 			} else {
@@ -77,19 +79,20 @@ public class IntTab {
 				if (selected[0] == j || transitional[0])
 					return;
 				if (selected[0] != -1) {
-					tables.get(selected[0]).actions(Actions.fadeOut(0.2f, Interp.fade), Actions.remove());
+					Table selectedTab = tables.get(selected[0]);
+					selectedTab.actions(Actions.fadeOut(0.2f, Interp.fade), Actions.remove());
 					transitional[0] = true;
 					title.update(() -> {
-						if (t.hasActions())
-							return;
+						if (selectedTab.hasActions()) return;
+						if (pane.getWidget() != t) pane.setWidget(t);
+						if (t.hasActions()) return;
 						transitional[0] = false;
 						title.update(null);
 						selected[0] = j;
-						cont.add(t);
 						t.actions(Actions.alpha(0), Actions.fadeIn(0.3f, Interp.fade));
 					});
 				} else {
-					cont.add(t);
+					pane.setWidget(t);
 					selected[0] = j;
 				}
 			}).height(42);

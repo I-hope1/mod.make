@@ -19,7 +19,7 @@ public class Frag extends Table {
 			if (cont == null || !cont.loadable())
 				return;
 
-			cont.btn = t.button(cont.localizedName(), Styles.cleart, cont::build).size(120f, 40f).get();
+			cont.btn = t.button(cont.localizedName(), Styles.flatt, cont::build).size(120f, 40f).get();
 			cont.load();
 			t.row();
 		})).row();

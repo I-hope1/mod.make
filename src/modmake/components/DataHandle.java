@@ -105,7 +105,6 @@ public class DataHandle {
 				iniParse(content, file.readString());
 			}
 		});
-
 	}
 
 	// settings
@@ -114,9 +113,8 @@ public class DataHandle {
 		Fi fi = Vars.dataDirectory.child("mods(I hope...)").child("settings.txt");
 		if (!fi.exists()) fi.writeString("");
 		var map = StringMap.of();
-		var value = reader.parse(Jval.read(fi.readString()).toString(Jformat.plain));
-		for (JsonValue entry = value.child; entry != null; entry = entry.next) {
-			map.put(entry.name, entry.asString());
+		for (var entry : Jval.read(fi.readString()).asObject()) {
+			map.put(entry.key, String.valueOf(entry.value));
 		}
 		/*Matcher m = Pattern.compile("[\\w-]+?\\s*:\\s*\\w+").matcher(fi.readString());
 		Seq<String> all = new Seq<>();

@@ -44,7 +44,7 @@ public class UpdateData extends BaseDialog {
 			).row();
 			t.image().fillX().color(Color.gray).padTop(2).padBottom(2).row();
 			t.add(mod.root.child("更新日志.txt").readString()).padBottom(2).row();
-		}).growY().growX().padTop(10f);
+		}).grow().padTop(10f);
 		row();
 		table(_t -> {
 			_t.button("$ok", this::hide).size(120, 50);

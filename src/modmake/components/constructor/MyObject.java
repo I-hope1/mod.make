@@ -43,8 +43,8 @@ public class MyObject<K, V> extends OrderedMap<K, V>
 		var str = new StringJoiner("\n");
 		orderedKeys().each(k -> {
 			var v = get(k);
-			var key = k instanceof Prov ? ((Prov<?>) k).get() : k;
-			var value = v instanceof Prov ? ((Prov<?>) v).get() : v;
+			Object key = k instanceof Prov ? ((Prov<?>) k).get() : k;
+			Object value = v instanceof Prov ? ((Prov<?>) v).get() : v;
 			str.add(key + ": " + (value.equals("") ? "\"\"" : value));
 		});
 		return "{\n" + str + "\n}";
@@ -53,5 +53,9 @@ public class MyObject<K, V> extends OrderedMap<K, V>
 	@Override
 	public MyObject<K, V> cpy() {
 		return new MyObject<>(this);
+	}
+
+	public <K1, V1> MyObject<K1, V1> as() {
+		return (MyObject<K1, V1>) this;
 	}
 }

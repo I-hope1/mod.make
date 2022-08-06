@@ -1,6 +1,5 @@
 package modmake.ui.dialog;
 
-import arc.Events;
 import arc.func.Boolc;
 import arc.func.Boolp;
 import arc.graphics.Color;
@@ -14,15 +13,12 @@ import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
-import arc.util.Align;
-import arc.util.Nullable;
-import arc.util.OS;
-import arc.util.Tmp;
-import mindustry.game.EventType;
+import arc.util.*;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import mindustry.ui.dialogs.SettingsMenuDialog;
+import modmake.ui.styles;
 import modmake.util.img.Stack;
 
 import java.util.Objects;
@@ -36,7 +32,7 @@ public class MySettingsDialog extends BaseDialog {
 	public MySettingsDialog() {
 		super("设置");
 
-		cont.pane(Styles.nonePane, p -> p.add(pane).width(400).get()).fillX();
+		cont.pane(styles.nonePane, p -> p.add(pane).width(400).get()).fillX();
 		pane.left().defaults().left();
 
 		addCloseButton();
@@ -175,7 +171,7 @@ public class MySettingsDialog extends BaseDialog {
 			setting.bp = dis;
 			all.put(setting.name, setting);
 		}
-		Events.run(EventType.ClientLoadEvent.class, () -> {
+		Time.runTask(0, () -> {
 			pane.add(displayName).growY().left().color(Pal.accent).row();
 			pane.table(t -> {
 				t.left().defaults().left();

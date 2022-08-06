@@ -3,6 +3,7 @@ package modmake.ui.img;
 import arc.func.Boolf;
 import arc.func.Cons;
 import arc.graphics.Color;
+import arc.graphics.Pixmap;
 import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.geom.Bresenham2;
@@ -29,10 +30,10 @@ public enum ImgEditorTool {
 		}
 
 		public void touchedLine(int x1, int y1, int x2, int y2) {
-			x1 = imgEditor.clampX(x1);
+			/*x1 = imgEditor.clampX(x1);
 			x2 = imgEditor.clampX(x2);
 			y1 = imgEditor.clampY(y1);
-			y2 = imgEditor.clampY(y2);
+			y2 = imgEditor.clampY(y2);*/
 			if (mode == 0) {
 				if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
 					y2 = y1;
@@ -58,15 +59,28 @@ public enum ImgEditorTool {
 //			Pixmap pix = imgEditor.pixmap();
 			int h = imgEditor.height() - 1;
 			if (this.mode == -1) {
-//				imgEditor.drawBlocks(x, y);
-				int clamped = (int) imgEditor.brushSize;
-				imgEditor.pixmap().fillCircle(x, h - y, clamped, imgEditor.drawColor.rgba());
+				imgEditor.drawBlocks(x, y);
+				/*int clamped = (int) imgEditor.brushSize;
+				imgEditor.pixmap().fillCircle(x, h - y, clamped, imgEditor.drawColor.rgba());*/
 			} else if (this.mode == 0) {
 				imgEditor.drawBlocksReplace(x, y);
 //				imgEditor.tile(x, y).color(imgEditor.drawColor);
 			} else if (this.mode == 1) {
-				int clamped = (int) imgEditor.brushSize;
-				imgEditor.pixmap().fillRect(x - clamped, h - y - clamped, clamped * 2, clamped * 2, imgEditor.drawColor.rgba());
+				int clamped = (int) Math.ceil(imgEditor.brushSize);
+				int rx1 = x - clamped, rx2 = x + clamped;
+				int ry1 = h - y - clamped, ry2 = h - y + clamped;
+				rx1 = imgEditor.clampX(rx1);
+				rx2 = imgEditor.clampX(rx2);
+				ry1 = imgEditor.clampY(ry1);
+				ry2 = imgEditor.clampY(ry2);
+				Pixmap pixmap = imgEditor.pixmap();
+				int color = imgEditor.drawColor.rgba();
+				for (int rx = rx1; rx <= rx2; rx++) {
+					for (int ry = ry1; ry <= ry2; ry++) {
+						pixmap.setRaw(rx, ry, color);
+					}
+				}
+//				imgEditor.pixmap().fillRect(x - clamped, h - y - clamped, clamped * 2, clamped * 2, imgEditor.drawColor.rgba());
 //				imgEditor.drawBlocks(x, y, true, tile -> true);
 //				imgEditor.tile(x, y).color(imgEditor.drawColor);
 			}
@@ -80,11 +94,10 @@ public enum ImgEditorTool {
 		}
 
 		public void touched(int x, int y) {
-			/*imgEditor.drawCircle(x, y, tile -> {
-				tile.color(Color.clear);
-			});*/
-			y = imgEditor.height() - 1 - y;
-			imgEditor.pixmap().fillCircle(x, y, (int) imgEditor.brushSize, Color.clearRgba);
+			imgEditor.drawCircle(x, y, Color.clearRgba);
+
+//			y = imgEditor.height() - 1 - y;
+//			imgEditor.pixmap().fillCircle(x, y, (int) imgEditor.brushSize, Color.clearRgba);
 		}
 	},
 	fill(KeyCode.g, "replaceall", "fillall") {
@@ -179,16 +192,11 @@ public enum ImgEditorTool {
 
 		public void touched(int x, int y) {
 			if (this.mode == -1) {
-				imgEditor.drawCircle(x, y, tile -> {
-					if (Mathf.chance(chance)) {
-						tile.color(imgEditor.drawColor);
-					}
-
-				});
+				imgEditor.drawCircle(x, y, imgEditor.drawColor.rgba(), __ -> Mathf.chance(chance));
 			} else if (this.mode == 0) {
-				imgEditor.drawBlocks(x, y, tile -> Mathf.chance(chance) && tile.colorRgba() != Color.clearRgba);
+				imgEditor.drawBlocks(x, y, color -> Mathf.chance(chance) && color != Color.clearRgba);
 			} else {
-				imgEditor.drawBlocks(x, y, tile -> Mathf.chance(chance));
+				imgEditor.drawBlocks(x, y, color -> Mathf.chance(chance));
 			}
 
 		}
@@ -238,12 +246,6 @@ public enum ImgEditorTool {
 		key = code;
 	}
 
-	ImgEditorTool(String... altModes) {
-		mode = -1;
-		key = KeyCode.unset;
-		this.altModes = altModes;
-	}
-
 	ImgEditorTool(KeyCode code, String... altModes) {
 		this.mode = -1;
 		this.key = code;
@@ -257,7 +259,8 @@ public enum ImgEditorTool {
 	}
 
 	// for select
-	public void selected(int x1, int y1, int x2, int y2) {}
+	public void selected(int x1, int y1, int x2, int y2) {
+	}
 
 	public void drag(int offsetX, int offsetY) {}
 }

@@ -1,50 +1,40 @@
 package modmake.components.build;
 
 
-import arc.Core;
 import arc.func.*;
 import arc.scene.style.Drawable;
-import arc.scene.ui.CheckBox;
-import arc.scene.ui.ImageButton;
-import arc.scene.ui.TextField;
-import arc.scene.ui.layout.Cell;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
-import mindustry.ai.types.FormationAI;
-import mindustry.entities.units.AIController;
+import arc.struct.*;
+import arc.util.Log;
+import mindustry.content.TechTree;
+import mindustry.ctype.UnlockableContent;
+import mindustry.entities.units.UnitController;
 import mindustry.gen.Icon;
-import mindustry.gen.Tex;
-import mindustry.graphics.Pal;
-import mindustry.type.Category;
-import mindustry.type.LiquidStack;
-import mindustry.type.UnitType;
+import mindustry.type.*;
 import mindustry.ui.Styles;
-import mindustry.world.blocks.power.NuclearReactor;
-import mindustry.world.consumers.ConsumeCoolant;
+import mindustry.world.consumers.*;
 import modmake.IntUI;
-import modmake.components.constructor.MyArray;
-import modmake.components.constructor.MyObject;
+import modmake.components.constructor.*;
 import modmake.ui.styles;
-import modmake.util.Classes;
-import modmake.util.Tools;
+
+import java.lang.reflect.Field;
+import java.util.Objects;
 
 import static mindustry.Vars.ui;
-import static modmake.IntVars.modName;
 import static modmake.util.BuildContent.*;
+import static modmake.util.Tools.*;
 import static modmake.util.load.ContentSeq.otherTypes;
-import static rhino.ScriptRuntime.isNaN;
-import static rhino.ScriptRuntime.toNumber;
 
 public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov<String>>> {
 	Seq<Category> categories = new Seq<>(Category.all);
 	Seq<Drawable> categoriesIcon = new Seq<>();
 	Seq<String> AISeq = new Seq<>();
-	Seq<Class<?>> AIBlackList = Seq.with(FormationAI.class);
+	Seq<Class<?>> AIBlackList = Seq.with(UnitController.class);
 	Seq<String> unitType = Seq.with("none", "flying", "mech", "legs", "naval", "payload");
 
 	public BKeys() {
-		otherTypes.get(AIController.class).each(ai -> {
+		otherTypes.get(UnitController.class).each(ai -> {
 			if (!AIBlackList.contains(ai)) {
 				AISeq.add(ai.getSimpleName());
 			}
@@ -57,10 +47,10 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 
 	public void setup() {
 		put("category", (table, value, __) -> {
-			String[] val = {"" + Tools.or(categories.find(c -> c.name().equals(value + "")),
+			String[] val = {"" + or(categories.find(c -> c.name().equals(value + "")),
 					Category.distribution)};
 
-			var btn = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.clearPartial2i));
+			var btn = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.cleari));
 			var style = btn.getStyle();
 			style.imageUp = ui.getIcon(val[0]);
 			btn.clicked(() -> {
@@ -75,8 +65,14 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			}
 			return null;
 		});
-		put("consumes", (table, _value, type) -> {
-			var value = _value instanceof MyObject ? (MyObject) _value : new MyObject<>();
+		put("consumes", (table, value, type) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> ConsumesClass.class, as(value), Seq.with(ConsumesClass.class));
+			return () -> {
+				return prov.get().toString();
+			};
+			/*var value = _value instanceof MyObject ? (MyObject) _value : new MyObject<>();
 			var cont = table.table(Tex.button).get();
 
 			Consumer.object = value;
@@ -158,11 +154,12 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 					v.check();
 				}
 				return value + "";
-			};
+			};*/
 		});
 		put("upgrades", (table, _value, __) -> {
 			if (!(_value instanceof MyArray)) return null;
-			var value = (MyArray) _value;
+			MyArray<Object> value = as(_value);
+			assert value != null;
 			table = table.table().fillX().get();
 			var cont = new Table();
 			//.name("upgrades-cont");
@@ -172,15 +169,16 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 					ui.showException("upgrades解析错误", new IllegalArgumentException("item isn't a MyArray"));
 					return;
 				}
-				var item = (MyArray) _item;
+				MyArray<Object> item = as(_item);
+				assert item != null;
 				var list = item.toArray();
 				item.clear();
 				var __table = cont.table().get();
 				cont.row();
-				var unitType1 = filterClass.get(UnitType.class).get(__table, Tools.or(list.get(0), () -> defaultClass.get(UnitType.class)), null, null);
+				var unitType1 = filterClass.get(UnitType.class).get(__table, or(list.get(0), () -> defaultClass.get(UnitType.class).get()), null, null);
 				item.put(0, unitType1);
 				__table.add("-->");
-				var unitType2 = filterClass.get(UnitType.class).get(__table, Tools.or(list.get(1), () -> defaultClass.get(UnitType.class)), null, null);
+				var unitType2 = filterClass.get(UnitType.class).get(__table, or(list.get(1), () -> defaultClass.get(UnitType.class).get()), null, null);
 				item.put(1, unitType2);
 				__table.button("", Icon.trash, styles.cleart, () -> {
 					value.removeValue(item);
@@ -197,14 +195,34 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			return () -> "" + value;
 		});
 		put("controller", (table, value, type) -> {
-			if (type == UnitType.class) {
+			if (UnitType.class.isAssignableFrom(type)) {
+				Log.debug("ok");
 				return tableWithListSelection(table, value + "", AISeq, "FlyingAI", false);
 			}
 			return null;
 		});
+		put("research", (table, o, __) -> {
+			MyObject<Object, Object> researchObj = o instanceof MyObject ? as(o) : o instanceof String ? MyObject.of("parent", "" + o) : null;
+			Object value = researchObj != null ? researchObj.get("parent") : null;
+
+			var techs = TechTree.all;
+			Seq<UnlockableContent> all = new Seq<>();
+			techs.each(node -> all.add(node.content));
+
+			final UnlockableContent[] content = {all.find(f -> f.name.equals(value))};
+			var btn = new TextButton(!Objects.equals(value, "") ?
+					"" + or(nullCheck(content[0], c -> c.localizedName), value) :
+					"$none", Styles.flatt);
+			btn.clicked(() -> IntUI.allContentSelection(btn, all, () -> content[0], c -> {
+				content[0] = c;
+				btn.setText(c.localizedName);
+			}, 42, 32, true));
+			table.add(btn).size(150, 60);
+			return () -> content[0].name;
+		});
 	}
 
-	static class Consumer<V, T> {
+	/*static class Consumer<V, T> {
 		public final static ObjectMap<String, Consumer> all = new ObjectMap<>();
 		public static Table cont = null;
 		public Table table;
@@ -250,9 +268,28 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			if (box.isDisabled()) object.remove(name);
 		}
 
+	}*/
+
+	// from ContentParser
+	static class ConsumesClass {
+		public Item item;
+		public ConsumeItemCharged itemCharged;
+		public ConsumeItemFlammable itemFlammable;
+		public ConsumeItemRadioactive itemRadioactive;
+		public ConsumeItemExplosive itemExplosive;
+		public ConsumeItemExplode itemExplode;
+		public ConsumeItems items;
+		public ConsumeLiquidFlammable liquidFlammable;
+		public ConsumeLiquid liquid;
+		public ConsumeLiquids liquids;
+		public ConsumeCoolant coolant;
+		public ConsumePower power;
+		public float powerBuffered;
 	}
 
-	public boolean myIsNaN(Object obj) {
+	static Field[] consumeFields = ConsumesClass.class.getFields();
+
+	/*public boolean myIsNaN(Object obj) {
 		return myIsNaN("" + obj);
 	}
 
@@ -262,5 +299,5 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			return isNaN(d);
 		} catch (Exception ignored) {}
 		return false;
-	}
+	}*/
 }

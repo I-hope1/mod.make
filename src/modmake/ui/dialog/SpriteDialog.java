@@ -213,7 +213,7 @@ public class SpriteDialog extends BaseDialog {
 				file[0].delete();
 				spriteMap.remove(file[0].nameWithoutExtension());
 				t.remove();
-			}).growX().growY();
+			}).grow();
 		};
 
 		table.table(ref.setup).pad(10).padBottom(3).padTop(0).row();

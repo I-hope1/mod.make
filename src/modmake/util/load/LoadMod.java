@@ -15,7 +15,6 @@ import arc.struct.Seq;
 import arc.struct.StringMap;
 import arc.util.Log;
 import arc.util.Time;
-import arc.util.async.AsyncExecutor;
 import mindustry.Vars;
 import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
@@ -43,7 +42,6 @@ import static modmake.util.load.ContentSeq.parser;
 public class LoadMod {
 
 	public static Method loadMod, checkWarnings;
-	public static AsyncExecutor async = new AsyncExecutor();
 	public static Seq<LoadedMod> mods;
 	public static MyMod currentMod;
 	public static LoadedMod lastMod;
@@ -353,7 +351,6 @@ public class LoadMod {
 
 				Pixmap pixmap = MyReflect.getValue(data, "pixmap");
 				if (pixmap != null) {
-					Log.info(pixmap);
 					if (main == null) {
 						main = pixmap;
 						continue;
@@ -425,6 +422,11 @@ public class LoadMod {
 
 	public static boolean load(MyMod mod) {
 		currentMod = mod;
+		Fi tmpDir = dataDirectory.child("tmp");
+		if (tmpDir.exists()) {
+			if (tmpDir.isDirectory()) tmpDir.deleteDirectory();
+			else tmpDir.delete();
+		}
 		if (settings.getBool("load_sprites")) mod.loadSprites();
 		IntVars.async("< 加载mod >", () -> {
 			try {

@@ -4,8 +4,6 @@ import arc.Core;
 import arc.func.Cons2;
 import arc.func.Prov;
 import arc.graphics.Color;
-import arc.graphics.g2d.TextureRegion;
-import arc.scene.style.Drawable;
 import arc.scene.ui.Button;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
@@ -17,25 +15,25 @@ import mindustry.ctype.ContentType;
 import mindustry.entities.Effect;
 import mindustry.entities.abilities.Ability;
 import mindustry.entities.bullet.BulletType;
+import mindustry.entities.pattern.ShootPattern;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.type.*;
-import mindustry.ui.Styles;
 import mindustry.world.blocks.Attributes;
 import mindustry.world.blocks.units.UnitFactory;
+import mindustry.world.consumers.*;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.meta.Attribute;
-import modmake.IntUI;
-import modmake.IntVars;
 import modmake.components.constructor.MyArray;
 import modmake.components.constructor.MyObject;
 import modmake.ui.styles;
 import modmake.util.Fields;
+import modmake.util.Tools;
 
 import java.lang.reflect.Field;
 
-import static modmake.IntUI.modDialog;
 import static modmake.util.BuildContent.*;
+import static modmake.util.Tools.as;
 import static modmake.util.Tools.or;
 
 public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
@@ -46,19 +44,19 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
 	public BClasses() {
 		put(Attribute.class, (table, value, __, ___) -> tableWithListSelection(
-				table, "" + value, attributes.as(), "" + defaultClass.get(Attribute.class), false));
+				table, "" + value, attributes.as(), "" + defaultClass.get(Attribute.class).get(), false));
 		put(Attributes.class, (table, value, __, ___) -> {
-			if (!(value instanceof MyObject<?, ?>)) throw new IllegalArgumentException("value isn't MyObject");
-			MyObject map = new MyObject<>();
+			if (!(value instanceof MyObject)) throw new IllegalArgumentException("value isn't MyObject");
+			MyObject<Object, Object> map = new MyObject<>();
 			var cont = new Table(Tex.button);
 			var children = new Table();
 			cont.add(children).fillX().row();
 			table.add(cont).fillX();
 			final int[] i = {0};
-			Cons2 add = (k, v) -> children.add(Fields.build(i[0]++, t -> {
+			Cons2<Object, Object> add = (k, v) -> children.add(Fields.build(i[0]++, t -> {
 				var key = get(Attribute.class).get(t, k, null, null);
 				map.put(
-						key, fail(t, v, Double.TYPE));
+						key, field(t, v, Double.TYPE));
 				t.table(right -> {
 					right.button("", Icon.trash, styles.cleart, () -> {
 						map.remove(key);
@@ -66,7 +64,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 					});
 				}).padLeft(4).growX().right();
 			})).growX().row();
-			var obj = or((MyObject) value, MyObject::new);
+			var obj = or(as(value), MyObject::new);
 			obj.each(add);
 
 			cont.button("$add", Icon.add, () -> add.get(null, 0)).growX().minWidth(100);
@@ -94,7 +92,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
 			return () -> "\"" + color[0] + "\"";
 		});
-		put(Sector.class, (table, value, __, ___) -> fail(table, parseInt(value), Double.TYPE));
+		put(Sector.class, (table, value, __, ___) -> field(table, parseInt(value), Double.TYPE));
 		put(BulletType.class, (table, value, __, ___) -> listWithType(
 				table, value, BulletType.class, "BasicBulletType", bullets, b -> "" + b));
 		put(StatusEffect.class, (table, value, __, ___) -> listWithType(
@@ -102,48 +100,48 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 				Vars.content.statusEffects(), s -> s.name, new Seq<>(StatusEffect.class)));
 		put(Weather.class, (table, value, __, ___) -> listWithType(
 				table, value, Weather.class, "ParticleWeather",
-				Vars.content.getBy(ContentType.weather).<Weather>as(), w -> w.name));
+				Vars.content.<Weather>getBy(ContentType.weather), w -> w.name));
 		// AmmoType, (table, value) -> {},
 		put(DrawBlock.class, (table, value, vType, __) -> {
 			if (value instanceof String) {
-				return tableWithTypeSelection(table, MyObject.of("type", value), vType, "DrawBlock");
+				return tableWithTypeSelection(table, as(MyObject.of("type", value)), vType, "DrawBlock");
 			}
-			return tableWithTypeSelection(table, (MyObject) value, vType, "DrawBlock");
+			return tableWithTypeSelection(table, as(value), vType, "DrawBlock");
 		});
 		put(Ability.class, (table, value, vType, __) -> tableWithTypeSelection(table,
-				(MyObject) value, vType, "Ability"));
+				as(value), vType, "Ability"));
 		put(Weapon.class, (table, value, vType, __) -> tableWithTypeSelection(table,
-				(MyObject) value, vType, "Weapon"));
+				as(value), vType, "Weapon"));
 
 		put(ItemStack.class, (table, value, __, ___) -> {
-			String[][] stack = {{null, null}};
+			String[][] stack = {{}};
 			if (value instanceof String) {
 				stack[0] = (value + "").split("/");
 			} else if (value instanceof MyObject) {
-				var obj = (MyObject) value;
-				stack[0] = new String[]{"" + obj.get("item"), "" + obj.get("amount")};
+				var obj = (MyObject<Object, Object>) value;
+				stack[0] = new String[]{"" + obj.get("item"), Tools.toString(obj.get("amount"))};
 			} else {
 				stack[0] = new String[]{"copper", "0"};
 			}
 
 			// to do...
-//		if (isNaN(stack[0][1])) throw new IllegalArgumentException("'" + stack[0][1] + "' isn't a number");
+			//		if (isNaN(stack[0][1])) throw new IllegalArgumentException("'" + stack[0][1] + "' isn't a number");
 			return buildOneStack(table, "item", Vars.content.items(), stack[0][0], stack[0][1]);
 		});
 		// like ItemStack
 		put(LiquidStack.class, (table, value, __, ___) -> {
-			String[][] stack = {{null, null}};
+			String[][] stack = {{}};
 			if (value instanceof String) {
 				stack[0] = (value + "").split("/");
 			} else if (value instanceof MyObject) {
 				var obj = (MyObject) value;
-				stack[0] = new String[]{"" + or(obj.get("liquid"), defaultClass.get(Liquid.class)), "" + or(obj.get("amount"), 0)};
+				stack[0] = new String[]{"" + or(obj.get("liquid"), defaultClass.get(Liquid.class).get()), Tools.toString(or(obj.get("amount"), 0))};
 			} else {
 				stack[0] = new String[]{"liquid", "0"};
 			}
 
 			// to do...
-//		if (isNaN(stack[0][1])) throw new IllegalArgumentException("'" + stack[0][1] + "' isn't a number");
+			//		if (isNaN(stack[0][1])) throw new IllegalArgumentException("'" + stack[0][1] + "' isn't a number");
 			return buildOneStack(table, "liquid", Vars.content.liquids(), stack[0][0], stack[0][1]);
 		});
 		put(Effect.class, (table, value, __, ___) -> listWithType(table, value, Effect.class,
@@ -166,11 +164,11 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			Cons2<String, Object>[] add = new Cons2[]{null};
 			add[0] = (k, v) -> {
 				var tab = Fields.build(i[0]++, t -> {
-					Prov<?> key = get(classes.get(0)).get(t, or(k, () -> defaultClass.get(classes.get(0))), null, null);
-					Table[] foldt = foldTable();
-					t.add(foldt[0]);
+					Prov<?> key = get(classes.get(0)).get(t, or(k, () -> defaultClass.get(classes.get(0)).get()), null, null);
+					Table[] foldT = foldTable();
+					t.add(foldT[0]);
 					map.put(
-							key, get(classes.get(1)).get(foldt[1], v, null, null)
+							key, get(classes.get(1)).get(foldT[1], v, null, null)
 					);
 					Runnable remove = () -> {
 						map.remove(key);
@@ -194,28 +192,122 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
 			return () -> map;
 		});
+		put(ShootPattern.class, (table, value, vType, __) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = tableWithTypeSelection(table, as(value), vType, "ShootPattern");
+			return () -> prov.get().toString();
+		});
 
 		put(UnitFactory.UnitPlan.class, (table, value, __, ___) -> {
-			MyObject map = or((MyObject) value, MyObject::new);
+			MyObject<Object, Object> map = or(as(value), MyObject::new);
 			Table cont = new Table(Tex.button);
 			table.add(cont).fillX();
 			cont.add(Core.bundle.get("unit", "unit"));
-			map.put("unit", get(UnitType.class).get(cont, map.get("unit", defaultClass.get(UnitType.class)), null, null));
+			map.put("unit", get(UnitType.class).get(cont, map.get("unit", defaultClass.get(UnitType.class).get()), null, null));
 			cont.row();
 			cont.add(Core.bundle.get("time", "time"));
-			map.put("time", fail(cont, map.get("time", 0), Double.TYPE));
+			map.put("time", field(cont, map.get("time", 0), Double.TYPE));
 			cont.row();
 			cont.add(Core.bundle.get("requirements"));
-			Table[] foldt = foldTable();
-			cont.add(foldt[0]).row();
+			Table[] foldT = foldTable();
+			cont.add(foldT[0]).row();
 			map.put(
-					"requirements", fArray(foldt[1], ItemStack.class, (MyArray) map.get("requirements", new MyArray<>()))
+					"requirements", fArray(foldT[1], ItemStack.class, as(map.get("requirements", new MyArray<>())))
 			);
 
 			return () -> map;
 		});
 
-		put(TextureRegion.class, (table, value, __, ___) -> {
+		// 以下是consumes
+		Seq<Class<?>> consumeFilter = Seq.with(
+				ConsumeItemCharged.class,
+				ConsumeItemFlammable.class,
+				ConsumeItemRadioactive.class,
+				ConsumeItemExplosive.class,
+				ConsumeItemExplode.class,
+				ConsumeItems.class,
+				ConsumeLiquidFlammable.class,
+				ConsumeLiquid.class,
+				ConsumeLiquids.class,
+				ConsumeCoolant.class,
+				ConsumePower.class
+		);
+		put(ConsumeItemCharged.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeItemFlammable.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeItemRadioactive.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeItemExplosive.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeItemExplode.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeItems.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeLiquidFlammable.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeLiquid.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeLiquids.class, (table, value, clazz, ___) -> {
+			if (value instanceof MyArray) {
+				value = MyObject.of("liquids", json.fromJson(LiquidStack[].class, value.toString()));
+			}
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumeCoolant.class, (table, value, clazz, ___) -> {
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+		put(ConsumePower.class, (table, value, clazz, ___) -> {
+			if (value instanceof Number) {
+				value = MyObject.of("usage", value);
+			}
+			if (!(value instanceof MyObject))
+				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
+			return () -> prov.get().toString();
+		});
+
+
+		/*put(TextureRegion.class, (table, value, __, ___) -> {
 			final String[] v = {"" + value};
 			Button[] btn = {null};
 			TextureRegion region = new TextureRegion();
@@ -224,16 +316,21 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			table.button(b -> {
 				btn[0] = b;
 				b.image(region).size(45, 45);
-				b.add(v[0]);
+				b.label(() -> v[0]);
 			}, Styles.defaultb, () -> {
+				MyMod mod = modDialog.currentMod;
 				IntUI.createDialog("__",
 						"选择图像", "从图片库选择图片", Icon.zoom, (Runnable) () -> {
-							IntUI.showSelectImageTableWithFunc(btn[0], modDialog.currentMod.keys, () -> v[0],
-									val -> v[0] = val, 50, 42, 5, val -> (Drawable) IntVars.find(val), true);
+							IntUI.showSelectImageTableWithFunc(btn[0], mod.keys1, () -> v[0],
+									val -> {
+										v[0] = val;
+										region.texture = IntVars.find(val).texture;
+									}, 50, 42, 5,
+									val -> mod.sprites1.containsKey(val) ? new TextureRegionDrawable(IntVars.wrap(mod.sprites1.get(val))) : new TextureRegionDrawable(IntVars.error), true);
 						});
 			});
 			return () -> v[0];
-		});
+		});*/
 		/*put(TextureRegion.class, (table, value, __, ___) -> {
 
 		});*/

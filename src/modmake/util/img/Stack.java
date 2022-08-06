@@ -1,5 +1,6 @@
 package modmake.util.img;
 
+import arc.util.Time;
 import modmake.components.DataHandle;
 import modmake.ui.img.ImgEditor;
 
@@ -22,18 +23,22 @@ public class Stack {
 	public void addUndo(ByteBuffer pixels) {
 		undoes.add(pixels);
 		while (undoes.size() > maxSize) {
-			undoes.remove(0);
+			undoes.remove(0).clear();
 		}
 	}
 
 	public void addRedo(ByteBuffer pixels) {
 		redoes.add(pixels);
 		while (redoes.size() > maxSize) {
-			redoes.remove(0);
+			redoes.remove(0).clear();
 		}
 	}
 
 	public void clear() {
+		Time.runTask(1, () -> {
+			undoes.forEach(ByteBuffer::clear);
+			redoes.forEach(ByteBuffer::clear);
+		});
 		undoes.clear();
 		redoes.clear();
 	}

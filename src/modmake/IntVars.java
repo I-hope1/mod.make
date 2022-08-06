@@ -66,6 +66,7 @@ public class IntVars {
 		thread.setName(text);
 	}*/
 
+	public static TextureRegion error = null;
 
 	public static TextureRegion find(String name) {
 		return find(modDialog.currentMod, name);
@@ -77,9 +78,10 @@ public class IntVars {
 
 	// 查找图片
 	public static TextureRegion find(MyMod mod, String name) {
-		if (mod == null) return atlas.find("error");
+		if (error == null) error = atlas.find("error");
+		if (mod == null) return error;
 		Pixmap pix = mod.sprites1.containsKey(name) ? mod.sprites1.get(name) : mod.sprites2.get(name);
-		if (pix == null) return atlas.find("error");
+		if (pix == null) return error;
 		return wrap(pix);
 	}
 

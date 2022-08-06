@@ -24,9 +24,7 @@ import mindustry.input.Binding;
 import mindustry.ui.GridImage;
 
 import static mindustry.Vars.mobile;
-import static mindustry.Vars.ui;
-import static modmake.IntUI.imgDialog;
-import static modmake.IntUI.imgEditor;
+import static modmake.IntUI.*;
 
 public class ImgView extends Element implements GestureDetector.GestureListener {
 	ImgEditorTool tool = ImgEditorTool.pencil;
@@ -137,6 +135,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 					lastTool = null;
 				}
 
+				rebuildCont();
 			}
 
 			@Override
@@ -146,8 +145,9 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 				Point2 p = project(x, y);
 
+				rebuildCont();
+
 				if (drawing && tool.draggable && !(p.x == lastx && p.y == lasty)) {
-					ui.editor.resetSaved();
 					Bresenham2.line(lastx, lasty, p.x, p.y, (cx, cy) -> tool.touched(cx, cy));
 				}
 
@@ -195,6 +195,8 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		center();
 		tool = ImgEditorTool.pencil;
 		select.clear();
+		if (cont != null) cont.texture.dispose();
+		if (background != null) background.texture.dispose();
 		cont = null;
 		background = null;
 		System.gc();
@@ -295,13 +297,16 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			buffer.dispose();
 			buffer.bind();*/
 		Draw.color();
-		if (background == null && showTransparentCanvas) rebuildBackground();
-		if (background != null) Draw.rect(background, centerx, centery, sclwidth, sclheight);
+		if (showTransparentCanvas) {
+			if (background == null) rebuildBackground();
+			if (background != null) Draw.rect(background, centerx, centery, sclwidth, sclheight);
+		}
 		if (cont == null) {
 			cont = new TextureRegion(new Texture(imgEditor.width(), imgEditor.height()));
+			rebuildCont();
 		}
 //		if (cont.texture == null) {
-		rebuildCont();
+//		rebuildCont();
 //		}
 		Draw.rect(cont, centerx, centery, sclwidth, sclheight);
 
@@ -317,7 +322,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			float height = unit * region.height;
 			float bx = leftBottom.x + unit * select.offsetX;
 			float by = leftBottom.y + unit * select.offsetY;
-			float offset = width / (float) Math.sqrt(zoom) / 15f;
+			float offset = Math.max(width, height) / (float) Math.sqrt(zoom) / 15f;
 			float minX = bx - offset / 2f - 1, maxX = bx + width + offset / 2f + 1;
 			float minY = by - offset / 2f - 1, maxY = by + height + offset / 2f + 1;
 			int divisions = Math.max(region.width, region.height) * 2;
@@ -387,7 +392,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 			//pencil square outline
 			if (tool == ImgEditorTool.pencil && tool.mode == 1) {
-				Lines.square(v.x + scaling / 2f, v.y + scaling / 2f, scaling * imgEditor.brushSize);
+				Lines.square(v.x + scaling / 2f, v.y + scaling / 2f, scaling * (imgEditor.brushSize + 0.5f));
 			} else if (tool == ImgEditorTool.select && tool.mode == -1 && drawing) {
 				Vec2 v1 = unproject(startx, starty).add(x, y).cpy();
 				Vec2 v2 = unproject(p.x, p.y).add(x, y);
@@ -504,26 +509,25 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 	public static class Select {
 
-		public boolean selectTransparent = false, cut = false;
+		public boolean coverTransparent = false, cut = false, multi = false;
 		public int offsetX, offsetY;
 		public Pixmap pixmap;
-		public TextureRegion textureRegion =  new TextureRegion();
-
-		{
-//			textureRegion.set(Pixmaps.blankTexture());
-		}
+		public TextureRegion textureRegion = new TextureRegion();
 
 		public void cover() {
 			if (pixmap == null) return;
 			pixmap.each((x, y) -> {
 				var tile = imgEditor.tile(x + offsetX, y + offsetY);
-				if (tile != null) {
+				if (tile != null && (coverTransparent || !pixmap.empty(x, y))) {
 					tile.color(pixmap.getRaw(x, y));
 				}
 			});
-			clear();
+			if (!multi) {
+				clear();
+				ImgEditorTool.select.mode = -1;
+			}
 			imgEditor.flushOp();
-			ImgEditorTool.select.mode = -1;
+			view.rebuildCont();
 		}
 
 		public void init(int startX, int startY, int toX, int toY) {
@@ -539,7 +543,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 //			toClear.clear();
 			pixmap.each((x, y) -> {
 				var tile = imgEditor.tileRaw(x + offsetX, y + offsetY);
-				if (tile != null) {
+				if (tile != null && tile.colorRgba() != 0) {
 					pixmap.setRaw(x, y, tile.colorRgba());
 					if (cut) tile.color(Color.clearRgba);
 				}
@@ -550,12 +554,43 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		}
 
 		public boolean any() {
-			return textureRegion.texture != null;
+			return textureRegion.texture != null && pixmap != null;
 		}
 
 		public void clear() {
+//			Log.info("clearSelect");
+			if (pixmap != null) pixmap.dispose();
+			if (textureRegion.texture != null) textureRegion.texture.dispose();
 			pixmap = null;
 			textureRegion.texture = null;
+		}
+
+		public void flipX() {
+			if (pixmap == null) return;
+			pixmap = pixmap.flipX();
+//			textureRegion.texture.draw(pixmap);
+			textureRegion.flip(true, false);
+		}
+
+		public void flipY() {
+			if (pixmap == null) return;
+			pixmap = pixmap.flipY();
+			textureRegion.flip(false, true);
+		}
+
+		public void rotate() {
+			if (pixmap == null) return;
+
+			int width = pixmap.width, height = pixmap.height;
+			Pixmap cpy = new Pixmap(height, width);
+			int w = width - 1, h = height - 1;
+			pixmap.each((x1, y1) -> {
+				cpy.setRaw(y1, w - x1, pixmap.getRaw(x1, y1));
+			});
+			pixmap = cpy;
+			textureRegion.set(new Texture(cpy));
+			textureRegion.flip(false, true);
+//			cpy = null;
 		}
 	}
 }

@@ -4,42 +4,40 @@ import arc.Core;
 import arc.files.Fi;
 import arc.func.Cons;
 import arc.graphics.Color;
-import arc.scene.event.HandCursorListener;
-import arc.scene.event.VisibilityListener;
-import arc.scene.ui.Button;
-import arc.scene.ui.Dialog;
-import arc.scene.ui.Label;
-import arc.scene.ui.TextField;
+import arc.scene.Element;
+import arc.scene.event.*;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
-import arc.util.Log;
+import arc.struct.*;
+import arc.util.*;
 import arc.util.serialization.Jval;
+import arc.util.serialization.Jval.Jformat;
 import mindustry.Vars;
+import mindustry.core.ContentLoader;
+import mindustry.ctype.*;
 import mindustry.gen.Icon;
 import mindustry.graphics.Pal;
-import mindustry.ui.Fonts;
-import mindustry.ui.Styles;
+import mindustry.ui.*;
 import mindustry.ui.dialogs.BaseDialog;
-import modmake.IntUI;
-import modmake.IntVars;
-import modmake.components.IntTab;
-import modmake.components.MyMod;
+import mindustry.world.Block;
+import modmake.*;
+import modmake.components.*;
 import modmake.ui.styles;
-import modmake.util.load.ContentSeq;
 import modmake.util.MyReflect;
 
-import java.util.Locale;
-import java.util.Objects;
+import java.lang.reflect.Constructor;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static mindustry.Vars.ui;
 import static modmake.IntUI.*;
 import static modmake.components.DataHandle.*;
-import static modmake.util.Tools.or;
+import static modmake.util.Tools.*;
+import static modmake.util.load.ContentSeq.cTypeMap;
 
 public class ModDialog extends BaseDialog {
 	public MyMod currentMod;
+	public static ContentLoader tmpLoader = new ContentLoader();
 
 	public ModDialog() {
 		super("");
@@ -59,7 +57,7 @@ public class ModDialog extends BaseDialog {
 
 		try {
 			bundles = MyReflect.getValue(ui.language, "displayNames");
-//			Log.info(bundles);
+			//			Log.info(bundles);
 		} catch (Throwable e) {
 			bundles = new ObjectMap<>();
 			Log.err(e);
@@ -109,7 +107,7 @@ public class ModDialog extends BaseDialog {
 			displayContentSprite[0] = settings.getBool("display-content-sprite");
 
 			if (content.equals(contentRoot)) {
-				var cTypes = ContentSeq.cTypeMap;
+				var cTypes = cTypeMap;
 				cTypes.keys().toSeq().each(type -> {
 					var f = content.child(type);
 					if (f.exists() && !f.isDirectory()) {
@@ -132,16 +130,14 @@ public class ModDialog extends BaseDialog {
 				selfText[0] = text;
 
 				if (ok[0]) {
-					p.getCells().each(e -> {
-						var elem = e.get();
-						elem.change();
-					});
+					p.getChildren().each(Element::change);
 					return;
 				}
 				ok[0] = true;
 				p.clearChildren();
 				Seq<Fi> all = content.findAll();
-//				IntVars.async("加载content", () -> {
+				//				IntVars.async("加载content", () -> {
+				Time.runTask(0f, () -> {
 					for (var i = 0; i < all.size; i++) {
 						final Fi[] json = {all.get(i)};
 						if (!json[0].extEquals("hjson") && !json[0].extEquals("json")) continue;
@@ -177,12 +173,13 @@ public class ModDialog extends BaseDialog {
 							btn.clearChildren();
 							if (displayContentSprite[0]) {
 								var image = btn.image(IntVars.find(mod, json[0].nameWithoutExtension())).size(32).padRight(6).left().get();
+								image.clicked(contentSpriteDialog::show);
 								if (!Vars.mobile) image.addListener(new HandCursorListener());
 							}
 							btn.add(json[0].name());
 						};
 						_setup.run();
-//						p.add(btn).growX().left().row();
+						//						p.add(btn).growX().left().row();
 						IntUI.longPress(btn, 600, longPress -> {
 							if (longPress) {
 								ui.showConfirm("$confirm",
@@ -215,7 +212,8 @@ public class ModDialog extends BaseDialog {
 							}
 						});
 					}
-//				}, () -> {});
+				});
+				//				}, () -> {});
 			});
 			body.add(table).growX().maxHeight(Core.graphics.getHeight()).row();
 
@@ -238,35 +236,63 @@ public class ModDialog extends BaseDialog {
 						boolean[] ok = {false};
 						Seq<Button> btns = new Seq<>();
 						ObjectMap<String, Jval> map = or(framework.get(content.name()), ObjectMap::new);
+						int cols = 2;
 						map.each((key, value) -> {
 							if (!ok[0]) {
 								int k = j[0];
-								btns.add(table.button("空白模板", Styles.clearTogglet, () -> {
-									btns.get(selected[0]).setChecked(false);
+								btns.add(table.button("空白模板", styles.clearTogglet, () -> {
+									if (selected[0] != -1) btns.get(selected[0]).setChecked(false);
 									btns.get(selected[0] = k).setChecked(true);
 								}).size(150, 64).get());
 								values.add(Jval.valueOf(""));
-								if (++j[0] % 2 == 0) table.row();
+								if (++j[0] % cols == 0) table.row();
 							}
 							ok[0] = true;
 
 							int k = j[0];
-							btns.add(table.button(key, Styles.clearTogglet, () -> {
-								btns.get(selected[0]).setChecked(false);
+							btns.add(table.button(key, styles.clearTogglet, () -> {
+								if (selected[0] != -1) btns.get(selected[0]).setChecked(false);
 								btns.get(selected[0] = k).setChecked(true);
 							}).size(150, 64).get());
 							values.add(value);
-							if (++j[0] % 2 == 0) table.row();
+							if (++j[0] % cols == 0) table.row();
 						});
 						var children = table.getChildren();
 						children.get(selected[0]).fireClick();
 						table.defaults().width(300);
-						cont.pane(table).width(300).height(300);
+						cont.pane(table).width(300).height(300).row();
+						final UnlockableContent[] selectUnlockContent = {null};
+						Button[] __btn = {null};
+						__btn[0] = cont.button("从实例中获取", Styles.flatTogglet, () -> {
+							IntUI.showSelectImageTable(__btn[0], Vars.content.getBy(ContentType.valueOf(cTypeMap.get(content.name()))), () -> selectUnlockContent[0], c -> {
+								selectUnlockContent[0] = c;
+								if (selected[0] != -1) btns.get(selected[0]).setChecked(false);
+								selected[0] = -1;
+							}, 42, 32, Vars.mobile ? 6 : 10, true);
+						}).checked(__ -> selected[0] == -1).growX().height(45).get();
 
 						buttons.button("$back", this::hide).size(150, 64);
 						buttons.button("$ok", () -> {
 							Fi file = content.child(name.getText() + ".hjson");
-							file.writeString(values.get(selected[0]).toString(Jval.Jformat.hjson));
+
+							if (selected[0] != -1) {
+								file.writeString(values.get(selected[0]).toString(Jval.Jformat.hjson));
+							} else {
+								try {
+									Class<?> cls = selectUnlockContent[0].getClass();
+									ContentLoader lastLoader = Vars.content;
+									Vars.content = tmpLoader;
+									Constructor<?> constructor = cls.getDeclaredConstructor(String.class);
+									constructor.setAccessible(true);
+									Block ins = (Block) constructor.newInstance(Time.nanos() + "");
+									Vars.content = lastLoader;
+
+									file.writeString(copyJval(ins, selectUnlockContent[0]).toString(Jformat.hjson));
+								} catch (Throwable e) {
+									ui.showException("获取失败", e);
+									return;
+								}
+							}
 							// dialog.hide();
 							ref.setup.get(selectedContent[0]);
 							hide();
@@ -290,7 +316,7 @@ public class ModDialog extends BaseDialog {
 		t.button("查看图片库1", () -> {
 			spriteDialog.hiddenRun = () -> {
 				ref.setup.get(selectedContent[0]);
-//				mod.loadSprites();
+				//				mod.loadSprites();
 			};
 			spriteDialog.setup(spritesDirectory1);
 		}).growX().row();
@@ -342,15 +368,16 @@ public class ModDialog extends BaseDialog {
 		}
 
 		Seq<Color> colors = Seq.with(Color.gold, Color.pink, Color.sky);
-		Seq<String> names = Seq.with("editor.content", "bundles", "scripts")
-				.replace(str -> Core.bundle.get(str, str));
+		Seq<String> names = new Seq<>();
+		Seq.with("editor.content", "bundles", "scripts").each(str -> names.add(Core.bundle.get(str, str)));
+		//		names.replace(str -> Core.bundle.get(str, str));
 		Seq<Table> tables = Seq.with(
 				/* content */
 				getContentTable(mod),
 				/* bundles */
 				new Table(styles.whiteui.tint(1, .8f, 1, .8f), t -> {
 					t.add("$default").padLeft(4).growX().left();
-					t.button(Icon.pencil, Styles.clearTransi, () -> {
+					t.button(Icon.pencil, styles.clearTransi, () -> {
 						hide();
 						editor.edit(mod.root.child("bundles").child("bundle.properties"), mod);
 						var listener = new VisibilityListener() {
@@ -365,7 +392,7 @@ public class ModDialog extends BaseDialog {
 					}).size(42).pad(10).row();
 					for (Locale k : Vars.locales) {
 						t.add(bundles.get(k + "", () -> k + "")).padLeft(4).growX().left();
-						t.button(Icon.pencil, Styles.clearTransi, () ->
+						t.button(Icon.pencil, styles.clearTransi, () ->
 								editor.edit(mod.root.child("bundles").child("bundle_" + k + ".properties"), mod)
 						).size(42).pad(10).row();
 						// if (Core.graphics.getWidth() > Core.graphics.getHeight() && i % 2 == 1) t.row();
@@ -379,7 +406,7 @@ public class ModDialog extends BaseDialog {
 
 		desc.row();
 
-		desc.add(new IntTab(-1, names, colors, tables).build()).width(w);
+		desc.add(new IntTab(-1, names, colors, tables).build()).growX().minWidth(w);
 
 		show();
 		return this;

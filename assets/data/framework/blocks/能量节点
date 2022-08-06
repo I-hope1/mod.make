@@ -1,0 +1,5 @@
+// extend 方块
+type: PowerNode
+laserRange: 6
+maxNodes: 10
+category: power
