@@ -59,7 +59,7 @@ import static modmake.util.load.ContentSeq.otherTypes;
 
 public class BuildContent {
 	public static Json json = DataHandle.json;
-	public static ObjectMap<Class<?>, Prov> defaultClass = new ObjectMap<>();
+	public static ObjectMap<Class<?>, Prov<?>> defaultClass = new ObjectMap<>();
 
 	static {
 		defaultClass.put(Effect.class, () -> "none");
@@ -75,7 +75,7 @@ public class BuildContent {
 		defaultClass.put(Planet.class, () -> "serpulo");
 	}
 
-	public static ObjectMap<String, Prov> defaultKey = ObjectMap.of(
+	public static ObjectMap<String, Prov<?>> defaultKey = ObjectMap.of(
 			"consumes", (Prov) MyObject::new
 	);
 
