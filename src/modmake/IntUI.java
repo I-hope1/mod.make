@@ -273,16 +273,16 @@ public class IntUI {
 		return t;
 	}
 
-	public static <T extends Button> Table
-	showSelectListTable(T button, Seq<String> list, Prov<String> holder,
-	                    Cons<String> cons, int width, int height, Boolean searchable) {
+	public static <T extends Button, E> Table
+	showSelectListTable(T button, Seq<E> list, Prov<String> holder,
+	                    Cons<E> cons, int width, int height, Boolean searchable) {
 		if (list == null) throw new IllegalArgumentException("list cannot be null");
-		return showSelectTable(button, (Table p, Runnable hide, String text) -> {
+		return showSelectTable(button, (p, hide, text) -> {
 			p.clearChildren();
 
 			Pattern pattern;
 			try {
-				pattern = Pattern.compile("(?i)" + text);
+				pattern = Pattern.compile(text, Pattern.CASE_INSENSITIVE);
 			} catch (Exception e) {return;}
 			list.each(item -> text.isEmpty() || pattern.matcher("" + item).find()
 					|| pattern.matcher(DataHandle.types.get("" + item, () -> "" + item)).find(), item -> {

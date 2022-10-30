@@ -1,40 +1,34 @@
 package modmake.components.build;
 
 import arc.Core;
-import arc.func.Cons2;
-import arc.func.Prov;
+import arc.func.*;
 import arc.graphics.Color;
 import arc.scene.ui.Button;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
+import arc.struct.*;
 import mindustry.Vars;
-import mindustry.content.Bullets;
-import mindustry.content.Fx;
+import mindustry.content.*;
 import mindustry.ctype.ContentType;
 import mindustry.entities.Effect;
 import mindustry.entities.abilities.Ability;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.pattern.ShootPattern;
-import mindustry.gen.Icon;
-import mindustry.gen.Tex;
+import mindustry.gen.*;
+import mindustry.graphics.g3d.GenericMesh;
 import mindustry.type.*;
 import mindustry.world.blocks.Attributes;
 import mindustry.world.blocks.units.UnitFactory;
 import mindustry.world.consumers.*;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.meta.Attribute;
-import modmake.components.constructor.MyArray;
-import modmake.components.constructor.MyObject;
+import modmake.components.constructor.*;
 import modmake.ui.styles;
-import modmake.util.Fields;
-import modmake.util.Tools;
+import modmake.util.*;
 
 import java.lang.reflect.Field;
 
 import static modmake.util.BuildContent.*;
-import static modmake.util.Tools.as;
-import static modmake.util.Tools.or;
+import static modmake.util.Tools.*;
 
 public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
@@ -46,7 +40,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 		put(Attribute.class, (table, value, __, ___) -> tableWithListSelection(
 				table, "" + value, attributes.as(), "" + defaultClass.get(Attribute.class).get(), false));
 		put(Attributes.class, (table, value, __, ___) -> {
-			if (!(value instanceof MyObject)) throw new IllegalArgumentException("value isn't MyObject");
+			checkMyObject(value);
 			MyObject<Object, Object> map = new MyObject<>();
 			var cont = new Table(Tex.button);
 			var children = new Table();
@@ -54,9 +48,8 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			table.add(cont).fillX();
 			final int[] i = {0};
 			Cons2<Object, Object> add = (k, v) -> children.add(Fields.build(i[0]++, t -> {
-				var key = get(Attribute.class).get(t, k, null, null);
-				map.put(
-						key, field(t, v, Double.TYPE));
+				var key = get(Attribute.class).get(t, or(k, defaultClass.get(Attribute.class)), null, null);
+				map.put(key, field(t, v, Double.TYPE));
 				t.table(right -> {
 					right.button("", Icon.trash, styles.cleart, () -> {
 						map.remove(key);
@@ -193,9 +186,8 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			return () -> map;
 		});
 		put(ShootPattern.class, (table, value, vType, __) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = tableWithTypeSelection(table, as(value), vType, "ShootPattern");
+			checkMyObject(value);
+			var prov = tableWithTypeSelection(table, as(value), ShootPattern.class, "ShootPattern");
 			return () -> prov.get().toString();
 		});
 
@@ -219,6 +211,12 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			return () -> map;
 		});
 
+		put(GenericMesh.class, (table, value, __, ___) -> {
+			checkMyObject(value);
+			var prov = tableWithTypeSelection(table, as(value), GenericMesh.class, "NoiseMesh");
+			return () -> prov.get().toString();
+		});
+
 		// 以下是consumes
 		Seq<Class<?>> consumeFilter = Seq.with(
 				ConsumeItemCharged.class,
@@ -233,78 +231,22 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 				ConsumeCoolant.class,
 				ConsumePower.class
 		);
-		put(ConsumeItemCharged.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+		ClassInterface def = (table, value, clazz, ___) -> {
+			checkMyObject(value);
 			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
 			return () -> prov.get().toString();
-		});
-		put(ConsumeItemFlammable.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumeItemRadioactive.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumeItemExplosive.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumeItemExplode.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumeItems.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumeLiquidFlammable.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumeLiquid.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumeLiquids.class, (table, value, clazz, ___) -> {
-			if (value instanceof MyArray) {
-				value = MyObject.of("liquids", json.fromJson(LiquidStack[].class, value.toString()));
-			}
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumeCoolant.class, (table, value, clazz, ___) -> {
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
-		put(ConsumePower.class, (table, value, clazz, ___) -> {
-			if (value instanceof Number) {
-				value = MyObject.of("usage", value);
-			}
-			if (!(value instanceof MyObject))
-				throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
-			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
-			return () -> prov.get().toString();
-		});
+		};
+		put(ConsumeItemCharged.class, def);
+		put(ConsumeItemFlammable.class, def);
+		put(ConsumeItemRadioactive.class, def);
+		put(ConsumeItemExplosive.class, def);
+		put(ConsumeItemExplode.class, def);
+		put(ConsumeItems.class, def);
+		put(ConsumeLiquidFlammable.class, def);
+		put(ConsumeLiquid.class, def);
+		put(ConsumeLiquids.class, def);
+		put(ConsumeCoolant.class, def);
+		put(ConsumePower.class, def);
 
 
 		/*put(TextureRegion.class, (table, value, __, ___) -> {
@@ -334,6 +276,11 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 		/*put(TextureRegion.class, (table, value, __, ___) -> {
 
 		});*/
+	}
+
+	public static void checkMyObject(Object value) {
+		if (!(value instanceof MyObject))
+			throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
 	}
 
 	public interface ClassInterface {

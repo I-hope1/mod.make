@@ -66,6 +66,10 @@ public class JsonDialog extends Dialog {
 		buttons.button("$edit", Icon.edit, Styles.defaultt, () -> {
 			editor.edit(file, mod);
 			editor.addListener(listener);
+		}).size(bw / 2f, 55).row();
+		buttons.button("文本编辑", Icon.edit, Styles.defaultt, () -> {
+			editor.edit(file, mod, "txt");
+			editor.addListener(listener);
 		}).size(bw / 2f, 55);
 		closeOnBack();
 	}

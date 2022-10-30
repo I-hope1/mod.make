@@ -3,7 +3,7 @@ importPackage(Packages.arc.files);
 
 
 let lastAtlas = null;
-let scripts = Vars.mods.scripts;
+let scripts = Vars.mods.getScripts();
 let { scope } = scripts;
 let loader = Vars.mods.mainLoader()
 loader.loadClass("modmake.ui.dialog.MySettingsDialog")
@@ -142,8 +142,8 @@ const loadMod = (() => {
 })()
 let AtlasRegion = TextureAtlas.AtlasRegion
 
-const ACLASS = NativeJavaClass(scope, loader.loadClass("modmake.util.load.LoadMod"), true);
-ACLASS.boolf = boolf(loadMod)
+const ACLASS = new NativeJavaClass(scope, loader.loadClass("modmake.util.load.LoadMod"), true);
+ACLASS.boolf = new Boolf({get:loadMod})
 // ACLASS.boolf = boolf(() => false)
 let { settings } = ACLASS
 
@@ -151,6 +151,7 @@ Events.run(ClientLoadEvent, () => {
 	lastAtlas = Core.atlas;
 })
 
+/*
 let lastReq = require
 const hjson = require("hjson/hjson")
-Log.debug(hjson.stringify(hjson.parse("a: 2//2\nb: 2\nc: {b: 1, d:3}", {keepWsc:true}), {keepWsc:true}))
+Log.debug(hjson.stringify(hjson.parse("a: 2//2\nb: 2\nc: {b: 1, d:3}", {keepWsc:true}), {keepWsc:true}))*/

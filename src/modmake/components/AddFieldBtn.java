@@ -37,6 +37,7 @@ public class AddFieldBtn extends TextButton {
 	public static ObjectMap<Class<?>, ObjectMap> caches = new ObjectMap<>() {
 		@Override
 		public ObjectMap get(Class<?> key) {
+			if (key == null) return null;
 			ObjectMap val = super.get(key);
 			if (val == null) {
 				var m = new OrderedMap(json.getFields(key));
@@ -149,7 +150,7 @@ public class AddFieldBtn extends TextButton {
 						_hide.run();
 					}).height(64).fillX();
 				}
-//				Log.debug("ok");
+				//				Log.debug("ok");
 			}, cont != null);
 
 		});
@@ -189,7 +190,7 @@ public class AddFieldBtn extends TextButton {
 	}
 
 	public static Object defaultValue(String key) {
-		return BuildContent.defaultKey.get(key, () -> null).get();
+		return BuildContent.defaultKey.get(key, () -> () -> null).get();
 	}
 
 	public static Object defaultValue(Class<?> type) {

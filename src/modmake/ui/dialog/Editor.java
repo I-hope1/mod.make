@@ -16,10 +16,7 @@ import mindustry.type.*;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
-import modmake.components.AddFieldBtn;
-import modmake.components.DataHandle;
-import modmake.components.MyMod;
-import modmake.components.TypeSelection;
+import modmake.components.*;
 import modmake.components.constructor.MyObject;
 import modmake.util.Classes;
 import modmake.util.Fields;
@@ -62,6 +59,7 @@ public class Editor extends BaseDialog {
 	}
 
 	Fi file;
+	String extension;
 	MyMod mod;
 
 	public Editor() {
@@ -104,13 +102,14 @@ public class Editor extends BaseDialog {
 		addCloseListener();
 	}
 
-	public void edit(Fi file, MyMod mod) {
+	public void edit(Fi file, MyMod mod, String extension) {
 		if (!file.exists()) file.writeString("");
 
 		this.file = file;
+		this.extension = extension;
 		this.mod = mod;
 
-		if (!Objects.equals(file.extension(), "properties")) {
+		if (!Objects.equals(extension, "properties")) {
 			if (topTable.getChildren().size == 0) {
 				topTable.add("$fileName");
 				topTable.add(fileName);
@@ -123,6 +122,10 @@ public class Editor extends BaseDialog {
 
 		show();
 	}
+	public void edit(Fi file, MyMod mod) {
+		edit(file, mod, file.extension());
+	}
+
 
 	public void buildJson(Fi file) {
 
@@ -335,15 +338,13 @@ public class Editor extends BaseDialog {
 		pane.clearChildren();
 		result = new Result();
 		var file = this.file;
-		var ext = file.extension();
-		if (ext.equalsIgnoreCase("hjson") || ext.equalsIgnoreCase("json")) buildJson(file);
-
-		else if (ext.equalsIgnoreCase("properties")) buildPro(file);
-
-		else {
-			var area = pane.area(file.readString(), t -> {
-
-			}).size(Math.min(Core.graphics.getWidth(), Core.graphics.getHeight()) - 200).get();
+		if (extension.equalsIgnoreCase("hjson")
+				|| extension.equalsIgnoreCase("json")) {
+			buildJson(file);
+		} else if (extension.equalsIgnoreCase("properties")) {
+			buildPro(file);
+		} else {
+			var area = pane.add(new TextAreaTable(file.readString())).grow().get().getArea();
 			result.value = () -> area.getText().replaceAll("\\r", "\n");
 		}
 
@@ -384,8 +385,11 @@ public class Editor extends BaseDialog {
 
 	// 编译代码
 	public void parse() {
-		if (file.extEquals("hjson") || file.extEquals("json")) parseJson();
-
-		else file.writeString(result.value.get());
+		if (extension.equalsIgnoreCase("hjson")
+				|| extension.equalsIgnoreCase("json")) {
+			parseJson();
+		} else {
+			file.writeString(result.value.get());
+		}
 	}
 }

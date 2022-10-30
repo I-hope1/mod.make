@@ -1,61 +1,40 @@
 package modmake.util;
 
 import arc.Core;
-import arc.func.Cons;
-import arc.func.Cons2;
-import arc.func.Func;
-import arc.func.Prov;
+import arc.func.*;
 import arc.graphics.Color;
 import arc.input.KeyCode;
-import arc.scene.event.InputEvent;
-import arc.scene.event.InputListener;
-import arc.scene.style.Drawable;
-import arc.scene.style.TextureRegionDrawable;
+import arc.scene.event.*;
+import arc.scene.style.*;
 import arc.scene.ui.*;
-import arc.scene.ui.layout.Cell;
-import arc.scene.ui.layout.Collapser;
-import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.OrderedMap;
-import arc.struct.Seq;
-import arc.struct.StringMap;
-import arc.util.Log;
-import arc.util.Time;
-import arc.util.serialization.Json;
-import arc.util.serialization.Jval;
+import arc.scene.ui.layout.*;
+import arc.struct.*;
+import arc.util.*;
+import arc.util.serialization.*;
 import mindustry.Vars;
 import mindustry.ctype.UnlockableContent;
 import mindustry.entities.Effect;
 import mindustry.entities.bullet.BulletType;
-import mindustry.gen.Icon;
-import mindustry.gen.Tex;
+import mindustry.gen.*;
 import mindustry.type.*;
 import mindustry.ui.Styles;
 import mindustry.world.meta.Attribute;
 import modmake.IntUI;
-import modmake.components.AddFieldBtn;
-import modmake.components.DataHandle;
-import modmake.components.MyTextField;
-import modmake.components.TypeSelection;
-import modmake.components.build.BClasses;
-import modmake.components.build.BKeys;
-import modmake.components.build.inspect.IClasses;
-import modmake.components.build.inspect.IKeys;
-import modmake.components.build.inspect.Inspect;
-import modmake.components.constructor.MyArray;
-import modmake.components.constructor.MyObject;
+import modmake.components.*;
+import modmake.components.build.*;
+import modmake.components.build.inspect.*;
+import modmake.components.constructor.*;
 import modmake.ui.styles;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.Objects;
 
 import static mindustry.Vars.ui;
 import static modmake.components.AddFieldBtn.*;
+import static modmake.components.DataHandle.types;
 import static modmake.components.DataHandle.*;
 import static modmake.util.Tools.*;
-import static modmake.util.load.ContentSeq.getGenericType;
-import static modmake.util.load.ContentSeq.otherTypes;
+import static modmake.util.load.ContentSeq.*;
 
 public class BuildContent {
 	public static Json json = DataHandle.json;
@@ -76,7 +55,9 @@ public class BuildContent {
 	}
 
 	public static ObjectMap<String, Prov<?>> defaultKey = ObjectMap.of(
-			"consumes", (Prov) MyObject::new
+			"consumes", (Prov<?>) MyObject::new,
+			"controller", (Prov<?>) MyObject::new,
+			"research", (Prov<?>) () -> "none"
 	);
 
 	// 折叠黑名单
@@ -199,11 +180,11 @@ public class BuildContent {
 
 
 	public static Prov<String>
-	tableWithListSelection(Table table, String value, Seq<String> seq, String defaultValue, boolean searchable) {
+	tableWithListSelection(Table table, String value, Seq<?> seq, String defaultValue, boolean searchable) {
 		String[] val = {value != null ? value : defaultValue};
 		var btn = new TextButton(types.get(val[0], () -> val[0]), styles.cleart);
 		btn.clicked(() -> IntUI.showSelectListTable(btn, seq, () -> val[0],
-				type -> btn.setText(types.get(val[0] = type, () -> val[0])
+				type -> btn.setText(types.get(val[0] = String.valueOf(type), () -> val[0])
 				), 150, 55, searchable));
 		table.add(btn).minWidth(100).height(45).get();
 		return () -> val[0];
@@ -586,8 +567,11 @@ public class BuildContent {
 				return ret;
 			}
 			// 尝试解析对象
-			if (!unknown[0] && value[0] instanceof MyObject && !isArray) {
+			if (field == null || !Object.class.isAssignableFrom(field.getType())) return null;
+			if (value[0] instanceof MyObject && !isArray) {
 				return fObject(finalTable[0], field::getType, as(value[0]));
+			} else if (value[0] instanceof MyArray) {
+				return fArray(finalTable[0], field.getType(), as(value[0]));
 			}
 			return null;
 		}).get();

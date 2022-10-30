@@ -15,9 +15,7 @@ import modmake.IntVars;
 
 import java.util.Objects;
 
-import static modmake.components.DataHandle.json;
-import static modmake.components.DataHandle.settings;
-import static modmake.ui.dialog.ModsDialog.dataDirectory;
+import static modmake.components.DataHandle.*;
 
 public class MyMod {
 	public Fi root;

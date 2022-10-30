@@ -108,9 +108,16 @@ public class DataHandle {
 	}
 
 	// settings
+	public static final Fi dataDirectory = Vars.dataDirectory.child("b0kkihope");
 	static {
-
-		Fi fi = Vars.dataDirectory.child("mods(I hope...)").child("settings.txt");
+		try {
+			Fi fi = Vars.dataDirectory.child("mods(I hope...)");
+			if (fi.exists() && fi.isDirectory()) {
+				fi.copyFilesTo(dataDirectory);
+				fi.deleteDirectory();
+			}
+		} catch (Throwable ignored) {}
+		Fi fi = dataDirectory.child("settings.txt");
 		if (!fi.exists()) fi.writeString("");
 		var map = StringMap.of();
 		for (var entry : Jval.read(fi.readString()).asObject()) {

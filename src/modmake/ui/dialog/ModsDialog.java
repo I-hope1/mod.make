@@ -24,7 +24,7 @@ import java.util.Objects;
 import static mindustry.Vars.ui;
 import static modmake.IntUI.modDialog;
 import static modmake.IntUI.modMetaDialog;
-import static modmake.components.DataHandle.settings;
+import static modmake.components.DataHandle.*;
 
 public class ModsDialog extends BaseDialog {
 
@@ -120,8 +120,6 @@ public class ModsDialog extends BaseDialog {
 			if (root != null) root.delete();
 		}
 	}
-
-	public static final Fi dataDirectory = Vars.dataDirectory.child("mods(I hope...)");
 	public static final Fi modsDirectory = dataDirectory.child("mods");
 	TextButton.TextButtonStyle style;
 	float margin;

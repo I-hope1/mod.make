@@ -1,7 +1,6 @@
 package modmake.util.load;
 
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
+import arc.struct.*;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.entities.Effect;
@@ -9,12 +8,11 @@ import mindustry.entities.abilities.Ability;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.entities.units.UnitController;
-import mindustry.graphics.g3d.GenericMesh;
+import mindustry.graphics.g3d.*;
 import mindustry.mod.ContentParser;
 import mindustry.type.Weapon;
 import mindustry.world.draw.DrawBlock;
-import modmake.util.Classes;
-import modmake.util.MyReflect;
+import modmake.util.*;
 
 import java.lang.reflect.*;
 
@@ -33,12 +31,11 @@ public class ContentSeq {
 			Ability.class, new Seq<>(),
 			Effect.class, new Seq<>(),
 			Weapon.class, new Seq<>(),
-			GenericMesh.class, new Seq<>(),
 			UnitController.class, new Seq<>(),
 			ShootPattern.class, new Seq<>()
 	);
 
-//	public static ObjectMap<String, Color> colors = new ObjectMap<>();
+	//	public static ObjectMap<String, Color> colors = new ObjectMap<>();
 
 	public static void load() throws Throwable {
 		parser = MyReflect.getValue(Vars.mods, "parser");
@@ -96,6 +93,7 @@ public class ContentSeq {
 
 		Classes.each((k, type) -> {
 			if (!settings.getBool("display_deprecated") && type.isAnnotationPresent(Deprecated.class)) return;
+			if (Modifier.isAbstract(type.getModifiers())) return;
 			var classes = contentTypes.keys().toSeq();
 			for (int i = 0; i < classes.size; i += 1) {
 				if (classes.get(i) != null && !classes.get(i).isAssignableFrom(type)) continue;
@@ -104,11 +102,14 @@ public class ContentSeq {
 				break;
 			}
 			otherTypes.each((clazz, arr) -> {
-				if (clazz.isAssignableFrom(type) && !Modifier.isAbstract(type.getModifiers()) && type != BulletType.class) {
+				if (clazz.isAssignableFrom(type) && type != BulletType.class) {
 					arr.add(type);
 				}
 			});
 		});
+
+		otherTypes.put(GenericMesh.class, Seq.with(
+				NoiseMesh.class, MultiMesh.class, MatMesh.class));
 	}
 
 

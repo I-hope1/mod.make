@@ -36,7 +36,7 @@ import java.util.Locale;
 
 import static mindustry.Vars.content;
 import static mindustry.Vars.ui;
-import static modmake.ui.dialog.ModsDialog.dataDirectory;
+import static modmake.components.DataHandle.dataDirectory;
 import static modmake.util.load.ContentSeq.parser;
 
 public class LoadMod {
