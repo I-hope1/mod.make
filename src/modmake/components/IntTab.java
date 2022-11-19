@@ -7,7 +7,7 @@ import arc.scene.ui.Image;
 import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 
 /*
  * Tab栏切换
@@ -75,7 +75,7 @@ public class IntTab {
 
 				Image image = b.image().fillX().growX().get();
 				b.update(() -> image.setColor(selected[0] == j ? colors.get(j) : Color.gray));
-			}, styles.clearb, () -> {
+			}, MyStyles.clearb, () -> {
 				if (selected[0] == j || transitional[0])
 					return;
 				if (selected[0] != -1) {

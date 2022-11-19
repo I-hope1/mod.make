@@ -11,7 +11,7 @@ import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.ui.Styles;
 import modmake.components.MyMod;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 
 import static modmake.IntUI.editor;
 
@@ -33,23 +33,23 @@ public class JsonDialog extends Dialog {
 		});
 		p.center();
 		p.defaults().padTop(10).left();
-		p.add("$editor.sourceCode", Color.gray).padRight(10).padTop(0).row();
+		p.add("@editor.sourceCode", Color.gray).padRight(10).padTop(0).row();
 		p.table(t -> {
 			t.right();
-			t.button(Icon.paste, styles.clearPartiali, () -> Vars.ui
-					.showConfirm("粘贴", "是否要粘贴", () -> {
+			t.button(Icon.paste, MyStyles.clearPartiali, () -> Vars.ui
+					.showConfirm("@paste", "@confirm.paste", () -> {
 						file.writeString(Core.app.getClipboardText());
 						label.setText(getText());
 					})
 			).padRight(2);
-			t.button(Icon.copy, styles.clearPartiali, () -> {
+			t.button(Icon.copy, MyStyles.clearPartiali, () -> {
 				Core.app.setClipboardText(this.file.readString());
 			});
 		}).growX().right().row();
 		p.pane(p -> p.left().add(label)).width(bw).height(bh);
 		cont.add(p).grow().row();
 
-		buttons.button("$back", Icon.left, Styles.defaultt, () -> {
+		buttons.button("@back", Icon.left, Styles.defaultt, () -> {
 			hide();
 		}).size(bw / 2, 55);
 
@@ -63,7 +63,7 @@ public class JsonDialog extends Dialog {
 				return false;
 			}
 		};
-		buttons.button("$edit", Icon.edit, Styles.defaultt, () -> {
+		buttons.button("@edit", Icon.edit, Styles.defaultt, () -> {
 			editor.edit(file, mod);
 			editor.addListener(listener);
 		}).size(bw / 2f, 55).row();

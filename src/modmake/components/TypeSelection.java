@@ -9,7 +9,7 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import modmake.IntUI;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -31,8 +31,8 @@ public class TypeSelection {
 		this.typeName = _typeName;
 		this.table = new Table(Tex.clear, t -> {
 			t.defaults().fillX();
-			t.add("$type").padRight(4);
-			var button = new Button(styles.clearb);
+			t.add("@type").padRight(4);
+			var button = new Button(MyStyles.clearb);
 			t.add(button).height(40);
 			button.table(l -> {
 				l.label(() -> typesIni.get(typeName, () -> typeName));

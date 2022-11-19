@@ -22,7 +22,7 @@ import mindustry.world.consumers.*;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.meta.Attribute;
 import modmake.components.constructor.*;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 import modmake.util.*;
 
 import java.lang.reflect.Field;
@@ -51,7 +51,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 				var key = get(Attribute.class).get(t, or(k, defaultClass.get(Attribute.class)), null, null);
 				map.put(key, field(t, v, Double.TYPE));
 				t.table(right -> {
-					right.button("", Icon.trash, styles.cleart, () -> {
+					right.button("", Icon.trash, MyStyles.cleart, () -> {
 						map.remove(key);
 						t.remove();
 					});
@@ -60,7 +60,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			var obj = or(as(value), MyObject::new);
 			obj.each(add);
 
-			cont.button("$add", Icon.add, () -> add.get(null, 0)).growX().minWidth(100);
+			cont.button("@add", Icon.add, () -> add.get(null, 0)).growX().minWidth(100);
 
 			return () -> map;
 		});
@@ -172,7 +172,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 							remove.run();
 							add[0].get(k, newV);
 						}, () -> {});
-						right.button("", Icon.trash, styles.cleart, remove);
+						right.button("", Icon.trash, MyStyles.cleart, remove);
 					}).padLeft(4).growX().right();
 				});
 				tab.defaults().growX();
@@ -181,7 +181,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			ObjectMap obj = or((ObjectMap) value, MyObject::new);
 			obj.each(add[0]);
 
-			cont.button("$add", Icon.add, () -> add[0].get(null, null)).growX().minWidth(100);
+			cont.button("@add", Icon.add, () -> add[0].get(null, null)).growX().minWidth(100);
 
 			return () -> map;
 		});

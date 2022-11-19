@@ -47,7 +47,7 @@ public class UpdateData extends BaseDialog {
 		}).grow().padTop(10f);
 		row();
 		table(_t -> {
-			_t.button("$ok", this::hide).size(120, 50);
+			_t.button("@ok", this::hide).size(120, 50);
 			_t.check(Core.bundle.get("not_show_again", "not show again"),
 					false, b -> settings.put("not_show_again", String.valueOf(b))
 			);

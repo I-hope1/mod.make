@@ -1,30 +1,20 @@
 package modmake.components;
 
-import arc.Events;
+import arc.Core;
 import arc.files.Fi;
-import arc.func.Func;
-import arc.func.Prov;
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
-import arc.struct.StringMap;
+import arc.func.*;
+import arc.struct.*;
 import arc.util.Log;
-import arc.util.serialization.Json;
-import arc.util.serialization.JsonReader;
-import arc.util.serialization.JsonValue;
-import arc.util.serialization.Jval;
+import arc.util.serialization.*;
 import mindustry.Vars;
-import mindustry.game.EventType;
-import modmake.components.constructor.MyArray;
-import modmake.components.constructor.MyObject;
+import modmake.components.constructor.*;
 import modmake.ui.dialog.MySettingsDialog;
 
-import java.util.ArrayList;
-import java.util.StringJoiner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 
 import static arc.util.serialization.Jval.Jformat;
-import static mindustry.Vars.ui;
+import static mindustry.Vars.locales;
 import static modmake.IntVars.data;
 import static modmake.ui.dialog.MySettingsDialog.CheckSetting;
 
@@ -35,6 +25,11 @@ public class DataHandle {
 
 	public final static JsonReader reader = new JsonReader();
 	public final static Json json = new Json();
+
+	/**
+	 * 数据目录
+	 */
+	public static final Fi dataDirectory = Vars.dataDirectory.child("b0kkihope");
 
 	public static class _Class {
 		public Jval value;
@@ -77,11 +72,40 @@ public class DataHandle {
 
 	}
 
+	static String getLocate() {
+		String loc = Core.settings.getString("locale");
+
+		if (loc.equals("default")) {
+			return findClosestLocale();
+		}
+		return loc;
+	}
+
+	static String findClosestLocale() {
+		//check exact locale
+		for (Locale l : locales) {
+			if (l.equals(Locale.getDefault())) {
+				return l.toString();
+			}
+		}
+
+		//find by language
+		for (Locale l : locales) {
+			if (l.getLanguage().equals(Locale.getDefault().getLanguage())) {
+				return l.toString();
+			}
+		}
+
+		return "en";
+	}
+
 	// types
 	static {
 		types = new ObjectMap<>();
-		Fi fi = data.child("types").child("default.ini");
-
+		Fi fi = data.child("types").child(getLocate() + ".ini");
+		if (fi.exists()) parseType(fi);
+	}
+	static void parseType(Fi fi) {
 		// [\u4e00-\u9fa5]为中文
 		Matcher m = Pattern.compile("\\w+?\\s*=\\s*[^\n]+").matcher(fi.readString());
 		Seq<String> seq = new Seq<>();
@@ -98,17 +122,44 @@ public class DataHandle {
 
 	// content
 	static {
-		content = new StringMap();
-		Events.run(EventType.ClientLoadEvent.class, () -> {
-			Fi file = data.child("content").child(ui.language.getLocale() + ".ini");
-			if (file.exists()) {
-				iniParse(content, file.readString());
+		content = new StringMap();/* {
+			public boolean hasChanged;
+			public final StringMap nullMap = new StringMap();
+
+			@Override
+			public String get(String key) {
+				if (containsKey(key)) return super.get(key);
+				nullMap.put(key, null);
+				hasChanged = true;
+				return null;
 			}
-		});
+
+			final Fi fi = dataDirectory.child("未翻译的接口.txt");
+
+			{
+				if (fi.exists()) for (var str : fi.readString().split("\n")) {
+					if (str.isBlank()) continue;
+					nullMap.put(str, null);
+				}
+
+				Events.run(Trigger.update, () -> {
+					if (!hasChanged) return;
+					StringBuilder sb = new StringBuilder();
+					for (var entry : nullMap) {
+						sb.append(entry.key).append('\n');
+					}
+					fi.writeString(sb.toString());
+				});
+			}
+		};*/
+		Fi file = data.child("content").child(getLocate() + ".ini");
+		if (file.exists()) {
+			iniParse(content, file.readString());
+		}
+
 	}
 
 	// settings
-	public static final Fi dataDirectory = Vars.dataDirectory.child("b0kkihope");
 	static {
 		try {
 			Fi fi = Vars.dataDirectory.child("mods(I hope...)");
@@ -154,7 +205,7 @@ public class DataHandle {
 	}
 
 	// to load static
-	public static void load(){}
+	public static void load() {}
 
 	public static String getParent(String str) {
 		if (str.startsWith("//")) {
@@ -190,7 +241,7 @@ public class DataHandle {
 	/* hjson解析 (使用arc的JsonReader) */
 	public static JsonValue hjsonParse(String str) {
 
-//		if (!Pattern.compile("^\\s*[\\[{]").matcher(str).find()) str = "{\n" + str + "\n}";
+		//		if (!Pattern.compile("^\\s*[\\[{]").matcher(str).find()) str = "{\n" + str + "\n}";
 		try {
 			return json.fromJson(null, Jval.read(str).toString(Jformat.plain));
 			// return reader.parse(str);
@@ -251,7 +302,7 @@ public class DataHandle {
 			value = valArr.remove(0);
 			obj2 = objArr.remove(0);
 		}
-//		 Log.info(output + "");
+		//		 Log.info(output + "");
 		return output;
 	}
 
@@ -260,7 +311,7 @@ public class DataHandle {
 	}
 
 	public static String formatPrint(String cx, Format format) {
-//		Log.info(cx);
+		//		Log.info(cx);
 		switch (format) {
 			case hjsonMin:
 				return Jval.read(cx).toString(Jformat.hjson);

@@ -9,7 +9,7 @@ import arc.struct.ObjectMap;
 import arc.util.Log;
 import mindustry.gen.Tex;
 import modmake.components.constructor.MyObject;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 
 import static modmake.components.DataHandle.settings;
 import static modmake.util.Tools.or;
@@ -70,10 +70,10 @@ public class Fields {
 
 	public static void load() {
 		backgrounds = new Drawable[]{
-				styles.whiteui.tint(.6f, .2f, .6f, 1f),
-				styles.whiteui.tint(.6f, .6f, .2f, 1f),
-				styles.whiteui.tint(.2f, .6f, .2f, 1f),
-				styles.whiteui.tint(.2f, .6f, .6f, 1f),
+				MyStyles.whiteui.tint(.6f, .2f, .6f, 1f),
+				MyStyles.whiteui.tint(.6f, .6f, .2f, 1f),
+				MyStyles.whiteui.tint(.2f, .6f, .2f, 1f),
+				MyStyles.whiteui.tint(.2f, .6f, .6f, 1f),
 		};
 	}
 

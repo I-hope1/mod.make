@@ -18,7 +18,7 @@ import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Scl;
-import arc.util.Tmp;
+import arc.util.*;
 import mindustry.graphics.Pal;
 import mindustry.input.Binding;
 import mindustry.ui.GridImage;
@@ -105,6 +105,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 				tool.touched(p.x, p.y);
 				firstTouch.set(p);
 
+				rebuildCont();
 				drawing = true;
 				return true;
 			}
@@ -145,7 +146,6 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 				Point2 p = project(x, y);
 
-				rebuildCont();
 
 				if (drawing && tool.draggable && !(p.x == lastx && p.y == lasty)) {
 					Bresenham2.line(lastx, lasty, p.x, p.y, (cx, cy) -> tool.touched(cx, cy));
@@ -167,6 +167,8 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 					lastx = p.x;
 					lasty = p.y;
 				}
+
+				rebuildCont();
 			}
 		});
 	}
@@ -452,6 +454,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		});*/
 //		if (cont.texture != null) cont.texture.dispose();
 //		cont = new TextureRegion(new Texture(imgEditor.pixmap()));
+		Log.info(imgEditor.pixmap());
 		cont.texture.draw(imgEditor.pixmap());
 //		cont.flip(false, true);
 	}
@@ -473,16 +476,16 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		background = new TextureRegion(new Texture(pixmap));
 	}
 
-	public boolean active() {
-		return Core.scene != null && Core.scene.getKeyboardFocus() != null
-				&& Core.scene.getKeyboardFocus().isDescendantOf(imgDialog)
-				&& imgDialog.isShown() && tool == ImgEditorTool.zoom &&
-				Core.scene.hit(Core.input.mouse().x, Core.input.mouse().y, true) == this;
+	public boolean quiet() {
+		return Core.scene == null || Core.scene.getKeyboardFocus() == null
+				|| !Core.scene.getKeyboardFocus().isDescendantOf(imgDialog)
+				|| !imgDialog.isShown() || tool != ImgEditorTool.zoom ||
+				Core.scene.hit(Core.input.mouse().x, Core.input.mouse().y, true) != this;
 	}
 
 	@Override
 	public boolean pan(float x, float y, float deltaX, float deltaY) {
-		if (!active()) return false;
+		if (quiet()) return false;
 		offsetx += deltaX / zoom;
 		offsety += deltaY / zoom;
 		return false;
@@ -490,7 +493,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 	@Override
 	public boolean zoom(float initialDistance, float distance) {
-		if (!active()) return false;
+		if (quiet()) return false;
 		float nzoom = distance - initialDistance;
 		zoom += nzoom / 10000f / Scl.scl(1f) * zoom;
 		clampZoom();
@@ -504,7 +507,6 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 	@Override
 	public void pinchStop() {
-
 	}
 
 	public static class Select {

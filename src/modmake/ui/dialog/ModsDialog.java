@@ -1,29 +1,25 @@
 package modmake.ui.dialog;
 
 import arc.Core;
-import arc.files.Fi;
-import arc.files.ZipFi;
+import arc.files.*;
 import arc.graphics.Texture;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import mindustry.Vars;
-import mindustry.gen.Icon;
-import mindustry.gen.Tex;
+import mindustry.gen.*;
 import mindustry.graphics.Pal;
-import mindustry.ui.BorderImage;
-import mindustry.ui.Styles;
+import mindustry.ui.*;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.components.MyMod;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 import modmake.util.load.LoadMod;
 
 import java.util.Objects;
 
 import static mindustry.Vars.ui;
-import static modmake.IntUI.modDialog;
-import static modmake.IntUI.modMetaDialog;
+import static modmake.IntUI.*;
 import static modmake.components.DataHandle.*;
 
 public class ModsDialog extends BaseDialog {
@@ -39,6 +35,7 @@ public class ModsDialog extends BaseDialog {
 	public void load() {
 		modDialog.load();
 		modMetaDialog.load();
+		// modMetaDialog.hidden(this::setup);
 
 		addCloseListener();
 
@@ -47,19 +44,19 @@ public class ModsDialog extends BaseDialog {
 		pane = new Table();
 		pane.margin(10).top();
 
-		cont.add("$mod.advise").top().row();
+		cont.add("@mod.advise").top().row();
 		cont.table(Styles.none, t -> t.pane(pane).scrollX(false).fillX().fillY()).row();
 
-		buttons.button("$back", Icon.left, style, this::hide).margin(margin).size(210, 60);
-		buttons.button("$mod.add", Icon.add, style, () -> {
-			BaseDialog dialog = new BaseDialog("$mod.add");
+		buttons.button("@back", Icon.left, style, this::hide).margin(margin).size(210, 60);
+		buttons.button("@mod.add", Icon.add, style, () -> {
+			BaseDialog dialog = new BaseDialog("@mod.add");
 			TextButton.TextButtonStyle bstyle = Styles.cleart;
 
 			dialog.cont.table(Tex.button, t -> {
 				t.defaults().left().size(300, 70);
 				t.margin(12);
 
-				t.button("$mod.import.file", Icon.file, bstyle, () -> {
+				t.button("@mod.import.file", Icon.file, bstyle, () -> {
 					hide();
 
 					Vars.platform.showMultiFileChooser(file -> {
@@ -67,19 +64,18 @@ public class ModsDialog extends BaseDialog {
 						setup();
 					}, "zip", "jar");
 				}).margin(12).row();
-				t.button("$mod.add", Icon.add, bstyle, () -> {
+				t.button("@mod.add", Icon.add, bstyle, () -> {
 					modMetaDialog.show(modsDirectory.child("tmp").child("mod.hjson"));
-					setup();
 				}).margin(12);
 			});
 			dialog.addCloseButton();
 			dialog.show();
 		}).margin(margin).size(210, 64).row();
 
-		if (!Vars.mobile) buttons.button("$mods.openfolder", Icon.link, style, () -> {
+		if (!Vars.mobile) buttons.button("@mods.openfolder", Icon.link, style, () -> {
 			Core.app.openFolder(dataDirectory.absolutePath());
 		}).margin(margin).size(210, 64);
-		buttons.button("$quit", Icon.exit, style, () -> Core.app.exit()).margin(margin).size(210, 64);
+		buttons.button("@quit", Icon.exit, style, () -> Core.app.exit()).margin(margin).size(210, 64);
 
 		setup();
 
@@ -105,7 +101,7 @@ public class ModsDialog extends BaseDialog {
 				if (list[0].isDirectory()) {
 					currentFile = list[0];
 				} else {
-					throw new IllegalArgumentException("文件内容不合法");
+					throw new IllegalArgumentException(Core.bundle.get("file.content.illegal"));
 				}
 			} else {
 				currentFile = root;
@@ -129,7 +125,7 @@ public class ModsDialog extends BaseDialog {
 		p.clearChildren();
 		mods = new Seq<>(modsDirectory.list());
 		if (mods.size == 0) {
-			p.table(Styles.black6, t -> t.add("$mods.none")).height(80);
+			p.table(Styles.black6, t -> t.add("@mods.none")).height(80);
 			return;
 		}
 
@@ -170,17 +166,17 @@ public class ModsDialog extends BaseDialog {
 				b.table(right -> {
 //					right.fillParent = true;
 					right.right();
-					right.button(Icon.edit, styles.clearPartiali, () -> {
+					right.button(Icon.edit, MyStyles.clearPartiali, () -> {
 						modMetaDialog.show(mod.root.child("mod.json").exists()
 								? mod.root.child("mod.json") : mod.root.child("mod.hjson"));
 					}).size(50);
-					right.button(Icon.trash, styles.clearPartiali, () ->
-							ui.showConfirm("$confirm", "$mod.remove.confirm", () -> {
+					right.button(Icon.trash, MyStyles.clearPartiali, () ->
+							ui.showConfirm("@confirm", "@mod.remove.confirm", () -> {
 								file.deleteDirectory();
 								setup();
 							})
 					).size(50).row();
-					right.button(Icon.upload, styles.clearPartiali, () -> {
+					right.button(Icon.upload, MyStyles.clearPartiali, () -> {
 						Fi dir = Vars.modDirectory;
 						boolean enable = settings.getBool("auto_load_mod");
 						Runnable upload = () -> {
@@ -200,9 +196,9 @@ public class ModsDialog extends BaseDialog {
 							ui.showConfirm("替换", "同名文件已存在\n是否要替换", upload);
 						} else upload.run();
 					}).size(50).disabled(__ -> Vars.state.isGame() && settings.getBool("auto_load_mod"));
-					right.button(Icon.link, styles.clearPartiali, () -> Core.app.openFolder(mod.root.absolutePath())).size(50);
+					right.button(Icon.link, MyStyles.clearPartiali, () -> Core.app.openFolder(mod.root.absolutePath())).size(50);
 				}).growX().right().padRight(-8).padTop(-8).fill();
-			}, styles.clearpb, () -> {
+			}, MyStyles.clearpb, () -> {
 				hide();
 				modDialog.show(mod);
 			}).size(w, h).growX().pad(4).row();

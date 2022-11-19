@@ -24,7 +24,7 @@ import modmake.components.*;
 import modmake.components.build.*;
 import modmake.components.build.inspect.*;
 import modmake.components.constructor.*;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 
 import java.lang.reflect.*;
 import java.util.Objects;
@@ -39,6 +39,8 @@ import static modmake.util.load.ContentSeq.*;
 public class BuildContent {
 	public static Json json = DataHandle.json;
 	public static ObjectMap<Class<?>, Prov<?>> defaultClass = new ObjectMap<>();
+
+	public static final String selfDefined = Core.bundle.get("modmake.selfdefined");
 
 	static {
 		defaultClass.put(Effect.class, () -> "none");
@@ -122,7 +124,7 @@ public class BuildContent {
 			col.toggle();
 			style.imageUp = col.isCollapsed() ? Icon.rightOpen : Icon.downOpen;
 		});
-		style.up = style.over = styles.whiteui.tint(0.6f, 0.8f, 0.8f, 1f);
+		style.up = style.over = MyStyles.whiteui.tint(0.6f, 0.8f, 0.8f, 1f);
 		table.add(btn).padTop(1).padBottom(1).padRight(4).size(32);
 		table.add(col).growX().left();
 		if (settings.getBool("auto_fold_code")) {
@@ -143,7 +145,7 @@ public class BuildContent {
 		if (content == null) content = stack.get(0).name;
 		var prov = IntUI.selectionWithField(t, stack, content, 42, 32, 6, true);
 
-		t.add("$amount");
+		t.add("@amount");
 		var atf = new TextField("" + amount);
 		t.add(atf);
 
@@ -159,20 +161,20 @@ public class BuildContent {
 	copyAndPaste(Table table, Object key, Object value, Cons<MyObject> paste, Runnable catchF) {
 		table.table(t -> {
 			// 复制
-			t.button("", Icon.copy, styles.cleart, () -> {
+			t.button("", Icon.copy, MyStyles.cleart, () -> {
 				Core.app.setClipboardText("" + value);
 				ui.showInfoFade("已复制");
 			}).padRight(2);
 			// 粘贴
-			t.button("", Icon.paste, styles.cleart, () -> ui.showConfirm(
-					"粘贴", "是否要粘贴", () -> {
+			t.button("", Icon.paste, MyStyles.cleart, () -> ui.showConfirm(
+					"@paste", "@confirm.paste", () -> {
 						String txt = Core.app.getClipboardText();
 						try {
 							paste.get(parse(txt));
-							ui.showInfoFade("已粘贴");
+							ui.showInfoFade("Ok");
 						} catch (Exception e) {
 							catchF.run();
-							ui.showException("无法粘贴", e);
+							ui.showException(Core.bundle.get("unable.paste"), e);
 						}
 					}));
 		}).padRight(6);
@@ -182,7 +184,7 @@ public class BuildContent {
 	public static Prov<String>
 	tableWithListSelection(Table table, String value, Seq<?> seq, String defaultValue, boolean searchable) {
 		String[] val = {value != null ? value : defaultValue};
-		var btn = new TextButton(types.get(val[0], () -> val[0]), styles.cleart);
+		var btn = new TextButton(types.get(val[0], () -> val[0]), MyStyles.cleart);
 		btn.clicked(() -> IntUI.showSelectListTable(btn, seq, () -> val[0],
 				type -> btn.setText(types.get(val[0] = String.valueOf(type), () -> val[0])
 				), 150, 55, searchable));
@@ -215,7 +217,7 @@ public class BuildContent {
 		items = items.copy();
 		Seq<Object> tmpList = new Seq<>();
 		tmpList.addAll(items.as());
-		tmpList.add("自定义");
+		tmpList.add(selfDefined);
 		value = Tools.or(value, () -> defaultClass.get(vType).get());
 		boolean isObject = value instanceof MyObject;
 		MyObject<Object, Object> val1 = isObject ? as(value) : new MyObject<Object, Object>();
@@ -230,7 +232,7 @@ public class BuildContent {
 		var cont = table1.table().name("cont").get();
 		var map = fObject(cont, selection::type, val1, Tools.or(blackList, new Seq<>()));
 
-		Object[] retV = {isObject ? "自定义" : value};
+		Object[] retV = {isObject ? selfDefined : value};
 		Object[] val2 = {retV[0]};
 		Cell<?>[] cell = {null};
 		ImageButton[] btn = {null};
@@ -242,10 +244,10 @@ public class BuildContent {
 		btn[0] = table.button(Tex.whiteui, Styles.logici, () -> {
 			IntUI.showSelectImageTableWithFunc(btn[0], tmpList, () -> val2[0], obj -> {
 				btn[0].getStyle().imageUp = getImg.get(obj);
-				if ("自定义".equals(obj)) {
+				if (selfDefined.equals(obj)) {
 					cell[0].setElement(table1);
 					retV[0] = map;
-					val2[0] = "自定义";
+					val2[0] = selfDefined;
 				} else {
 					cell[0].clearElement();
 					retV[0] = val2[0] = _func.get(finalItems.find(item -> item.equals(obj)));
@@ -269,7 +271,7 @@ public class BuildContent {
 		list = list.copy();
 		Seq<String> tmpList = new Seq<>();
 		tmpList.addAll(list.as());
-		tmpList.add("自定义");
+		tmpList.add(selfDefined);
 		value = Tools.or(value, () -> defaultClass.get(vType).get());
 		boolean isObject = value instanceof MyObject;
 		MyObject<Object, Object> val1 = isObject ? as(value) : new MyObject<Object, Object>();
@@ -284,18 +286,18 @@ public class BuildContent {
 		var cont = table1.table().name("cont").get();
 		var map = fObject(cont, selection::type, val1, Tools.or(blackList, new Seq<>()));
 
-		Object[] retV = {isObject ? "自定义" : value};
+		Object[] retV = {isObject ? selfDefined : value};
 		String[] val2 = {"" + retV[0]};
 		Cell<?>[] cell = {null};
 		TextButton[] btn = {null};
 		Seq<T> finalList = list;
-		btn[0] = table.button(types.get(val2[0], () -> val2[0]), styles.cleart, () -> {
+		btn[0] = table.button(types.get(val2[0], () -> val2[0]), MyStyles.cleart, () -> {
 			IntUI.showSelectListTable(btn[0], tmpList, () -> val2[0], fx -> {
 				btn[0].setText(types.get(fx, () -> fx));
-				if ("自定义".equals(fx)) {
+				if (selfDefined.equals(fx)) {
 					cell[0].setElement(table1);
 					retV[0] = map;
-					val2[0] = "自定义";
+					val2[0] = selfDefined;
 				} else {
 					cell[0].clearElement();
 					retV[0] = val2[0] = _func.get(finalList.find(item -> item.equals(fx)));
@@ -535,9 +537,9 @@ public class BuildContent {
 					if (vType.getSimpleName().equalsIgnoreCase("boolean")) {
 						boolean[] val = {Boolean.parseBoolean(value[0] + "")};
 						StringMap obj = StringMap.of(
-								"true", "是",
-								"false", "否");
-						var btn = new TextButton(obj.get("" + val[0]), styles.cleart);
+								"true", types.get("true"),
+								"false", types.get("false"));
+						var btn = new TextButton(obj.get("" + val[0]), MyStyles.cleart);
 						btn.clicked(() -> btn.setText(obj.get((value[0] = val[0] = !val[0]) + "")));
 						finalTable[0].add(btn).minWidth(100).height(45).get();
 						return () -> val[0];
@@ -597,14 +599,14 @@ public class BuildContent {
 			});
 			// 帮助按钮
 			if (!isArray && !finalUnknown && content.containsKey(k + ".help")) {
-				var btn = new TextButton("?", styles.clearPartialt);
+				var btn = new TextButton("?", MyStyles.clearPartialt);
 				right.add(btn).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
 				btn.clicked(() -> IntUI.showSelectTable(btn, (p, __, ___) -> {
 					p.pane(help -> help.add(content.get(k + ".help"), 1.3f)).pad(4, 8, 4, 8);
 				}, false));
 			}
 			// 删除按钮
-			right.button("", Icon.trash, styles.cleart, () -> fields.remove(k));
+			right.button("", Icon.trash, MyStyles.cleart, () -> fields.remove(k));
 		}).padLeft(4).growX().right();
 
 		table.row();

@@ -5,10 +5,11 @@ import arc.util.Log;
 import mindustry.Vars;
 import mindustry.game.EventType.ClientLoadEvent;
 import mindustry.mod.Mod;
+import modmake.components.DataHandle;
 import modmake.ui.UpdateData;
 import modmake.ui.content.ModMakeContent;
 import modmake.ui.content.SettingContent;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 import modmake.util.MyReflect;
 import modmake.util.load.ContentSeq;
 import modmake.util.load.LoadMod;
@@ -25,6 +26,8 @@ public class ModMake extends Mod {
 			//			if (Vars.ui != null) throw new RuntimeException("");
 			//			DataHandle.load();
 
+			DataHandle.load();
+
 			new SettingContent();
 			new ModMakeContent();
 
@@ -39,7 +42,7 @@ public class ModMake extends Mod {
 			} catch (Throwable throwable) {
 				Log.err(throwable);
 			}
-			styles.load();
+			MyStyles.load();
 			frag.load();
 			if (!settings.getBool("not_show_again")) {
 				Log.info("load updateData");

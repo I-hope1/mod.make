@@ -1,15 +1,11 @@
 package modmake.components;
 
 import arc.Core;
-import arc.func.Cons;
-import arc.func.Prov;
+import arc.func.*;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.ObjectSet;
-import arc.struct.OrderedMap;
-import arc.struct.Seq;
+import arc.struct.*;
 import arc.util.serialization.Json;
 import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Icon;
@@ -18,14 +14,12 @@ import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.consumers.Consume;
 import modmake.IntUI;
-import modmake.components.constructor.MyArray;
-import modmake.components.constructor.MyObject;
-import modmake.ui.styles;
-import modmake.util.BuildContent;
-import modmake.util.Fields;
+import modmake.components.constructor.*;
+import modmake.ui.MyStyles;
+import modmake.util.*;
 import modmake.util.load.ContentSeq;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -38,10 +32,15 @@ public class AddFieldBtn extends TextButton {
 		@Override
 		public ObjectMap get(Class<?> key) {
 			if (key == null) return null;
-			ObjectMap val = super.get(key);
+			var val = super.get(key);
+			l:
 			if (val == null) {
+				if (key.getSuperclass() == null) {
+					put(key, val = new ObjectMap());
+					break l;
+				}
 				var m = new OrderedMap(json.getFields(key));
-				if (key == UnitType.class) {
+				if (UnitType.class.isAssignableFrom(key)) {
 					// Label仅是一种标识
 					m.put("type", Label.class);
 					m.put("controller", Label.class);
@@ -110,14 +109,14 @@ public class AddFieldBtn extends TextButton {
 						var help = content.get(name + ".help");
 						if (help != null) {
 							Button[] btn = {null};
-							btn[0] = t.button("?", styles.clearPartialt, () -> IntUI.showSelectTable(btn[0], (p, __, ___) -> {
+							btn[0] = t.button("?", MyStyles.clearPartialt, () -> IntUI.showSelectTable(btn[0], (p, __, ___) -> {
 								p.pane(p2 -> p2.add(help, 1.3f)).pad(4, 8, 4, 8).row();
 							}, false)).size(8 * 5).padLeft(5).padRight(5).right().grow().get();
 						}
 					}).row();
 				});
 				if (table.getChildren().size == 0) {
-					table.table(t -> t.add("$none")).size(Core.graphics.getWidth() * .2f, 45);
+					table.table(t -> t.add("@none")).size(Core.graphics.getWidth() * .2f, 45);
 				}
 			};
 
@@ -136,16 +135,16 @@ public class AddFieldBtn extends TextButton {
 					p.left().top().defaults().left().top();
 					TextField name = new TextField();
 					p.table(t -> {
-						t.add("$name").growX().left().row();
+						t.add("@name").growX().left().row();
 						t.add(name).width(300);
 					}).pad(6, 8, 6, 8).row();
 					TextField value = new TextField();
 					p.table(t -> {
-						t.add("$value").growX().left().row();
+						t.add("@value").growX().left().row();
 						t.add(value).width(300);
 					}).pad(6, 8, 6, 8).row();
 
-					p.button("$ok", Styles.cleart, () -> {
+					p.button("@ok", Styles.cleart, () -> {
 						Fields.add(null, name.getText(), value.getText());
 						_hide.run();
 					}).height(64).fillX();
@@ -158,8 +157,11 @@ public class AddFieldBtn extends TextButton {
 
 	public Button bind = this;
 
-	public static Pattern pattern = Pattern.compile(
-			"^id|minfo|iconId|uiIcon|fullIcon|unlocked|stats|bars|timers|singleTarget|mapColor|buildCost|flags|timerDump|dumpTime|generator|capacities|region|legRegion|jointRegion|baseJointRegion|footRegion|legBaseRegion|baseRegion|cellRegion|softShadowRegion|outlineRegion|shadowRegion|heatRegion|edgeRegion|overlayRegion|canHeal$");
+	public static ObjectMap<String, ?> map = Seq.with(
+			"id", "minfo", "iconId", "uiIcon", "fullIcon", "unlocked", "stats", "bars", "timers", "singleTarget", "mapColor", "buildCost", "flags", "timerDump", "dumpTime", "generator", "capacities", "region", "legRegion", "jointRegion", "baseJointRegion", "footRegion", "legBaseRegion", "baseRegion", "cellRegion", "softShadowRegion", "outlineRegion", "shadowRegion", "heatRegion", "edgeRegion", "overlayRegion", "canHeal",
+			"itemFilter", "liquidFilter", "solarSystem", "children", "autoFindTarget"
+	).asMap(k -> k, k -> null);
+	// public static Pattern pattern = Pattern.compile("^$");
 
 	public static boolean filter(Field field, Class<?> vType) {
 		if (!settings.getBool("display_deprecated") && field.isAnnotationPresent(Deprecated.class)) return false;
@@ -169,7 +171,7 @@ public class AddFieldBtn extends TextButton {
 		while (type.isArray() || arrayClass.contains(type)) {
 			type = arrayClass.contains(type) ? ContentSeq.getGenericType(field).get(0) : type.getComponentType();
 		}
-		if (pattern.matcher(name).find()
+		if (map.containsKey(name)
 				|| (type == TextureRegion.class && field.getType().isArray())
 				|| (Consume.class.isAssignableFrom(vType) && "^(update|optional|booster)$".matches(name))) return false;
 		if (type.isPrimitive() || type == String.class) return true;
@@ -180,13 +182,10 @@ public class AddFieldBtn extends TextButton {
 			BuildContent.filterClass.each((k, v) -> {
 				if (k.isAssignableFrom(finalType)) throw new RuntimeException();
 			});
-			BuildContent.filterKeys.each((k, v) -> {
-				if (k.equals(name)) throw new RuntimeException();
-			});
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			return true;
 		}
-		return false;
+		return BuildContent.filterKeys.containsKey(name);
 	}
 
 	public static Object defaultValue(String key) {

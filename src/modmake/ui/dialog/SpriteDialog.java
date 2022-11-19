@@ -62,7 +62,7 @@ public class SpriteDialog extends BaseDialog {
 						}
 					};
 					if (toFile.exists()) {
-						Vars.ui.showConfirm("$confirm", "是否要覆盖", go);
+						Vars.ui.showConfirm("@confirm", "是否要覆盖", go);
 					} else {
 						go.run();
 					}

@@ -30,7 +30,7 @@ import modmake.components.DataHandle;
 import modmake.components.MyMod;
 import modmake.util.MyReflect;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -138,7 +138,7 @@ public class LoadMod {
 	}
 
 
-	public static void loadContent() {
+	public static void loadContent() throws InvocationTargetException, IllegalAccessException {
 		content.setCurrentMod(null);
 
 		class LoadRun implements Comparable<LoadRun> {
@@ -435,7 +435,7 @@ public class LoadMod {
 				ui.showException("加载失败", e);
 			}
 		}, () -> {
-			if (settings.getBool("display_exception")) {
+			if (lastMod.hasContentErrors() && settings.getBool("display_exception")) {
 				try {
 					checkWarnings.invoke(Vars.mods);
 				} catch (Exception e) {

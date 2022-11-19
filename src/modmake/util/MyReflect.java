@@ -48,6 +48,5 @@ public class MyReflect {
 		} catch (Exception e) {
 			Log.err(e);
 		}
-
 	}
 }

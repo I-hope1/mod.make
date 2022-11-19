@@ -18,7 +18,7 @@ import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import mindustry.ui.dialogs.SettingsMenuDialog;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 import modmake.util.img.Stack;
 
 import java.util.Objects;
@@ -30,9 +30,9 @@ public class MySettingsDialog extends BaseDialog {
 	static Table pane = new Table();
 
 	public MySettingsDialog() {
-		super("设置");
+		super("@settings");
 
-		cont.pane(styles.nonePane, p -> p.add(pane).width(400).get()).fillX();
+		cont.pane(MyStyles.nonePane, p -> p.add(pane).width(400).get()).fillX();
 		pane.left().defaults().left();
 
 		addCloseButton();

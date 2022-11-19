@@ -87,9 +87,9 @@ public class Editor extends BaseDialog {
         checkBtn.getCells().reverse();
         checkBtn.clicked(result::check);*/
 
-		buttons.button("$back", Icon.left, this::hide).size(220, 70);
+		buttons.button("@back", Icon.left, this::hide).size(220, 70);
 
-		buttons.button("$ok", Icon.ok, () -> {
+		buttons.button("@ok", Icon.ok, () -> {
 			parse();
 			if (topTable.getChildren().size > 0) {
 				var toFile = file.sibling(fileName.getText() + "." + file.extension());
@@ -111,7 +111,7 @@ public class Editor extends BaseDialog {
 
 		if (!Objects.equals(extension, "properties")) {
 			if (topTable.getChildren().size == 0) {
-				topTable.add("$fileName");
+				topTable.add("@fileName");
 				topTable.add(fileName);
 				topTable.add(checkBtn).padLeft(6);
 			}
@@ -122,6 +122,7 @@ public class Editor extends BaseDialog {
 
 		show();
 	}
+
 	public void edit(Fi file, MyMod mod) {
 		edit(file, mod, file.extension());
 	}
@@ -188,7 +189,7 @@ public class Editor extends BaseDialog {
 
 				var btn = new TextButton(!value.equals("") ?
 						or(nullCheck(techs.find(node -> node.content.name.equals(value)), node -> node.content.localizedName), value) :
-						"$none", Styles.cleart);
+						"@none", Styles.cleart);
 				btn.clicked(() -> IntUI.showSelectTable(btn, (p, hide, v) -> {
 					p.clearChildren();
 					p.button("$none", Styles.cleart, () -> {
@@ -294,7 +295,7 @@ public class Editor extends BaseDialog {
 			}).get();
 			var index = arr.size - 1;
 			IntUI.doubleClick(table, () -> {
-				ui.showConfirm("$confirm", Core.bundle.format("confirm.remove",
+				ui.showConfirm("@confirm", Core.bundle.format("confirm.remove",
 								arr.get(index).name), () -> {
 							table.remove();
 							arr.remove(index);
@@ -319,7 +320,7 @@ public class Editor extends BaseDialog {
 
 		pane.row();
 		pane.table(btn -> {
-			btn.button("$add", Icon.add, () -> fun.get("", " ")).size(210, 64);
+			btn.button("@add", Icon.add, () -> fun.get("", " ")).size(210, 64);
 			btn.button(Core.bundle.get("content.add", "add") + Core.bundle.get("annotation", "annotation"),
 					() -> fun.get("#", "")).size(210, 64);
 		});
@@ -359,8 +360,7 @@ public class Editor extends BaseDialog {
 		var type = result.type();
 		if (type != null) {
 			//noinspection StatementWithEmptyBody
-			if (UnitType.class.isAssignableFrom(type) ||
-					Item.class.isAssignableFrom(type) ||
+			if (Item.class.isAssignableFrom(type) ||
 					Liquid.class.isAssignableFrom(type) ||
 					StatusEffect.class.isAssignableFrom(type) ||
 					SectorPreset.class.isAssignableFrom(type) ||

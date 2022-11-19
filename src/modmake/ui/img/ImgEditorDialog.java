@@ -23,7 +23,7 @@ import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
 import modmake.components.MyMod;
 import modmake.ui.img.ImgEditor.MyPixmap;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 import modmake.util.img.MyPixmapIO;
 
 import java.lang.reflect.AccessibleObject;
@@ -151,7 +151,7 @@ public class ImgEditorDialog extends Dialog {
 		Fi fi = imgEditor.currentFi;
 
 		if (imgEditor.currentFi == null) {
-			platform.export("保存", "png", f -> {
+			platform.export("@saveimage", "png", f -> {
 				imgEditor.currentFi = f;
 				imgEditor.save();
 				ui.showInfoFade("@editor.saved");
@@ -209,7 +209,7 @@ public class ImgEditorDialog extends Dialog {
 		table(cont -> {
 			cont.left();
 
-			cont.pane(styles.nonePane, mid -> {
+			cont.pane(MyStyles.nonePane, mid -> {
 						mid.top();
 
 						Table tools = new Table().top();
@@ -256,7 +256,7 @@ public class ImgEditorDialog extends Dialog {
 										table.button(b -> {
 											b.left();
 											b.marginLeft(6);
-											b.setStyle(styles.clearTogglet);
+											b.setStyle(MyStyles.clearTogglet);
 											b.add(Core.bundle.get("toolmode." + name)).left();
 											b.row();
 											b.add(Core.bundle.get("toolmode." + name + ".description")).color(Color.lightGray).left();
@@ -398,7 +398,7 @@ public class ImgEditorDialog extends Dialog {
 			view.select.multi = b;
 		}).row();
 
-		ImageButtonStyle style = styles.clearPartiali;
+		ImageButtonStyle style = MyStyles.clearPartiali;
 		table.table(t1 -> {
 			t1.defaults().size(ToolSize - 12f);
 			t1.button(Icon.flipX, style, view.select::flipX).disabled(b -> !view.select.any());
@@ -508,7 +508,7 @@ public class ImgEditorDialog extends Dialog {
 			) return;
 
 			ImageButton button = new ImageButton(Tex.whiteui, Styles.clearTogglei);
-			button.getStyle().imageUp = styles.whiteui.tint(c);
+			button.getStyle().imageUp = MyStyles.whiteui.tint(c);
 			button.clicked(() -> imgEditor.drawColor = c);
 			button.resizeImage(8 * 4f);
 			button.update(() -> button.setChecked(imgEditor.drawColor == c));
@@ -530,7 +530,7 @@ public class ImgEditorDialog extends Dialog {
 			) return;
 
 			ImageButton button = new ImageButton(Tex.whiteui, Styles.clearTogglei);
-			button.getStyle().imageUp = styles.whiteui.tint(c);
+			button.getStyle().imageUp = MyStyles.whiteui.tint(c);
 			button.clicked(() -> imgEditor.drawColor = c);
 			button.resizeImage(8 * 4f);
 			button.update(() -> button.setChecked(imgEditor.drawColor.rgba() == c.rgba()));

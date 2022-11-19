@@ -59,17 +59,17 @@ const loadMod = (() => {
 
 
 	let lastMod;
-	function* gen(mod) {
+	function gen(mod) {
 		let fi = mod.root
 
 		let _mod = ACLASS.lastMod
 
 		Vars.content = new ContentLoader()
 		Vars.content.createBaseContent()
-		yield;
+//		yield;
 
 		ACLASS.loadContent()
-		yield;
+//		yield;
 		let wrong = _mod.hasContentErrors()
 
 		let ls = settings.getBool("load_sprites")
@@ -84,59 +84,20 @@ const loadMod = (() => {
 				loadSprites(map)
 			}
 		}
-		yield;
+//		yield;
 
 		// 加载content
 		Vars.content.init()
-		yield;
+//		yield;
 		Vars.content.load()
-		yield;
+//		yield;
 		Vars.content.loadColors()
 		return !wrong;
 	}
 	return function (mod) {
-		let g = gen(mod);
 		Vars.ui.loadfrag.show("加载mod");
-	    let el = new Element()
-	    let v;
-	    el.update(() => {
-		    try {
-    			v = g.next()
-    		} catch (err) {
-    		    Log.err(err)
-
-    		    let text = err.message
-
-                let ui = new Dialog("");
-                let { cont } = ui
-                let message = err.message;
-
-                ui.setFillParent(true);
-                cont.margin(15);
-                cont.add("@error.title").colspan(2);
-                cont.row();
-                cont.image().width(300).pad(2).colspan(2).height(4).color(Color.scarlet);
-                cont.row();
-                cont.add((text.startsWith("@") ? Core.bundle.get(text.substring(1)) : text) + (message == null ? "" : "\n[lightgray](" + message + ")")).colspan(2).wrap().growX().center().get().setAlignment(Align.center);
-                cont.row();
-
-                let col = new Collapser(base => base.pane(t => t.margin(14).add(err.stack).color(Color.lightGray).left()), true);
-
-                cont.button("@details", Styles.togglet, () => col.toggle()).size(180, 50).checked(b => !col.isCollapsed()).fillX().right();
-                cont.button("@ok", () => ui.hide()).size(110, 50).fillX().left();
-                cont.row();
-                cont.add(col).colspan(2).pad(2);
-                ui.closeOnBack();
-
-                ui.show();
-    			v = null;
-    		}
-	    	if (v == null || v.done) {
-		    	el.remove()
-    			el.update(null)
-    		}
-    	})
-    	Core.scene.add(el);
+		gen(mod);
+		Vars.ui.loadfrag.hide();
 		return true;
 	}
 })()

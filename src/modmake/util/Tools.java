@@ -1,16 +1,21 @@
 package modmake.util;
 
 import arc.func.*;
+import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
-import arc.struct.ObjectMap;
+import arc.struct.*;
+import arc.util.Reflect;
 import arc.util.serialization.Jval;
+import jdk.jfr.Category;
 import mindustry.ctype.UnlockableContent;
+import mindustry.mod.ClassMap;
 import modmake.components.AddFieldBtn;
 
 import java.lang.reflect.*;
 import java.util.Objects;
 
 import static modmake.util.MyReflect.unsafe;
+import static modmake.util.load.ContentSeq.otherTypes;
 
 public class Tools {
 	// 通过Jval转义
@@ -66,14 +71,16 @@ public class Tools {
 			Field[] fields = getFields(cls);
 			for (Field f : fields) {
 				int mod = f.getModifiers();
-				if (!Modifier.isStatic(mod) && Modifier.isPublic(mod) && !Modifier.isFinal(mod)) {
-					long offset = unsafe.objectFieldOffset(f);
+				if (Modifier.isStatic(mod) || !Modifier.isPublic(mod) || Modifier.isFinal(mod)) {
+					continue;
+				}
+				if (o1 != o2) {
 					val1 = f.get(o1);
 					val2 = f.get(o2);
-					if (!Objects.equals(val1, val2) && AddFieldBtn.filter(f, cls)) {
-						// if (display) Log.debug(f);
-						addJval(jval, f, val2);
-					}
+				} else val1 = val2 = f.get(o1);
+				if (o1 == o2 || !Objects.equals(val1, val2)) {
+					// if (display) Log.debug(f);
+					addJval(jval, f, val2);
 				}
 			}
 			cls = cls.getSuperclass();
@@ -81,42 +88,64 @@ public class Tools {
 		return jval;
 	}
 
-	public static Jval addJval(Jval jval, Field f, Object o) throws Exception {
-		String key = f.getName();
-		label:
+
+	public static Jval handleJval(Object o) throws Exception {
 		if (o == null) {
-			jval.put(key, Jval.NULL);
-		} else if (f.getType().isArray()) {
+			return Jval.NULL;
+		}
+		if (Reflect.isWrapper(o.getClass())) {
+			return Jval.read(String.valueOf(o));
+		}
+		label:
+		if (o.getClass().isArray()) {
 			if (objectCaches.containsKey(o)) break label;
 			objectCaches.put(o, o);
-			if (!(o instanceof Object[])) break label;
 			int len = Array.getLength(o);
 			Jval newArr = Jval.newArray();
 			for (int i = 0; i < len; i++) {
-				newArr.asArray().add(copyValue(Array.get(o, i)));
+				newArr.add(handleJval(Array.get(o, i)));
 			}
-			jval.put(key, newArr);
-		} else if (f.getType().isPrimitive()) {
-			jval.put(key, Jval.read(String.valueOf(o)));
-		} else if (f.getType() == String.class) {
-			jval.put(key, Jval.valueOf(String.valueOf(o)));
-		} else if (TextureRegion.class.isAssignableFrom(f.getType())) {
-		} else if (UnlockableContent.class.isAssignableFrom(f.getType())) {
-			jval.put(key, String.valueOf(o));
-		} else {
-			if (objectCaches.containsKey(o)) break label;
-			objectCaches.put(o, o);
-			jval.put(key, copyValue(o));
+			return newArr;
 		}
-		return jval;
+		if (o instanceof Seq) {
+			Jval newArr = Jval.newArray();
+			((Seq<?>) o).each(e -> {
+				try {
+					newArr.add(copyValue(e));
+				} catch (Exception ex) {
+					newArr.add(Jval.NULL);
+				}
+			});
+			return newArr;
+		}
+		if (o instanceof String || o instanceof Color
+				|| o instanceof TextureRegion || o instanceof Category) {
+			return Jval.valueOf(String.valueOf(o));
+		}
+		if (o instanceof UnlockableContent) {
+			return Jval.valueOf(((UnlockableContent) o).name);
+		}
+		if (objectCaches.containsKey(o)) return Jval.NULL;
+		objectCaches.put(o, o);
+		return copyValue(o);
+
+	}
+
+	public static void addJval(Jval jval, Field f, Object o) throws Exception {
+		if (o == null) return;
+		if (!AddFieldBtn.filter(f, o.getClass())) return;
+		Jval res = handleJval(o);
+		if (res != null) jval.put(f.getName(), res);
 	}
 
 	public static Jval copyValue(Object o) throws Exception {
 		if (o == null) return Jval.NULL;
-		Class cls = o.getClass();
-		if (cls.isPrimitive()) return Jval.read(String.valueOf(o));
+		Class<?> type = o.getClass();
+		Class<?> cls = type;
+		/*if (cls.isPrimitive()) return Jval.read(String.valueOf(o));
 		if (cls == String.class || TextureRegion.class.isAssignableFrom(cls)
-				|| UnlockableContent.class.isAssignableFrom(cls)) Jval.valueOf(String.valueOf(o));
+				|| UnlockableContent.class.isAssignableFrom(cls) || Color.class.isAssignableFrom(cls))
+			Jval.valueOf(String.valueOf(o));*/
 		Jval jval = Jval.newObject();
 		while (cls != null && Object.class.isAssignableFrom(cls)) {
 			Field[] fields = getFields(cls);
@@ -128,6 +157,17 @@ public class Tools {
 				}
 			}
 			cls = cls.getSuperclass();
+		}
+		if (type != null) {
+			while (type.isAnonymousClass()) type = type.getSuperclass();
+			if (ClassMap.classes.containsValue(type, true)) {
+				for (var c : otherTypes) {
+					if (c.key.isAssignableFrom(type)) {
+						jval.put("type", type.getSimpleName());
+						break;
+					}
+				}
+			}
 		}
 		return jval;
 	}

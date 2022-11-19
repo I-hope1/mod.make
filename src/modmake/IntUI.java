@@ -4,6 +4,7 @@ import arc.Core;
 import arc.func.*;
 import arc.graphics.*;
 import arc.graphics.g2d.TextureRegion;
+import arc.input.KeyCode;
 import arc.math.Interp;
 import arc.scene.Element;
 import arc.scene.actions.Actions;
@@ -11,9 +12,10 @@ import arc.scene.event.ChangeListener.ChangeEvent;
 import arc.scene.event.*;
 import arc.scene.style.*;
 import arc.scene.ui.*;
-import arc.scene.ui.layout.Table;
+import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.*;
+import arc.util.Timer.Task;
 import mindustry.Vars;
 import mindustry.ctype.*;
 import mindustry.gen.*;
@@ -107,7 +109,11 @@ public class IntUI {
 		BaseDialog dialog = new BaseDialog("");
 		dialog.title.remove();
 		var areaTable = new TextAreaTable(unpackString(text.getText()));
-		dialog.cont.add(areaTable).grow();
+		Cell<?> cell = dialog.cont.add(areaTable);
+		cell.update(__ -> {
+			cell.size(Core.graphics.getWidth() / Scl.scl(),
+					Core.graphics.getHeight() / Scl.scl());
+		});
 		var area = areaTable.getArea();
 
 		dialog.addCloseListener();
@@ -167,8 +173,28 @@ public class IntUI {
 
 	public static <T extends Element> T longPress(T elem, long duration, Boolc boolc) {
 		elem.addListener(new ClickListener() {
+			Task task;
+			@Override
+			public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
+				if (super.touchDown(event, x, y, pointer, button)) {
+					task = Time.runTask(duration / 1000f * 60, () -> {
+						boolc.get(true);
+						cancelled = true;
+					});
+					return true;
+				}
+				return false;
+			}
+
 			public void clicked(InputEvent event, float x, float y) {
-				boolc.get(Time.millis() - visualPressedTime > duration);
+				task.cancel();
+				boolc.get(false);
+			}
+
+			@Override
+			public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button) {
+				super.touchUp(event, x, y, pointer, button);
+				task.cancel();
 			}
 		});
 		return elem;
@@ -333,7 +359,7 @@ public class IntUI {
 					continue;
 				}
 
-				ImageButton btn = p.button(Tex.whiteui, styles.clearToggleTransi, imageSize, () -> {
+				ImageButton btn = p.button(Tex.whiteui, MyStyles.clearToggleTransi, imageSize, () -> {
 					cons.get(item);
 					hide.run();
 				}).size(size).get();
@@ -412,7 +438,7 @@ public class IntUI {
 						: 5;
 				var table1 = tableArr[index];
 				ImageButton button = table1.button(new TextureRegionDrawable(content.uiIcon),
-						styles.clearToggleTransi, imageSize, () -> {
+						MyStyles.clearToggleTransi, imageSize, () -> {
 							cons.get(content);
 							hide.run();
 						}).size(size).get();
@@ -440,7 +466,7 @@ public class IntUI {
 	public static <T extends UnlockableContent> Prov<String> selectionWithField(Table table, Seq<T> items, String current, int size, int imageSize, int cols, boolean searchable) {
 		var field = new TextField(current);
 		table.add(field).fillX();
-		var btn = table.button(Icon.pencilSmall, styles.clearFulli, () -> {}).size(40).padLeft(-1).get();
+		var btn = table.button(Icon.pencilSmall, MyStyles.clearFulli, () -> {}).size(40).padLeft(-1).get();
 		btn.clicked(() -> showSelectImageTable(btn, items,
 				() -> content.getByName(ContentType.item, field.getText()),
 				item -> field.setText(item.name), size, imageSize,

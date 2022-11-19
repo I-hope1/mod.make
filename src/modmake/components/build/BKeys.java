@@ -16,7 +16,7 @@ import mindustry.ui.Styles;
 import mindustry.world.consumers.*;
 import modmake.IntUI;
 import modmake.components.constructor.*;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
@@ -180,13 +180,13 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 				__table.add("-->");
 				var unitType2 = filterClass.get(UnitType.class).get(__table, or(list.get(1), () -> defaultClass.get(UnitType.class).get()), null, null);
 				item.put(1, unitType2);
-				__table.button("", Icon.trash, styles.cleart, () -> {
+				__table.button("", Icon.trash, MyStyles.cleart, () -> {
 					value.removeValue(item);
 					__table.remove();
 				}).marginLeft(4);
 			};
 			value.each(build);
-			table.button("$add", () -> {
+			table.button("@add", () -> {
 				var array = new MyArray<>();
 				value.put(array);
 				build.get(array);
@@ -212,7 +212,7 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			final UnlockableContent[] content = {all.find(f -> f.name.equals(value))};
 			var btn = new TextButton(!Objects.equals(value, "") ?
 					"" + or(nullCheck(content[0], c -> c.localizedName), value) :
-					"$none", Styles.flatt);
+					"@none", Styles.flatt);
 			btn.clicked(() -> IntUI.allContentSelection(btn, all, () -> content[0], c -> {
 				content[0] = c;
 				btn.setText(c.localizedName);

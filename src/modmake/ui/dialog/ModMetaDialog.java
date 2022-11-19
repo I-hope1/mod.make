@@ -17,14 +17,14 @@ import modmake.util.Tools;
 import java.util.StringJoiner;
 
 import static modmake.IntUI.modsDialog;
-import static modmake.components.DataHandle.hjsonParse;
+import static modmake.components.DataHandle.*;
 import static modmake.util.BuildContent.packString;
 import static modmake.util.BuildContent.unpackString;
 import static rhino.ScriptRuntime.toNumber;
 
 public class ModMetaDialog extends BaseDialog {
 	int __MinGameVersion__ = 136;
-	Fi modsDirectory = Vars.dataDirectory.child("mods(I hope...)").child("mods");
+	Fi modsDirectory = dataDirectory.child("mods");
 	String[] arr = {"name", "displayName", "description", "author", "version", "main", "repo"};
 	String lastFiName;
 
@@ -80,11 +80,11 @@ public class ModMetaDialog extends BaseDialog {
 			err.label(() -> "[red]" + errorText[0]).get();
 		}).row();
 		buttons.table(b -> {
-			b.button("$back", Icon.left, this::hide).size(210, 64);
-			b.button("$ok", Icon.ok, () -> {
+			b.button("@back", Icon.left, this::hide).size(210, 64);
+			b.button("@ok", Icon.ok, () -> {
 				Fi mod = modsDirectory.child(Fields.get("fileName").getText());
 				if (!mod.name().equals(lastFiName) && mod.path().equals(file.parent().path()) && mod.exists()) {
-					Vars.ui.showConfirm("覆盖", "同名文件已存在\n是否要覆盖", () -> {
+					Vars.ui.showConfirm("@overwrite", "@confirm.rename", () -> {
 						mod.deleteDirectory();
 						write(mod);
 					});
@@ -100,7 +100,7 @@ public class ModMetaDialog extends BaseDialog {
 			});
 		});
 
-		container.add("$mod.fileName");
+		container.add("@mod.fileName");
 		TextField fileName = MyTextField();
 		Fields.put("fileName", fileName);
 		container.add(fileName).valid(text -> {
@@ -114,7 +114,7 @@ public class ModMetaDialog extends BaseDialog {
 		}).row();
 		FieldArray.add(fileName);
 
-		container.add("$minGameVersion");
+		container.add("@minGameVersion");
 		TextField minGameVersion = MyTextField();
 		Fields.put("minGameVersion", minGameVersion);
 		container.add(minGameVersion).valid(text -> {
@@ -162,7 +162,7 @@ public class ModMetaDialog extends BaseDialog {
 		isNull = !f.exists();
 		if (isNull) file.writeString("");
 		jsonValue = hjsonParse(file.readString());
-		title.setText(isNull ? "$mod.create" : "$edit");
+		title.setText(isNull ? "@mod.create" : "@edit");
 
 		Fields.get("fileName").setText(isNull ? "" : f.parent().name());
 		int num = jsonValue.getInt("minGameVersion", __MinGameVersion__);

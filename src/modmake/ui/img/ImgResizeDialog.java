@@ -19,7 +19,7 @@ public class ImgResizeDialog extends BaseDialog {
 	int width, height;
 
 	public ImgResizeDialog(Intc2 cons) {
-		super("重设大小");
+		super("@editor.resize");
 
 		closeOnBack();
 		shown(() -> {

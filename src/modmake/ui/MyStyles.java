@@ -14,7 +14,7 @@ import static mindustry.gen.Tex.flatDownBase;
 import static mindustry.gen.Tex.pane;
 import static mindustry.ui.Styles.*;
 
-public class styles {
+public class MyStyles {
 	public static TextureRegionDrawable whiteui;
 	public static ScrollPaneStyle nonePane;
 	public static ButtonStyle clearb, clearpb;

@@ -14,12 +14,12 @@ public class NameDialog extends Dialog {
 
 	{
 		cont.table(t -> {
-			t.add("$name");
+			t.add("@name");
 			Cell<TextField> c = t.add(namef).growX();
 		}).growX().row();
 
-		buttons.button("$back", this::hide).size(150, 64);
-		buttons.button("$ok", () -> {
+		buttons.button("@back", this::hide).size(150, 64);
+		buttons.button("@ok", () -> {
 			okCons.get(namef.getText());
 			hide();
 		}).size(150, 64).disabled(__ -> !namef.isValid());

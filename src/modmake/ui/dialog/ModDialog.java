@@ -19,10 +19,9 @@ import mindustry.gen.Icon;
 import mindustry.graphics.Pal;
 import mindustry.ui.*;
 import mindustry.ui.dialogs.BaseDialog;
-import mindustry.world.Block;
 import modmake.*;
 import modmake.components.*;
-import modmake.ui.styles;
+import modmake.ui.MyStyles;
 import modmake.util.MyReflect;
 
 import java.lang.reflect.Constructor;
@@ -39,15 +38,29 @@ public class ModDialog extends BaseDialog {
 	public MyMod currentMod;
 	public static ContentLoader tmpLoader = new ContentLoader();
 
+	/**
+	 * 默认为false，在hide之前使用，无需手动改回来。
+	 */
+	public boolean disabledHidden = false;
 	public ModDialog() {
 		super("");
 		title.setStyle(lstyle);
+
+		hidden(() -> {
+			if (disabledHidden) {
+				disabledHidden = false;
+				return;
+			}
+			currentMod = null;
+			modsDialog.show();
+		});
 	}
 
 	public static Label.LabelStyle lstyle = new Label.LabelStyle(Fonts.def, Color.white);
 
 	// 语言
 	public ObjectMap<String, String> bundles;
+
 
 	Table desc;
 	float w = !Core.graphics.isPortrait() ? 520 : Vars.mobile ? 410 : 440;
@@ -63,14 +76,7 @@ public class ModDialog extends BaseDialog {
 			Log.err(e);
 		}
 
-		buttons.defaults().size(210, 64);
-		buttons.button("@back", Icon.left, () -> {
-			hide();
-			currentMod = null;
-			modsDialog.show();
-		}).size(210, 64);
-
-		addCloseListener();
+		addCloseButton();
 
 		desc = new Table();
 		desc.center();
@@ -121,7 +127,7 @@ public class ModDialog extends BaseDialog {
 				return;
 			}
 
-			body.add("$content.info").row();
+			body.add("@content.info").row();
 			var table = new Table();
 			final boolean[] ok = {false};
 			String[] selfText = {""};
@@ -136,83 +142,81 @@ public class ModDialog extends BaseDialog {
 				ok[0] = true;
 				p.clearChildren();
 				Seq<Fi> all = content.findAll();
-				//				IntVars.async("加载content", () -> {
-				Time.runTask(0f, () -> {
-					for (var i = 0; i < all.size; i++) {
-						final Fi[] json = {all.get(i)};
-						if (!json[0].extEquals("hjson") && !json[0].extEquals("json")) continue;
-						var btn = new Button(Styles.defaultb);
-						btn.defaults().growX().pad(2).padLeft(4).minWidth(w - 10).left();
+				for (var i = 0; i < all.size; i++) {
+					final Fi[] json = {all.get(i)};
+					if (!json[0].extEquals("hjson") && !json[0].extEquals("json")) continue;
+					var btn = new Button(Styles.defaultb);
+					btn.defaults().growX().pad(2).padLeft(4).minWidth(w - 10).left();
 
-						// 包装btn，以控制显示隐藏
-						var btnTable = new Table();
-						boolean[] shown = {true};
-						btnTable.changed(() -> {
-							boolean canShow = true;
-							Pattern pattern = Pattern.compile(selfText[0], Pattern.CASE_INSENSITIVE);
-							try {
-								if (!Objects.equals(selfText[0], "") && !pattern.matcher(json[0].nameWithoutExtension()).find())
-									canShow = false;
-							} catch (Exception e) {canShow = false;}
+					// 包装btn，以控制显示隐藏
+					var btnTable = new Table();
+					boolean[] shown = {true};
+					btnTable.changed(() -> {
+						boolean canShow = true;
+						Pattern pattern = Pattern.compile(selfText[0], Pattern.CASE_INSENSITIVE);
+						try {
+							if (!Objects.equals(selfText[0], "") && !pattern.matcher(json[0].nameWithoutExtension()).find())
+								canShow = false;
+						} catch (Exception e) {canShow = false;}
 
-							if (canShow) {
-								if (!shown[0]) {
-									shown[0] = true;
-									btnTable.add(btn);
-								}
-							} else {
-								shown[0] = false;
-								btn.remove();
+						if (canShow) {
+							if (!shown[0]) {
+								shown[0] = true;
+								btnTable.add(btn);
 							}
-						});
-						btnTable.add(btn);
-						p.add(btnTable).growX().left().row();
+						} else {
+							shown[0] = false;
+							btn.remove();
+						}
+					});
+					btnTable.add(btn);
+					p.add(btnTable).growX().left().row();
 
-						btn.left();
-						Runnable _setup = () -> {
-							btn.clearChildren();
-							if (displayContentSprite[0]) {
-								var image = btn.image(IntVars.find(mod, json[0].nameWithoutExtension())).size(32).padRight(6).left().get();
-								image.clicked(contentSpriteDialog::show);
-								if (!Vars.mobile) image.addListener(new HandCursorListener());
-							}
-							btn.add(json[0].name());
-						};
-						_setup.run();
-						//						p.add(btn).growX().left().row();
-						IntUI.longPress(btn, 600, longPress -> {
-							if (longPress) {
-								ui.showConfirm("$confirm",
-										Core.bundle.format("confirm.remove", json[0].nameWithoutExtension()),
-										() -> {
-											json[0].delete();
-											ref.setup.get(selectedContent[0]);
-										}
-								);
-							} else {
-								if (!json[0].exists()) {
-									ui.showException(new NullPointerException("file(" + json[0] + ")不存在"));
-									ref.setup.get(selectedContent[0]);
-									return;
-								}
-								hide();
-								jsonDialog.show(json[0], mod);
-								var listener = new VisibilityListener() {
-									@Override
-									public boolean hidden() {
-
-										json[0] = jsonDialog.file;
-										_setup.run();
-										show();
-										jsonDialog.removeListener(this);
-										return false;
+					btn.left();
+					Runnable _setup = () -> {
+						btn.clearChildren();
+						if (displayContentSprite[0]) {
+							var image = btn.image(IntVars.find(mod, json[0].nameWithoutExtension())).size(32).padRight(6).left().get();
+							image.clicked(contentSpriteDialog::show);
+							if (!Vars.mobile) image.addListener(new HandCursorListener());
+						}
+						btn.add(json[0].name());
+					};
+					_setup.run();
+					//						p.add(btn).growX().left().row();
+					IntUI.longPress(btn, 600, longPress -> {
+						if (longPress) {
+							ui.showConfirm("@confirm",
+									Core.bundle.format("confirm.remove", json[0].nameWithoutExtension()),
+									() -> {
+										json[0].delete();
+										ref.setup.get(selectedContent[0]);
 									}
-								};
-								jsonDialog.addListener(listener);
+							);
+						} else {
+							if (!json[0].exists()) {
+								ui.showException(new NullPointerException("file(" + json[0] + ")不存在"));
+								ref.setup.get(selectedContent[0]);
+								return;
 							}
-						});
-					}
-				});
+							disabledHidden = true;
+							hide();
+							jsonDialog.show(json[0], mod);
+							var listener = new VisibilityListener() {
+								@Override
+								public boolean hidden() {
+
+									json[0] = jsonDialog.file;
+									_setup.run();
+									show();
+									jsonDialog.removeListener(this);
+									return false;
+								}
+							};
+							jsonDialog.addListener(listener);
+						}
+					});
+				}
 				//				}, () -> {});
 			});
 			body.add(table).growX().maxHeight(Core.graphics.getHeight()).row();
@@ -220,13 +224,13 @@ public class ModDialog extends BaseDialog {
 			// buttons
 			body.table(buttons -> {
 				buttons.defaults().growX();
-				buttons.button("$back", Icon.left, () -> ref.setup.get(contentRoot)).growX();
-				buttons.button("$add", Icon.add, () -> {
+				buttons.button("@back", Icon.left, () -> ref.setup.get(contentRoot)).growX();
+				buttons.button("@add", Icon.add, () -> {
 					new Dialog("") {{
 						var name = new TextField();
 
 						cont.table(t -> {
-							t.add("$name");
+							t.add("@name");
 							t.add(name).growX();
 						}).growX().row();
 						var table = new Table();
@@ -240,7 +244,7 @@ public class ModDialog extends BaseDialog {
 						map.each((key, value) -> {
 							if (!ok[0]) {
 								int k = j[0];
-								btns.add(table.button("空白模板", styles.clearTogglet, () -> {
+								btns.add(table.button("@mod.blank-template", MyStyles.clearTogglet, () -> {
 									if (selected[0] != -1) btns.get(selected[0]).setChecked(false);
 									btns.get(selected[0] = k).setChecked(true);
 								}).size(150, 64).get());
@@ -250,7 +254,7 @@ public class ModDialog extends BaseDialog {
 							ok[0] = true;
 
 							int k = j[0];
-							btns.add(table.button(key, styles.clearTogglet, () -> {
+							btns.add(table.button(key, MyStyles.clearTogglet, () -> {
 								if (selected[0] != -1) btns.get(selected[0]).setChecked(false);
 								btns.get(selected[0] = k).setChecked(true);
 							}).size(150, 64).get());
@@ -263,7 +267,7 @@ public class ModDialog extends BaseDialog {
 						cont.pane(table).width(300).height(300).row();
 						final UnlockableContent[] selectUnlockContent = {null};
 						Button[] __btn = {null};
-						__btn[0] = cont.button("从实例中获取", Styles.flatTogglet, () -> {
+						__btn[0] = cont.button("@get-from-instance", Styles.flatTogglet, () -> {
 							IntUI.showSelectImageTable(__btn[0], Vars.content.getBy(ContentType.valueOf(cTypeMap.get(content.name()))), () -> selectUnlockContent[0], c -> {
 								selectUnlockContent[0] = c;
 								if (selected[0] != -1) btns.get(selected[0]).setChecked(false);
@@ -271,26 +275,31 @@ public class ModDialog extends BaseDialog {
 							}, 42, 32, Vars.mobile ? 6 : 10, true);
 						}).checked(__ -> selected[0] == -1).growX().height(45).get();
 
-						buttons.button("$back", this::hide).size(150, 64);
-						buttons.button("$ok", () -> {
+						buttons.button("@back", this::hide).size(150, 64);
+						buttons.button("@ok", () -> {
 							Fi file = content.child(name.getText() + ".hjson");
 
 							if (selected[0] != -1) {
 								file.writeString(values.get(selected[0]).toString(Jval.Jformat.hjson));
 							} else {
+								ContentLoader lastLoader = Vars.content;
 								try {
 									Class<?> cls = selectUnlockContent[0].getClass();
-									ContentLoader lastLoader = Vars.content;
 									Vars.content = tmpLoader;
-									Constructor<?> constructor = cls.getDeclaredConstructor(String.class);
-									constructor.setAccessible(true);
-									Block ins = (Block) constructor.newInstance(Time.nanos() + "");
-									Vars.content = lastLoader;
+									try {
+										Constructor<?> constructor = cls.getDeclaredConstructor(String.class);
+										constructor.setAccessible(true);
+										Content ins = (Content) constructor.newInstance(Time.nanos() + "");
 
-									file.writeString(copyJval(ins, selectUnlockContent[0]).toString(Jformat.hjson));
+										file.writeString(copyJval(ins, selectUnlockContent[0]).toString(Jformat.hjson));
+									} catch (NoSuchMethodException e) {
+										file.writeString(copyJval(selectUnlockContent[0], selectUnlockContent[0]).toString(Jformat.hjson));
+									}
 								} catch (Throwable e) {
-									ui.showException("获取失败", e);
+									ui.showException("Failed to fetch", e);
 									return;
+								} finally {
+									Vars.content = lastLoader;
 								}
 							}
 							// dialog.hide();
@@ -313,18 +322,18 @@ public class ModDialog extends BaseDialog {
 		Fi spritesDirectory2 = mod.root.child("sprites-override");
 
 		t.image().color(Pal.accent).growX().row();
-		t.button("查看图片库1", () -> {
+		t.button("@view.sprite1", () -> {
 			spriteDialog.hiddenRun = () -> {
 				ref.setup.get(selectedContent[0]);
 				//				mod.loadSprites();
 			};
 			spriteDialog.setup(spritesDirectory1);
 		}).growX().row();
-		t.button("查看图片库2", () -> {
+		t.button("@view.sprite1", () -> {
 			spriteDialog.hiddenRun = () -> ref.setup.get(selectedContent[0]);
 			spriteDialog.setup(spritesDirectory2);
 		}).growX().row();
-		t.button("加载图片库", mod::loadSprites).growX().row();
+		t.button("@mod.sprite.load", mod::loadSprites).growX().row();
 
 		return t;
 	}
@@ -341,7 +350,7 @@ public class ModDialog extends BaseDialog {
 		desc.clearChildren();
 
 		if (meta.size == 0) {
-			desc.add("$error", Color.red);
+			desc.add("@error", Color.red);
 			show();
 			return this;
 		}
@@ -351,19 +360,19 @@ public class ModDialog extends BaseDialog {
 		}
 
 
-		desc.add("$editor.name", Color.gray).padRight(10).padTop(0).row();
+		desc.add("@editor.name", Color.gray).padRight(10).padTop(0).row();
 		desc.add(displayName).growX().wrap().padTop(2).row();
 
 		if (meta.has("author")) {
-			desc.add("$editor.author", Color.gray).padRight(10).row();
+			desc.add("@editor.author", Color.gray).padRight(10).row();
 			desc.add("" + meta.getString("author", "???")).growX().wrap().padTop(2).row();
 		}
 		if (meta.has("version")) {
-			desc.add("$editor.version", Color.gray).padRight(10).row();
+			desc.add("@editor.version", Color.gray).padRight(10).row();
 			desc.add("" + meta.getString("version", "???")).growX().wrap().padTop(2).row();
 		}
 		if (meta.has("description")) {
-			desc.add("$editor.description").padRight(10).color(Color.gray).top().row();
+			desc.add("@editor.description").padRight(10).color(Color.gray).top().row();
 			desc.add("" + meta.getString("description", "???")).growX().wrap().padTop(2).row();
 		}
 
@@ -375,9 +384,10 @@ public class ModDialog extends BaseDialog {
 				/* content */
 				getContentTable(mod),
 				/* bundles */
-				new Table(styles.whiteui.tint(1, .8f, 1, .8f), t -> {
-					t.add("$default").padLeft(4).growX().left();
-					t.button(Icon.pencil, styles.clearTransi, () -> {
+				new Table(MyStyles.whiteui.tint(1, .8f, 1, .8f), t -> {
+					t.add("@default").padLeft(4).growX().left();
+					t.button(Icon.pencil, MyStyles.clearTransi, () -> {
+						disabledHidden = true;
 						hide();
 						editor.edit(mod.root.child("bundles").child("bundle.properties"), mod);
 						var listener = new VisibilityListener() {
@@ -392,14 +402,14 @@ public class ModDialog extends BaseDialog {
 					}).size(42).pad(10).row();
 					for (Locale k : Vars.locales) {
 						t.add(bundles.get(k + "", () -> k + "")).padLeft(4).growX().left();
-						t.button(Icon.pencil, styles.clearTransi, () ->
+						t.button(Icon.pencil, MyStyles.clearTransi, () ->
 								editor.edit(mod.root.child("bundles").child("bundle_" + k + ".properties"), mod)
 						).size(42).pad(10).row();
 						// if (Core.graphics.getWidth() > Core.graphics.getHeight() && i % 2 == 1) t.row();
 					}
 				}),
 				/* scripts */
-				new Table(styles.whiteui.tint(.7f, .7f, 1, .8f), t -> {
+				new Table(MyStyles.whiteui.tint(.7f, .7f, 1, .8f), t -> {
 					t.add("未完成");
 				})
 		);
