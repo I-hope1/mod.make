@@ -383,5 +383,10 @@ public class ImgEditor {
 			cache();
 			super.fill(color);
 		}
+
+		@Override
+		public String toString() {
+			return pixels.toString();
+		}
 	}
 }
