@@ -38,12 +38,12 @@ import static modmake.util.ContentSeq.parser;
 
 public class LoadMod {
 	public static Method loadMod, checkWarnings;
-	public static AsyncExecutor async = new AsyncExecutor();
-	public static TextureAtlas lastAtlas = Core.atlas;
+	public static AsyncExecutor  async     = new AsyncExecutor();
+	public static TextureAtlas   lastAtlas = Core.atlas;
 	public static Seq<LoadedMod> mods;
-	public static MyMod currentMod;
-	public static LoadedMod lastMod;
-	public static MultiPacker packer;
+	public static MyMod          currentMod;
+	public static LoadedMod      lastMod;
+	public static MultiPacker    packer;
 
 	public static void init() throws Exception {
 		var clazz = Mods.class;
@@ -66,15 +66,15 @@ public class LoadMod {
 				packer.add(type, region.name, Core.atlas.getPixmap(region), region.splits, region.pads);
 			}
 		}*/
-		var shadow = lastAtlas;
-		ObjectMap<String, Pixmap> map = new ObjectMap<>();
+		var                            shadow   = lastAtlas;
+		ObjectMap<String, Pixmap>      map      = new ObjectMap<>();
 		ObjectMap<String, AtlasRegion> atlasMap = new ObjectMap<>();
-		var mod = currentMod;
+		var                            mod      = currentMod;
 		Cons2<Fi, Boolean> cons = (f, b) -> {
 			try {
-				var pix = new Pixmap(f);
+				var pix    = new Pixmap(f);
 				var region = new AtlasRegion(new TextureRegion(new Texture(pix)));
-				var name = f.nameWithoutExtension();
+				var name   = f.nameWithoutExtension();
 				name = region.name = b ? mod.name() + "-" + name : name;
 				map.put(name, pix);
 				atlasMap.put(name, region);
@@ -84,9 +84,9 @@ public class LoadMod {
 			}
 		};
 		mod.root.child("sprites").findAll(f -> f.extension().equalsIgnoreCase("png"))
-				.each(f -> cons.get(f, true));
+		 .each(f -> cons.get(f, true));
 		mod.root.child("sprites-override").findAll(f -> f.extension().equalsIgnoreCase("png"))
-				.each(f -> cons.get(f, false));
+		 .each(f -> cons.get(f, false));
 
 		Core.atlas = new TextureAtlas() {
 			{
@@ -121,15 +121,15 @@ public class LoadMod {
 
 			@Override
 			public boolean has(String s) {
-//				return shadow.has(s) || packer.get(s) != null;
-//				return shadow.has(s) || map.containsKey(s);
+				//				return shadow.has(s) || packer.get(s) != null;
+				//				return shadow.has(s) || map.containsKey(s);
 				return shadow.has(s) || atlasMap.containsKey(s);
 			}
 
 			//return the *actual* pixmap regions, not the disposed ones.
 			@Override
 			public PixmapRegion getPixmap(AtlasRegion region) {
-//				PixmapRegion out = packer.get(region.name);
+				//				PixmapRegion out = packer.get(region.name);
 				var out = find(region.name);
 				//this should not happen in normal situations
 				if (out == null) return error.pixmapRegion;
@@ -137,7 +137,7 @@ public class LoadMod {
 			}
 		};
 
-//		TextureFilter filter = Core.settings.getBool("linear", true) ? TextureFilter.linear : TextureFilter.nearest;
+		//		TextureFilter filter = Core.settings.getBool("linear", true) ? TextureFilter.linear : TextureFilter.nearest;
 
 		Time.mark();
 		//generate new icons
@@ -147,20 +147,20 @@ public class LoadMod {
 					var u = (UnlockableContent) c;
 					u.load();
 					u.loadIcon();
-//					u.createIcons(new MultiPacker());
+					//					u.createIcons(new MultiPacker());
 				}
 			});
 		}
 		Log.debug("Time to generate icons: @", Time.elapsed());
 
 		//dispose old atlas data
-//		Core.atlas = packer.flush(filter, new TextureAtlas());
+		//		Core.atlas = packer.flush(filter, new TextureAtlas());
 
 		Core.atlas.setErrorRegion("error");
 		Log.debug("Total pages: @", Core.atlas.getTextures().size);
 
-//		packer.dispose();
-//		packer = null;
+		//		packer.dispose();
+		//		packer = null;
 		Log.debug("Total time to generate & flush textures synchronously: @", Time.elapsed());
 	}
 
@@ -262,7 +262,7 @@ public class LoadMod {
 		var tasks = new Seq<AsyncResult<Runnable>>();
 
 
-		Seq<Fi> sprites = mod.root.child("sprites").findAll(f -> f.extension().equals("png"));
+		Seq<Fi> sprites   = mod.root.child("sprites").findAll(f -> f.extension().equals("png"));
 		Seq<Fi> overrides = mod.root.child("sprites-override").findAll(f -> f.extension().equals("png"));
 
 		packSprites(sprites, mod, true, tasks);
@@ -292,20 +292,20 @@ public class LoadMod {
 
 	private static PageType getPage(AtlasRegion region) {
 		return region.texture == Core.atlas.find("white").texture ? PageType.main :
-				region.texture == Core.atlas.find("stone1").texture ? PageType.environment :
-						region.texture == Core.atlas.find("clear-editor").texture ? PageType.editor :
-								region.texture == Core.atlas.find("whiteui").texture ? PageType.ui :
-										region.texture == Core.atlas.find("rubble-1-0").texture ? PageType.rubble :
-												PageType.main;
+		 region.texture == Core.atlas.find("stone1").texture ? PageType.environment :
+			region.texture == Core.atlas.find("clear-editor").texture ? PageType.editor :
+			 region.texture == Core.atlas.find("whiteui").texture ? PageType.ui :
+				region.texture == Core.atlas.find("rubble-1-0").texture ? PageType.rubble :
+				 PageType.main;
 	}
 
 	private static PageType getPage(Fi file) {
 		String path = file.path();
 		return path.contains("sprites/blocks/environment") ? PageType.environment :
-				path.contains("sprites/editor") ? PageType.editor :
-						path.contains("sprites/rubble") ? PageType.editor :
-								path.contains("sprites/ui") ? PageType.ui :
-										PageType.main;
+		 path.contains("sprites/editor") ? PageType.editor :
+			path.contains("sprites/rubble") ? PageType.editor :
+			 path.contains("sprites/ui") ? PageType.ui :
+				PageType.main;
 	}
 
 	private static void packSprites(Seq<Fi> sprites, MyMod mod, boolean prefix, Seq<AsyncResult<Runnable>> tasks) {
@@ -338,7 +338,7 @@ public class LoadMod {
 
 		class LoadRun implements Comparable<LoadRun> {
 			final ContentType type;
-			final Fi file;
+			final Fi          file;
 
 			public LoadRun(ContentType type, Fi file) {
 				this.type = type;
@@ -357,8 +357,8 @@ public class LoadMod {
 		if (mod.root.child("content").exists()) {
 			Fi contentRoot = mod.root.child("content");
 			for (ContentType type : ContentType.all) {
-				String lower = type.name().toLowerCase(Locale.ROOT);
-				Fi folder = contentRoot.child(lower + (lower.endsWith("s") ? "" : "s"));
+				String lower  = type.name().toLowerCase(Locale.ROOT);
+				Fi     folder = contentRoot.child(lower + (lower.endsWith("s") ? "" : "s"));
 				if (folder.exists()) {
 					for (Fi file : folder.findAll(f -> f.extension().equals("json") || f.extension().equals("hjson"))) {
 						runs.add(new LoadRun(type, file));
@@ -393,24 +393,24 @@ public class LoadMod {
 
 	private static boolean loaded() throws Exception {
 		var mod = currentMod;
-		var fi = mod.root;
+		var fi  = mod.root;
 
-//		var _mod = (LoadedMod) loadMod.invoke(Vars.mods, fi, true);
-//		mods.add(_mod);
-//		_mod.state = Mods.ModState.enabled;
+		//		var _mod = (LoadedMod) loadMod.invoke(Vars.mods, fi, true);
+		//		mods.add(_mod);
+		//		_mod.state = Mods.ModState.enabled;
 
 		content.clear();
 		content.createBaseContent();
 		var _mod = loadContent();
-//		content.createModContent();
+		//		content.createModContent();
 		var wrong = _mod.hasContentErrors();
 		lastMod = _mod;
 
 		if (settings.getBool("load_sprites") && mod.spritesFi() != null) {
 			loadAsync();
-//			Thread.sleep(200);
+			//			Thread.sleep(200);
 			loadSync();
-//			loadSprites();
+			//			loadSprites();
 		}
 
 		// 加载content

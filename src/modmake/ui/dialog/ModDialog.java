@@ -18,11 +18,11 @@ import mindustry.ctype.*;
 import mindustry.gen.Icon;
 import mindustry.graphics.Pal;
 import mindustry.ui.*;
-import mindustry.ui.dialogs.BaseDialog;
 import modmake.*;
 import modmake.components.*;
+import modmake.components.limit.LimitTable;
 import modmake.ui.MyStyles;
-import modmake.util.MyReflect;
+import modmake.util.*;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -32,28 +32,30 @@ import static mindustry.Vars.ui;
 import static modmake.IntUI.*;
 import static modmake.components.DataHandle.*;
 import static modmake.util.Tools.*;
-import static modmake.util.load.ContentSeq.cTypeMap;
+import static modmake.util.load.ContentVars.cTypeMap;
+import static modmake.util.tools.Tools.compileRegExp;
 
-public class ModDialog extends BaseDialog {
-	public MyMod currentMod;
+public class ModDialog extends Window {
+	public        MyMod         currentMod;
 	public static ContentLoader tmpLoader = new ContentLoader();
 
 	/**
 	 * 默认为false，在hide之前使用，无需手动改回来。
 	 */
 	public boolean disabledHidden = false;
+
 	public ModDialog() {
-		super("");
+		super("", 120, 80, true, false);
 		title.setStyle(lstyle);
 
-		hidden(() -> {
+		/*hidden(() -> {
 			if (disabledHidden) {
 				disabledHidden = false;
 				return;
 			}
 			currentMod = null;
-			modsDialog.show();
-		});
+			// modsDialog.show();
+		});*/
 	}
 
 	public static Label.LabelStyle lstyle = new Label.LabelStyle(Fonts.def, Color.white);
@@ -66,8 +68,6 @@ public class ModDialog extends BaseDialog {
 	float w = !Core.graphics.isPortrait() ? 520 : Vars.mobile ? 410 : 440;
 
 	public void load() {
-		jsonDialog.load();
-
 		try {
 			bundles = MyReflect.getValue(ui.language, "displayNames");
 			//			Log.info(bundles);
@@ -76,7 +76,7 @@ public class ModDialog extends BaseDialog {
 			Log.err(e);
 		}
 
-		addCloseButton();
+		// addCloseButton();
 
 		desc = new Table();
 		desc.center();
@@ -87,20 +87,20 @@ public class ModDialog extends BaseDialog {
 
 	Table getContentTable(MyMod mod) {
 
-		var t = new Table();
+		var t = new LimitTable();
 		t.center();
 		t.defaults().padTop(10).left();
 		var contentRoot = mod.root.child("content");
 
-		var cont = new Table();
+		var cont = new LimitTable();
 		cont.defaults().padTop(10).left();
-		var body = new Table();
+		var body = new LimitTable();
 		body.top().left();
 		body.defaults().padTop(2).top().left();
 		cont.pane(p -> p.add(body).left().growX()).growX()
-				.with(pane -> pane.setScrollingDisabled(true, false)).row();
+		 .with(pane -> pane.setScrollingDisabled(true, false)).row();
 
-		final Fi[] selectedContent = new Fi[1];
+		final Fi[]      selectedContent      = new Fi[1];
 		final boolean[] displayContentSprite = new boolean[1];
 
 		var ref = new Object() {
@@ -110,7 +110,7 @@ public class ModDialog extends BaseDialog {
 			selectedContent[0] = content;
 			body.clearChildren();
 
-			displayContentSprite[0] = settings.getBool("display-content-sprite");
+			displayContentSprite[0] = dsettings.getBool("display-content-sprite");
 
 			if (content.equals(contentRoot)) {
 				var cTypes = cTypeMap;
@@ -119,18 +119,26 @@ public class ModDialog extends BaseDialog {
 					if (f.exists() && !f.isDirectory()) {
 						f.deleteDirectory();
 					}
+
+					try {
+						f.mkdirs();
+					} catch (ArcRuntimeException e) {
+						Log.err(e);
+					}
 					body.button(b -> {
 						b.left();
-						b.add(types.get(f.name(), f::name));
+						b.add(types.get(f.name(), f::name))
+						 .color(f.exists() && f.isDirectory() && f.list().length > 0
+							? Color.white : Color.gray);
 					}, Styles.defaultb, () -> ref.setup.get(f)).growX().pad(2).padLeft(4).left().row();
 				});
 				return;
 			}
 
 			body.add("@content.info").row();
-			var table = new Table();
-			final boolean[] ok = {false};
-			String[] selfText = {""};
+			var             table    = new Table();
+			final boolean[] ok       = {false};
+			String[]        selfText = {""};
 
 			IntUI.searchTable(table, (p, text) -> {
 				selfText[0] = text;
@@ -149,11 +157,11 @@ public class ModDialog extends BaseDialog {
 					btn.defaults().growX().pad(2).padLeft(4).minWidth(w - 10).left();
 
 					// 包装btn，以控制显示隐藏
-					var btnTable = new Table();
-					boolean[] shown = {true};
+					var       btnTable = new Table();
+					boolean[] shown    = {true};
 					btnTable.changed(() -> {
 						boolean canShow = true;
-						Pattern pattern = Pattern.compile(selfText[0], Pattern.CASE_INSENSITIVE);
+						Pattern pattern = compileRegExp(selfText[0]);
 						try {
 							if (!Objects.equals(selfText[0], "") && !pattern.matcher(json[0].nameWithoutExtension()).find())
 								canShow = false;
@@ -177,7 +185,10 @@ public class ModDialog extends BaseDialog {
 						btn.clearChildren();
 						if (displayContentSprite[0]) {
 							var image = btn.image(IntVars.find(mod, json[0].nameWithoutExtension())).size(32).padRight(6).left().get();
-							image.clicked(contentSpriteDialog::show);
+							image.clicked(() -> {
+								var d = new ContentSpriteDialog();
+								d.show();
+							});
 							if (!Vars.mobile) image.addListener(new HandCursorListener());
 						}
 						btn.add(json[0].name());
@@ -187,11 +198,11 @@ public class ModDialog extends BaseDialog {
 					IntUI.longPress(btn, 600, longPress -> {
 						if (longPress) {
 							ui.showConfirm("@confirm",
-									Core.bundle.format("confirm.remove", json[0].nameWithoutExtension()),
-									() -> {
-										json[0].delete();
-										ref.setup.get(selectedContent[0]);
-									}
+							 Core.bundle.format("confirm.remove", json[0].nameWithoutExtension()),
+							 () -> {
+								 json[0].delete();
+								 ref.setup.get(selectedContent[0]);
+							 }
 							);
 						} else {
 							if (!json[0].exists()) {
@@ -200,20 +211,21 @@ public class ModDialog extends BaseDialog {
 								return;
 							}
 							disabledHidden = true;
-							hide();
-							jsonDialog.show(json[0], mod);
+							// hide();
+							var d = new JsonDialog();
+							d.load();
+							d.show(json[0], mod);
 							var listener = new VisibilityListener() {
 								@Override
 								public boolean hidden() {
-
-									json[0] = jsonDialog.file;
+									json[0] = d.file;
 									_setup.run();
 									show();
-									jsonDialog.removeListener(this);
+									d.clearChildren();
 									return false;
 								}
 							};
-							jsonDialog.addListener(listener);
+							d.addListener(listener);
 						}
 					});
 				}
@@ -233,14 +245,14 @@ public class ModDialog extends BaseDialog {
 							t.add("@name");
 							t.add(name).growX();
 						}).growX().row();
-						var table = new Table();
-						Seq<Jval> values = new Seq<>();
-						final int[] selected = {0};
-						final int[] j = {0};
-						boolean[] ok = {false};
-						Seq<Button> btns = new Seq<>();
-						ObjectMap<String, Jval> map = or(framework.get(content.name()), ObjectMap::new);
-						int cols = 2;
+						var                     table    = new Table();
+						Seq<Jval>               values   = new Seq<>();
+						final int[]             selected = {0};
+						final int[]             j        = {0};
+						boolean[]               ok       = {false};
+						Seq<Button>             btns     = new Seq<>();
+						ObjectMap<String, Jval> map      = or(framework.get(content.name()), ObjectMap::new);
+						int                     cols     = 2;
 						map.each((key, value) -> {
 							if (!ok[0]) {
 								int k = j[0];
@@ -266,7 +278,7 @@ public class ModDialog extends BaseDialog {
 						table.defaults().width(300);
 						cont.pane(table).width(300).height(300).row();
 						final UnlockableContent[] selectUnlockContent = {null};
-						Button[] __btn = {null};
+						Button[]                  __btn               = {null};
 						__btn[0] = cont.button("@get-from-instance", Styles.flatTogglet, () -> {
 							IntUI.showSelectImageTable(__btn[0], Vars.content.getBy(ContentType.valueOf(cTypeMap.get(content.name()))), () -> selectUnlockContent[0], c -> {
 								selectUnlockContent[0] = c;
@@ -323,15 +335,19 @@ public class ModDialog extends BaseDialog {
 
 		t.image().color(Pal.accent).growX().row();
 		t.button("@view.sprite1", () -> {
-			spriteDialog.hiddenRun = () -> {
+			var d = new SpriteDialog(currentMod);
+			d.hiddenRun = () -> {
+				ref.setup.get(selectedContent[0]);
+			};
+			d.setup(spritesDirectory1);
+		}).growX().row();
+		t.button("@view.sprite2", () -> {
+			var d = new SpriteDialog(currentMod);
+			d.hiddenRun = () -> {
 				ref.setup.get(selectedContent[0]);
 				//				mod.loadSprites();
 			};
-			spriteDialog.setup(spritesDirectory1);
-		}).growX().row();
-		t.button("@view.sprite1", () -> {
-			spriteDialog.hiddenRun = () -> ref.setup.get(selectedContent[0]);
-			spriteDialog.setup(spritesDirectory2);
+			d.setup(spritesDirectory2);
 		}).growX().row();
 		t.button("@mod.sprite.load", mod::loadSprites).growX().row();
 
@@ -341,9 +357,9 @@ public class ModDialog extends BaseDialog {
 
 	public ModDialog show(MyMod mod) {
 		currentMod = mod;
-		if ("打开项目加载一次".equals(settings.get("auto_load_sprites"))) mod.loadSprites();
+		if ("打开项目加载一次".equals(dsettings.get("auto_load_sprites"))) mod.loadSprites();
 
-		var meta = mod.meta;
+		var meta        = mod.meta;
 		var displayName = "" + mod.displayName();
 		title.setText(displayName);
 
@@ -355,7 +371,7 @@ public class ModDialog extends BaseDialog {
 			return this;
 		}
 
-		if (!(mod.logo() + "").equals("error") && settings.getBool("display_mod_logo")) {
+		if (!(mod.logo() + "").equals("error") && dsettings.getBool("display_mod_logo")) {
 			desc.image(mod.logo()).row();
 		}
 
@@ -376,42 +392,90 @@ public class ModDialog extends BaseDialog {
 			desc.add("" + meta.getString("description", "???")).growX().wrap().padTop(2).row();
 		}
 
-		Seq<Color> colors = Seq.with(Color.gold, Color.pink, Color.sky);
-		Seq<String> names = new Seq<>();
+		Seq<Color>  colors = Seq.with(Color.gold, Color.pink, Color.sky);
+		Seq<String> names  = new Seq<>();
 		Seq.with("editor.content", "bundles", "scripts").each(str -> names.add(Core.bundle.get(str, str)));
 		//		names.replace(str -> Core.bundle.get(str, str));
 		Seq<Table> tables = Seq.with(
-				/* content */
-				getContentTable(mod),
-				/* bundles */
-				new Table(MyStyles.whiteui.tint(1, .8f, 1, .8f), t -> {
-					t.add("@default").padLeft(4).growX().left();
-					t.button(Icon.pencil, MyStyles.clearTransi, () -> {
-						disabledHidden = true;
-						hide();
-						editor.edit(mod.root.child("bundles").child("bundle.properties"), mod);
-						var listener = new VisibilityListener() {
-							@Override
-							public boolean hidden() {
-								show();
-								editor.removeListener(this);
-								return false;
-							}
-						};
-						editor.addListener(listener);
-					}).size(42).pad(10).row();
-					for (Locale k : Vars.locales) {
-						t.add(bundles.get(k + "", () -> k + "")).padLeft(4).growX().left();
-						t.button(Icon.pencil, MyStyles.clearTransi, () ->
-								editor.edit(mod.root.child("bundles").child("bundle_" + k + ".properties"), mod)
-						).size(42).pad(10).row();
-						// if (Core.graphics.getWidth() > Core.graphics.getHeight() && i % 2 == 1) t.row();
-					}
-				}),
-				/* scripts */
-				new Table(MyStyles.whiteui.tint(.7f, .7f, 1, .8f), t -> {
-					t.add("未完成");
-				})
+		 /* content */
+		 getContentTable(mod),
+		 /* bundles */
+		 new LimitTable(MyStyles.whiteui.tint(1, .8f, 1, .8f), t -> {
+			 t.add("@default").padLeft(4).growX().left();
+			 t.button(Icon.pencil, MyStyles.clearTransi, () -> {
+				 disabledHidden = true;
+				 // hide();
+				 var editor = new Editor();
+				 editor.load();
+				 editor.edit(mod.root.child("bundles").child("bundle.properties"), mod);
+			 }).size(42).pad(10).row();
+			 for (Locale k : Vars.locales) {
+				 t.add(bundles.get(k + "", () -> k + "")).padLeft(4).growX().left();
+				 t.button(Icon.pencil, MyStyles.clearTransi, () -> {
+					 var editor = new Editor();
+					 editor.load();
+					 editor.edit(mod.root.child("bundles").child("bundle_" + k + ".properties"), mod);
+				 }).size(42).pad(10).row();
+				 // if (Core.graphics.getWidth() > Core.graphics.getHeight() && i % 2 == 1) t.row();
+			 }
+		 }),
+		 /* scripts */
+		 new LimitTable(MyStyles.whiteui.tint(.7f, .7f, 1, .8f)) {
+			 final Pattern pattern = Pattern.compile("[?\\\\*|\"<>:/.]");
+			 final Fi scripts = mod.root.child("scripts");
+			 Fi currentDir = scripts;
+			 final Table cont = new LimitTable(), buttons = new LimitTable();
+
+			 {
+				 rebuild();
+				 pane(cont).grow().height(200).row();
+				 buttons.defaults().growX();
+				 add(buttons).growX().row();
+			 }
+
+			 void setCurrentDir(Fi fi) {
+				 currentDir = fi;
+				 rebuild();
+			 }
+
+			 void addTrashBtn(Fi fi) {
+				 cont.button(Icon.trash, Styles.flati, () -> {
+					 if (fi.delete() || fi.deleteDirectory()) {}
+					 rebuild();
+				 }).size(32).row();
+			 }
+
+			 void rebuild() {
+				 cont.clearChildren();
+				 if (!currentDir.equals(scripts)) {
+					 cont.button("..", () -> setCurrentDir(currentDir.parent()))
+						.growX().colspan(2).row();
+				 }
+				 for (Fi fi : currentDir.list()) {
+					 if (!fi.isDirectory() && !fi.extEquals("js")) continue;
+					 Time.runTask(fi.isDirectory() ? 0 : 1, () -> {
+						 cont.button("" + fi.nameWithoutExtension(), fi.isDirectory() ? Icon.folder : Icon.file, Styles.flatt, fi.isDirectory() ?
+							() -> setCurrentDir(fi) : () -> {
+							 var editor = new Editor();
+							 editor.load();
+							 editor.edit(fi, mod);
+						 }).growX();
+						 addTrashBtn(fi);
+					 });
+				 }
+			 }
+
+			 {
+				 buttons.button("New File", Icon.add, () -> nameDialog.show(newName -> {
+					 currentDir.child(newName + ".js").writeString("");
+					 rebuild();
+				 }, t -> !pattern.matcher(t).find())).row();
+				 buttons.button("New Directory", Icon.add, () -> nameDialog.show(newName -> {
+					 currentDir.child(newName).mkdirs();
+					 rebuild();
+				 }, t -> !pattern.matcher(t).find())).row();
+			 }
+		 }
 		);
 
 		desc.row();

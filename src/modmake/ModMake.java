@@ -5,17 +5,17 @@ import arc.util.Log;
 import mindustry.Vars;
 import mindustry.game.EventType.ClientLoadEvent;
 import mindustry.mod.Mod;
-import modmake.components.DataHandle;
+import modmake.components.*;
 import modmake.ui.UpdateData;
 import modmake.ui.content.ModMakeContent;
 import modmake.ui.content.SettingContent;
 import modmake.ui.MyStyles;
 import modmake.util.MyReflect;
-import modmake.util.load.ContentSeq;
+import modmake.util.load.ContentVars;
 import modmake.util.load.LoadMod;
 
 import static modmake.IntUI.frag;
-import static modmake.components.DataHandle.settings;
+import static modmake.components.DataHandle.dsettings;
 
 public class ModMake extends Mod {
 
@@ -26,6 +26,7 @@ public class ModMake extends Mod {
 			//			if (Vars.ui != null) throw new RuntimeException("");
 			//			DataHandle.load();
 
+			MyFonts.load();
 			DataHandle.load();
 
 			new SettingContent();
@@ -33,7 +34,7 @@ public class ModMake extends Mod {
 
 			try {
 				//				LoadMod.init();
-				ContentSeq.load();
+				ContentVars.load();
 			} catch (Throwable e) {
 				Vars.ui.showException("加载ContentSeq出现异常", e);
 			}
@@ -44,7 +45,7 @@ public class ModMake extends Mod {
 			}
 			MyStyles.load();
 			frag.load();
-			if (!settings.getBool("not_show_again")) {
+			if (!dsettings.getBool("not_show_again")) {
 				Log.info("load updateData");
 				new UpdateData().show();
 			}

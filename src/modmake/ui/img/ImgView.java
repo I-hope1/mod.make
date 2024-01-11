@@ -21,28 +21,28 @@ import static modmake.IntUI.*;
 public class ImgView extends Element implements GestureDetector.GestureListener {
 	ImgEditorTool tool = ImgEditorTool.pencil;
 	private float offsetx, offsety;
-	private float zoom = 1f;
-	public boolean settingsChange = false;
-	private boolean grid = false;
-	private final GridImage image = new GridImage(0, 0);
-	private final Vec2 vec = new Vec2();
-	private final Rect rect = new Rect();
-	private final Vec2[][] brushPolygons = new Vec2[ImgEditor.brushSizes.length][0];
+	private       float     zoom           = 1f;
+	public        boolean   settingsChange = false;
+	private       boolean   grid           = false;
+	private final GridImage image          = new GridImage(0, 0);
+	private final Vec2      vec            = new Vec2();
+	private final Rect      rect           = new Rect();
+	private final Vec2[][]  brushPolygons  = new Vec2[ImgEditor.brushSizes.length][0];
 
 	public static boolean showTransparentCanvas = false;
 	boolean drawing;
-	int lastx, lasty;
+	int     lastx, lasty;
 	int startx, starty;
 	float mousex, mousey;
 	ImgEditorTool lastTool;
-	public Select select = new Select();
+	public Select        select = new Select();
 	public TextureRegion cont, background;
 
 	public ImgView() {
 
 		for (int i = 0, len = ImgEditor.brushSizes.length; i < len; i++) {
 			float size = ImgEditor.brushSizes[i];
-			float mod = size % 1f;
+			float mod  = size % 1f;
 			brushPolygons[i] = Geometry.pixelCircle(size, (index, x, y) -> Mathf.dst(x, y, index - mod, index - mod) <= size - 0.5f);
 		}
 
@@ -228,9 +228,9 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	}
 
 	public Point2 project(float x, float y) {
-		float ratio = 1f / ((float) imgEditor.width() / imgEditor.height());
-		float size = Math.min(width, height);
-		float sclwidth = size * zoom;
+		float ratio     = 1f / ((float) imgEditor.width() / imgEditor.height());
+		float size      = Math.min(width, height);
+		float sclwidth  = size * zoom;
 		float sclheight = size * zoom * ratio;
 		x = (x - getWidth() / 2 + sclwidth / 2 - offsetx * zoom) / sclwidth * imgEditor.width();
 		y = (y - getHeight() / 2 + sclheight / 2 - offsety * zoom) / sclheight * imgEditor.height();
@@ -239,24 +239,24 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	}
 
 	public Vec2 unproject(int x, int y) {
-		float ratio = 1f / ((float) imgEditor.width() / imgEditor.height());
-		float size = Math.min(width, height);
-		float sclwidth = size * zoom;
+		float ratio     = 1f / ((float) imgEditor.width() / imgEditor.height());
+		float size      = Math.min(width, height);
+		float sclwidth  = size * zoom;
 		float sclheight = size * zoom * ratio;
-		float px = (float) x / imgEditor.width() * sclwidth + offsetx * zoom - sclwidth / 2 + getWidth() / 2;
+		float px        = (float) x / imgEditor.width() * sclwidth + offsetx * zoom - sclwidth / 2 + getWidth() / 2;
 		float py = (float) y / imgEditor.height() * sclheight
-				+ offsety * zoom - sclheight / 2 + getHeight() / 2;
+							 + offsety * zoom - sclheight / 2 + getHeight() / 2;
 		return vec.set(px, py);
 	}
 
 	@Override
 	public void draw() {
-		float ratio = 1f / ((float) imgEditor.width() / imgEditor.height());
-		float size = Math.min(width, height);
-		float sclwidth = size * zoom;
+		float ratio     = 1f / ((float) imgEditor.width() / imgEditor.height());
+		float size      = Math.min(width, height);
+		float sclwidth  = size * zoom;
 		float sclheight = size * zoom * ratio;
-		float centerx = x + width / 2 + offsetx * zoom;
-		float centery = y + height / 2 + offsety * zoom;
+		float centerx   = x + width / 2 + offsetx * zoom;
+		float centery   = y + height / 2 + offsety * zoom;
 
 		image.setImageSize(imgEditor.width(), imgEditor.height());
 
@@ -311,15 +311,15 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			float lastX = leftBottom.x + (last.x) * unit, lastY = leftBottom.y + (last.y) * unit;
 			Draw.color(Color.gray.cpy().a(0.7f));
 			Fill.rect(firstX, firstY, lastX - firstX, lastY - firstY);*/
-			TextureRegion region = select.textureRegion;
-			float width = unit * region.width;
-			float height = unit * region.height;
-			float bx = leftBottom.x + unit * select.offsetX;
-			float by = leftBottom.y + unit * select.offsetY;
-			float offset = Math.max(width, height) / (float) Math.sqrt(zoom) / 15f;
-			float minX = bx - offset / 2f - 1, maxX = bx + width + offset / 2f + 1;
-			float minY = by - offset / 2f - 1, maxY = by + height + offset / 2f + 1;
-			int divisions = Math.max(region.width, region.height) * 2;
+			TextureRegion region    = select.textureRegion;
+			float         width     = unit * region.width;
+			float         height    = unit * region.height;
+			float         bx        = leftBottom.x + unit * select.offsetX;
+			float         by        = leftBottom.y + unit * select.offsetY;
+			float         offset    = Math.max(width, height) / (float) Math.sqrt(zoom) / 15f;
+			float         minX      = bx - offset / 2f - 1, maxX = bx + width + offset / 2f + 1;
+			float         minY      = by - offset / 2f - 1, maxY = by + height + offset / 2f + 1;
+			int           divisions = Math.max(region.width, region.height) * 2;
 			Lines.stroke(offset);
 			Draw.color(Color.gray);
 			Lines.dashLine(minX, minY, minX, maxY, divisions);
@@ -338,8 +338,8 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 			Draw.color();
 
 			Draw.rect(region, leftBottom.x + unit * select.offsetX + width / 2f,
-					leftBottom.y + unit * select.offsetY + height / 2f,
-					width, height);
+			 leftBottom.y + unit * select.offsetY + height / 2f,
+			 width, height);
 		}
 
 		Draw.reset();
@@ -372,9 +372,9 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 		//		if (tool != MyEditorTool.fill) {
 		if (tool == ImgEditorTool.line && drawing) {
-			Vec2 v1 = unproject(startx, starty).add(x, y);
+			Vec2  v1 = unproject(startx, starty).add(x, y);
 			float sx = v1.x, sy = v1.y;
-			Vec2 v2 = unproject(lastx, lasty).add(x, y);
+			Vec2  v2 = unproject(lastx, lasty).add(x, y);
 
 			Lines.poly(brushPolygons[index], sx, sy, scaling);
 			Lines.poly(brushPolygons[index], v2.x, v2.y, scaling);
@@ -382,14 +382,14 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 		if ((tool.edit || tool == ImgEditorTool.line && !drawing) && (!mobile || drawing)) {
 			Point2 p = project(mousex, mousey);
-			Vec2 v = unproject(p.x, p.y).add(x, y);
+			Vec2   v = unproject(p.x, p.y).add(x, y);
 
 			//pencil square outline
 			if (tool == ImgEditorTool.pencil && tool.mode == 1) {
 				Lines.square(v.x + scaling / 2f, v.y + scaling / 2f, scaling * (imgEditor.brushSize + 0.5f));
 			} else if (tool == ImgEditorTool.select && tool.mode == -1 && drawing) {
-				Vec2 v1 = unproject(startx, starty).add(x, y).cpy();
-				Vec2 v2 = unproject(p.x, p.y).add(x, y);
+				Vec2  v1 = unproject(startx, starty).add(x, y).cpy();
+				Vec2  v2 = unproject(p.x, p.y).add(x, y);
 				float x1, x2, y1, y2;
 				if (v2.x > v1.x) {
 					x1 = v1.x;
@@ -461,10 +461,10 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 	}
 
 	public void rebuildBackground() {
-		int w = imgEditor.width() * 2, h = imgEditor.height() * 2;
-		var pixmap = new Pixmap(w, h);
+		int w         = imgEditor.width() * 2, h = imgEditor.height() * 2;
+		var pixmap    = new Pixmap(w, h);
 		int lightGray = Color.lightGray.rgba();
-		int gray = Color.gray.rgba();
+		int gray      = Color.gray.rgba();
 		//		if (w % 2 == 1) w--;
 		for (int x = 0; x <= w; x += 2) {
 			for (int y = 0; y <= h; y += 2) {
@@ -479,9 +479,9 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 	public boolean quiet() {
 		return Core.scene == null || Core.scene.getKeyboardFocus() == null
-				|| !Core.scene.getKeyboardFocus().isDescendantOf(imgDialog)
-				|| !imgDialog.isShown() || tool != ImgEditorTool.zoom ||
-				Core.scene.hit(Core.input.mouse().x, Core.input.mouse().y, true) != this;
+					 || !Core.scene.getKeyboardFocus().isDescendantOf(imgDialog)
+					 || !imgDialog.isShown() || tool != ImgEditorTool.zoom ||
+					 Core.scene.hit(Core.input.mouse().x, Core.input.mouse().y, true) != this;
 	}
 
 	@Override
@@ -514,7 +514,7 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 
 		public boolean coverTransparent = false, cut = false, multi = false;
 		public int offsetX, offsetY;
-		public Pixmap pixmap;
+		public Pixmap        pixmap;
 		public TextureRegion textureRegion = new TextureRegion();
 
 		public void cover() {
@@ -584,9 +584,9 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		public void rotate() {
 			if (pixmap == null) return;
 
-			int width = pixmap.width, height = pixmap.height;
-			Pixmap cpy = new Pixmap(height, width);
-			int w = width - 1, h = height - 1;
+			int    width = pixmap.width, height = pixmap.height;
+			Pixmap cpy   = new Pixmap(height, width);
+			int    w     = width - 1, h = height - 1;
 			pixmap.each((x1, y1) -> {
 				cpy.setRaw(y1, w - x1, pixmap.getRaw(x1, y1));
 			});

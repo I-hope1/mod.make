@@ -24,18 +24,18 @@ import java.util.Objects;
 import static mindustry.Vars.ui;
 import static modmake.util.BuildContent.*;
 import static modmake.util.Tools.*;
-import static modmake.util.load.ContentSeq.otherTypes;
+import static modmake.util.load.ContentVars.otherTypes;
 
 public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov<String>>> {
-	Seq<Category> categories = new Seq<>(Category.all);
+	Seq<Category> categories     = new Seq<>(Category.all);
 	Seq<Drawable> categoriesIcon = new Seq<>();
-	Seq<String> AISeq = new Seq<>();
-	Seq<Class<?>> AIBlackList = Seq.with(UnitController.class);
-	Seq<String> unitType = Seq.with("none", "flying", "mech", "legs", "naval", "payload");
+	Seq<String>   AISeq          = new Seq<>();
+	// Seq<Class<?>> AIBlackList    = Seq.with();
+	Seq<String>   unitType       = Seq.with("none", "flying", "mech", "legs", "naval", "payload");
 
 	public BKeys() {
 		otherTypes.get(UnitController.class).each(ai -> {
-			if (!AIBlackList.contains(ai)) {
+			if (!ai.isInterface()/*  || !AIBlackList.contains(ai) */) {
 				AISeq.add(ai.getSimpleName());
 			}
 		});
@@ -48,9 +48,9 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 	public void setup() {
 		put("category", (table, value, __) -> {
 			String[] val = {"" + or(categories.find(c -> c.name().equals(value + "")),
-					Category.distribution)};
+			 Category.distribution)};
 
-			var btn = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.cleari));
+			var btn   = new ImageButton(Styles.none, new ImageButton.ImageButtonStyle(Styles.cleari));
 			var style = btn.getStyle();
 			style.imageUp = ui.getIcon(val[0]);
 			btn.clicked(() -> {
@@ -60,7 +60,7 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 			return () -> val[0];
 		});
 		put("type", (table, value, type) -> {
-			if (type == UnitType.class) {
+			if (UnitType.class.isAssignableFrom(type)) {
 				return tableWithListSelection(table, value + "", unitType, "none", false);
 			}
 			return null;
@@ -175,10 +175,10 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 				item.clear();
 				var __table = cont.table().get();
 				cont.row();
-				var unitType1 = filterClass.get(UnitType.class).get(__table, or(list.get(0), () -> defaultClass.get(UnitType.class).get()), null, null);
+				var unitType1 = filterClass.get(UnitType.class).get(__table, or(list.get(0), () -> defaultClassIns.get(UnitType.class).get()), null, null);
 				item.put(0, unitType1);
 				__table.add("-->");
-				var unitType2 = filterClass.get(UnitType.class).get(__table, or(list.get(1), () -> defaultClass.get(UnitType.class).get()), null, null);
+				var unitType2 = filterClass.get(UnitType.class).get(__table, or(list.get(1), () -> defaultClassIns.get(UnitType.class).get()), null, null);
 				item.put(1, unitType2);
 				__table.button("", Icon.trash, MyStyles.cleart, () -> {
 					value.removeValue(item);
@@ -203,22 +203,22 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 		});
 		put("research", (table, o, __) -> {
 			MyObject<Object, Object> researchObj = o instanceof MyObject ? as(o) : o instanceof String ? MyObject.of("parent", "" + o) : null;
-			Object value = researchObj != null ? researchObj.get("parent") : null;
+			Object                   value       = researchObj != null ? researchObj.get("parent") : null;
 
-			var techs = TechTree.all;
-			Seq<UnlockableContent> all = new Seq<>();
+			var                    techs = TechTree.all;
+			Seq<UnlockableContent> all   = new Seq<>();
 			techs.each(node -> all.add(node.content));
 
 			final UnlockableContent[] content = {all.find(f -> f.name.equals(value))};
 			var btn = new TextButton(!Objects.equals(value, "") ?
-					"" + or(nullCheck(content[0], c -> c.localizedName), value) :
-					"@none", Styles.flatt);
+			 "" + or(nullCheck(content[0], c -> c.localizedName), value) :
+			 "@none", Styles.flatt);
 			btn.clicked(() -> IntUI.allContentSelection(btn, all, () -> content[0], c -> {
 				content[0] = c;
 				btn.setText(c.localizedName);
 			}, 42, 32, true));
 			table.add(btn).size(150, 60);
-			return () -> content[0].name;
+			return () -> content[0] != null ? content[0].name : (String) value;
 		});
 	}
 
@@ -272,19 +272,19 @@ public class BKeys extends ObjectMap<String, Func3<Table, Object, Class<?>, Prov
 
 	// from ContentParser
 	static class ConsumesClass {
-		public Item item;
-		public ConsumeItemCharged itemCharged;
-		public ConsumeItemFlammable itemFlammable;
+		public Item                   item;
+		public ConsumeItemCharged     itemCharged;
+		public ConsumeItemFlammable   itemFlammable;
 		public ConsumeItemRadioactive itemRadioactive;
-		public ConsumeItemExplosive itemExplosive;
-		public ConsumeItemExplode itemExplode;
-		public ConsumeItems items;
+		public ConsumeItemExplosive   itemExplosive;
+		public ConsumeItemExplode     itemExplode;
+		public ConsumeItems           items;
 		public ConsumeLiquidFlammable liquidFlammable;
-		public ConsumeLiquid liquid;
-		public ConsumeLiquids liquids;
-		public ConsumeCoolant coolant;
-		public ConsumePower power;
-		public float powerBuffered;
+		public ConsumeLiquid          liquid;
+		public ConsumeLiquids         liquids;
+		public ConsumeCoolant         coolant;
+		public ConsumePower           power;
+		public float                  powerBuffered;
 	}
 
 	static Field[] consumeFields = ConsumesClass.class.getFields();

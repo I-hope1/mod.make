@@ -1,41 +1,37 @@
 package modmake.ui.dialog;
 
-import arc.func.Boolc;
-import arc.func.Boolp;
+import arc.func.*;
 import arc.graphics.Color;
 import arc.math.geom.Vec2;
 import arc.scene.Element;
 import arc.scene.event.Touchable;
-import arc.scene.ui.CheckBox;
-import arc.scene.ui.Label;
-import arc.scene.ui.Slider;
-import arc.scene.ui.Tooltip;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
+import arc.struct.*;
 import arc.util.*;
+import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
-import mindustry.ui.dialogs.BaseDialog;
 import mindustry.ui.dialogs.SettingsMenuDialog;
+import modmake.components.Window;
 import modmake.ui.MyStyles;
 import modmake.util.img.Stack;
 
 import java.util.Objects;
 
 import static arc.Core.bundle;
-import static modmake.components.DataHandle.settings;
+import static modmake.components.DataHandle.dsettings;
 
-public class MySettingsDialog extends BaseDialog {
+public class MySettingsDialog extends Window {
 	static Table pane = new Table();
 
 	public MySettingsDialog() {
-		super("@settings");
+		super("@settings", 120, 80, true, true);
 
 		cont.pane(MyStyles.nonePane, p -> p.add(pane).width(400).get()).fillX();
 		pane.left().defaults().left();
 
-		addCloseButton();
+		// addCloseButton();
 	}
 	/*
 	class BaseSetting<T> {
@@ -173,7 +169,8 @@ public class MySettingsDialog extends BaseDialog {
 		}
 		Time.runTask(0, () -> {
 			pane.add(displayName).growY().left().color(Pal.accent).row();
-			pane.table(t -> {
+			pane.image().color(Pal.accent).growX().row();
+			pane.table(Tex.pane, t -> {
 				t.left().defaults().left();
 				for (var setting : settings) {
 					setting.add(t);
@@ -186,35 +183,36 @@ public class MySettingsDialog extends BaseDialog {
 
 	static {
 		addSetting("基础", null,
-				new CheckSetting("display-content-sprite", true, b -> {}),
-				new CheckSetting("display_mod_logo", false, b -> {}),
-				new CheckSetting("not_show_again", false, b -> {}),
-				new CheckSetting("auto_load_mod", false, b -> {}));
+		 new CheckSetting("display-content-sprite", true, b -> {}),
+		 new CheckSetting("display_mod_logo", false, b -> {}),
+		 new CheckSetting("not_show_again", false, b -> {}),
+		 new CheckSetting("auto_load_mod", false, b -> {}),
+		 new CheckSetting("force_max_window", true, b -> {}));
 
 		addSetting("编辑器", null,
-				new CheckSetting("auto_fold_code", false, b -> {}),
-				new CheckSetting("display_deprecated", false, b -> {}),
-				new CheckSetting("point_out_unknown_field", false, b -> {}),
-				new CheckSetting("colorful_table", false, b -> {}),
-				new RadioSetting("format", "json",
-						Seq.with("hjsonMin", "hjson", "jsonMin", "json"))
+		 new CheckSetting("auto_fold_code", false, b -> {}),
+		 new CheckSetting("display_deprecated", false, b -> {}),
+		 new CheckSetting("point_out_unknown_field", false, b -> {}),
+		 new CheckSetting("colorful_table", false, b -> {}),
+		 new RadioSetting("format", "json",
+			Seq.with("hjsonMin", "hjson", "jsonMin", "json"))
 		);
 
 		addSetting("图集", null,
-				new CheckSetting("auto_save_image", false, b -> {}),
-				new RadioSetting("auto_load_sprites", "不加载", Seq.with("启动时加载一次", "打开项目加载一次", "不自动加载"))
-				, new SliderSetting("max_load_sprite_size", 10000, 0, 100000, 100, v -> (v / 1024) + " [lightgray]KB")
-				, new SliderSetting("max_img_stack_buffer_size", 15, 0, 100, 1, v -> {
-					Stack.maxSize = v;
-					return v + "";
-				})
+		 new CheckSetting("auto_save_image", false, b -> {}),
+		 new RadioSetting("auto_load_sprites", "不加载", Seq.with("启动时加载一次", "打开项目加载一次", "不自动加载"))
+		 , new SliderSetting("max_load_sprite_size", 10000, 0, 100000, 100, v -> (v / 1024) + " [lightgray]KB")
+		 , new SliderSetting("max_img_stack_buffer_size", 15, 0, 100, 1, v -> {
+			 Stack.maxSize = v;
+			 return v + "";
+		 })
 		);
 
-		addSetting("加载mod", () -> !settings.getBool("auto_load_mod"),
-				new CheckSetting("load_sprites", false, b -> {}),
-				new CheckSetting("load_icons", false, b -> {}),
-				new CheckSetting("display_exception", true, b -> {}));
-// new _Slider("loadMod", "compiling_times_per_second", "每秒最多编译次数", 1000, 500, 10000, 10, v => v + "/次");
+		addSetting("加载mod", () -> !dsettings.getBool("auto_load_mod"),
+		 new CheckSetting("load_sprites", false, b -> {}),
+		 new CheckSetting("load_icons", false, b -> {}),
+		 new CheckSetting("display_exception", true, b -> {}));
+		// new _Slider("loadMod", "compiling_times_per_second", "每秒最多编译次数", 1000, 500, 10000, 10, v => v + "/次");
 	}
 
 
@@ -268,11 +266,11 @@ public class MySettingsDialog extends BaseDialog {
 		public void add(Table table) {
 			CheckBox box = new CheckBox(title);
 
-			box.update(() -> box.setChecked(settings.getBool(name)));
+			box.update(() -> box.setChecked(dsettings.getBool(name)));
 			box.setDisabled(bp);
 
 			box.changed(() -> {
-				settings.put(name, String.valueOf(box.isChecked()));
+				dsettings.put(name, String.valueOf(box.isChecked()));
 				if (changed != null) {
 					changed.get(box.isChecked());
 				}
@@ -288,7 +286,7 @@ public class MySettingsDialog extends BaseDialog {
 	public static class RadioSetting extends Setting {
 		//		ButtonGroup<CheckBox> group = new ButtonGroup<>();
 		Seq<String> children;
-		String value;
+		String      value;
 
 		public RadioSetting(String name, Seq<String> children) {
 			this(name, children.get(0), children);
@@ -297,10 +295,10 @@ public class MySettingsDialog extends BaseDialog {
 		public RadioSetting(String name, String def, Seq<String> children) {
 			super(name);
 			this.children = children;
-			if (settings.containsKey(name)) {
-				value = settings.get(name, def);
+			if (dsettings.containsKey(name)) {
+				value = dsettings.get(name, def);
 			} else {
-				settings.put(name, value = def);
+				dsettings.put(name, value = def);
 			}
 		}
 
@@ -310,13 +308,13 @@ public class MySettingsDialog extends BaseDialog {
 			table.table(t -> {
 				t.left().defaults().left();
 				Table[] cont = {t.table().get()};
-				int[] c = {0};
+				int[]   c    = {0};
 				children.each(child -> {
 					String title = bundle.get("setting." + child + ".name", child);
-					var box = new CheckBox(title);
-					box.changed(() -> settings.put(name, value = child));
+					var    box   = new CheckBox(title);
+					box.changed(() -> dsettings.put(name, value = child));
 					box.update(() -> box.setChecked(Objects.equals(value, child)));
-//					group.add(box);
+					//					group.add(box);
 					cont[0].add(box).padRight(4f);
 					if (++c[0] % 2 == 0) {
 						t.row();
@@ -345,16 +343,16 @@ public class MySettingsDialog extends BaseDialog {
 			Slider slider = new Slider(min, max, step, false);
 			if (bp != null) slider.update(() -> slider.setDisabled(bp.get()));
 
-			slider.setValue(settings.getInt(name, def));
+			slider.setValue(dsettings.getInt(name, def));
 
-			Label value = new Label("", Styles.outlineLabel);
+			Label value   = new Label("", Styles.outlineLabel);
 			Table content = new Table();
 			content.add(title, Styles.outlineLabel).left().growX().wrap();
 			content.add(value).padLeft(10f).right();
 			content.touchable = Touchable.disabled;
 
 			slider.changed(() -> {
-				settings.put(name, String.valueOf(slider.getValue()));
+				dsettings.put(name, String.valueOf(slider.getValue()));
 				value.setText(sp.get((int) slider.getValue()));
 			});
 			slider.change();

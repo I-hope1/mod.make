@@ -11,7 +11,7 @@ let NativeJavaClass = Packages.rhino.NativeJavaClass
 /*const ModMake = Packages.rhino.NativeJavaClass(scope, loadClass("modmake.ModMake"), true);
 ModMake.runnable = () => {*/
 
-const ContentSeq = NativeJavaClass(scope, loader.loadClass("modmake.util.load.ContentSeq"), true);
+const ContentSeq = NativeJavaClass(scope, loader.loadClass("modmake.util.load.ContentVars"), true);
 
 const loadMod = (() => {
 
@@ -24,12 +24,12 @@ const loadMod = (() => {
 		let shadow = lastAtlas;
 
 		let atlas = Core.atlas = extend(TextureAtlas, {
-			find(name) {
-				var base = map.containsKey(name) ? map.get(name) : shadow.find(name);
+			find(name, arg2) {
+				let base = map.containsKey(name) ? map.get(name) : shadow.find(name);
 
 				if (base == this.error) {
-					if (typeof arguments[1] == "string") return this.find(arguments[1])
-					if (arguments[1] instanceof TextureRegion) return arguments[1]
+					if (typeof arg2 == "string") return this.find(arguments[1])
+					if (arg2 instanceof TextureRegion) return arguments[1]
 				}
 				return base;
 			},
@@ -59,17 +59,17 @@ const loadMod = (() => {
 
 
 	let lastMod;
-	function gen(mod) {
+	function* gen(mod, callback) {
 		let fi = mod.root
 
 		let _mod = ACLASS.lastMod
 
 		Vars.content = new ContentLoader()
 		Vars.content.createBaseContent()
-//		yield;
+		yield;
 
 		ACLASS.loadContent()
-//		yield;
+		yield;
 		let wrong = _mod.hasContentErrors()
 
 		let ls = settings.getBool("load_sprites")
@@ -79,24 +79,25 @@ const loadMod = (() => {
 		}
 		if (ls) {
 			let map = mod.spriteAll()
-//			Log.info(map)
 			if (!map.isEmpty()) {
 				loadSprites(map)
 			}
 		}
-//		yield;
 
 		// 加载content
 		Vars.content.init()
-//		yield;
+		yield;
 		Vars.content.load()
-//		yield;
+		yield;
 		Vars.content.loadColors()
-		return !wrong;
+		callback.get(!wrong);
 	}
-	return function (mod) {
+	return function (mod, callback) {
 		Vars.ui.loadfrag.show("加载mod");
-		gen(mod);
+		let f = gen(mod, callback);
+		forceRun(() => {
+			return f.next().done;
+		})
 		Vars.ui.loadfrag.hide();
 		return true;
 	}
@@ -104,13 +105,26 @@ const loadMod = (() => {
 let AtlasRegion = TextureAtlas.AtlasRegion
 
 const ACLASS = new NativeJavaClass(scope, loader.loadClass("modmake.util.load.LoadMod"), true);
-ACLASS.boolf = new Boolf({get:loadMod})
+ACLASS.boolf = new Boolf2({get:loadMod})
 // ACLASS.boolf = boolf(() => false)
 let { settings } = ACLASS
 
 Events.run(ClientLoadEvent, () => {
 	lastAtlas = Core.atlas;
 })
+
+function forceRun(func) {
+	Timer.schedule(extend(Timer.Task, {
+		run() {
+			try {
+				if (func()) this.cancel();
+			} catch (e) {
+				Log.err(e);
+				this.cancel();
+			}
+		}
+	}), 0, 1 / 60, -1);
+}
 
 /*
 let lastReq = require

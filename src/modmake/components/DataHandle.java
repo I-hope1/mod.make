@@ -4,11 +4,12 @@ import arc.Core;
 import arc.files.Fi;
 import arc.func.*;
 import arc.struct.*;
-import arc.util.Log;
+import arc.util.*;
 import arc.util.serialization.*;
 import mindustry.Vars;
 import modmake.components.constructor.*;
 import modmake.ui.dialog.MySettingsDialog;
+import modmake.util.load.ContentVars;
 
 import java.util.*;
 import java.util.regex.*;
@@ -19,12 +20,14 @@ import static modmake.IntVars.data;
 import static modmake.ui.dialog.MySettingsDialog.CheckSetting;
 
 public class DataHandle {
-	public static ObjectMap<String, ObjectMap<String, Jval>> framework;
-	public static ObjectMap<String, String> types;
-	public static StringMap content, settings;
+	static Pattern getP = Pattern.compile("^//\\s+extend\\s+([\\u4e00-\\u9fa5]+)");
 
-	public final static JsonReader reader = new JsonReader();
-	public final static Json json = new Json();
+	public static ObjectMap<String, ObjectMap<String, Jval>> framework;
+	public static ObjectMap<String, String>                  types;
+	public static StringMap                                  dcontent, dsettings;
+
+	public static JsonReader reader = new JsonReader();
+	public static Json       json   = Reflect.get(ContentVars.parser, "parser");
 
 	/**
 	 * 数据目录
@@ -32,7 +35,7 @@ public class DataHandle {
 	public static final Fi dataDirectory = Vars.dataDirectory.child("b0kkihope");
 
 	public static class _Class {
-		public Jval value;
+		public Jval    value;
 		public boolean ok = false;
 	}
 
@@ -43,13 +46,13 @@ public class DataHandle {
 		for (Fi fi : fiList) {
 			var map = new ObjectMap<String, Prov<Jval>>();
 			fi.walk(f -> {
-				String str = f.readString();
-				String parent = getParent(str);
-				final var obj = new _Class();
+				String    str    = f.readString();
+				String    parent = getParent(str);
+				final var obj    = new _Class();
 				obj.value = Jval.read(str);
 				map.put(f.nameWithoutExtension(), () -> {
 					if (parent.isEmpty()) return obj.value;
-					var func = map.get(parent);
+					var func  = map.get(parent);
 					var value = obj.value;
 					if (func != null && !obj.ok) {
 						obj.ok = true;
@@ -104,10 +107,15 @@ public class DataHandle {
 		types = new ObjectMap<>();
 		Fi fi = data.child("types").child(getLocate() + ".ini");
 		if (fi.exists()) parseType(fi);
+		else {
+			fi = data.child("types").child("default.ini");
+			parseType(fi);
+		}
 	}
+
 	static void parseType(Fi fi) {
 		// [\u4e00-\u9fa5]为中文
-		Matcher m = Pattern.compile("\\w+?\\s*=\\s*[^\n]+").matcher(fi.readString());
+		Matcher     m   = Pattern.compile("\\w+?\\s*=\\s*[^\n]+").matcher(fi.readString());
 		Seq<String> seq = new Seq<>();
 		// 将所有符合正则表达式的子串（电话号码）全部输出
 		while (m.find()) {
@@ -122,7 +130,7 @@ public class DataHandle {
 
 	// content
 	static {
-		content = new StringMap();/* {
+		dcontent = new StringMap();/* {
 			public boolean hasChanged;
 			public final StringMap nullMap = new StringMap();
 
@@ -153,10 +161,8 @@ public class DataHandle {
 			}
 		};*/
 		Fi file = data.child("content").child(getLocate() + ".ini");
-		if (file.exists()) {
-			iniParse(content, file.readString());
-		}
-
+		if (!file.exists()) file = data.child("types").child("default.ini");
+		iniParse(dcontent, file.readString());
 	}
 
 	// settings
@@ -184,7 +190,7 @@ public class DataHandle {
 			var a = type.split("\\s*:\\s*");
 			map.put(a[0], a[1]);
 		});*/
-		settings = new StringMap(map) {
+		dsettings = new StringMap(map) {
 			public String put(String k, String v) {
 				super.put(k, v);
 				var str = new StringJoiner("\n");
@@ -210,16 +216,16 @@ public class DataHandle {
 	public static String getParent(String str) {
 		if (str.startsWith("//")) {
 			// [\u4e00-\u9fa5]为中文
-			Matcher m = Pattern.compile("^//\\s+extend\\s+([\\u4e00-\\u9fa5]+)").matcher(str);
+			Matcher m = getP.matcher(str);
 			if (m.find()) return m.group(1);
 		}
 		return "";
 	}
 
-	public static StringMap iniParse(StringMap _map, String str) {
+	public static StringMap iniParse(StringMap map, String str) {
 		// [\u4e00-\u9fa5]为中文
 		var all = str.split("\n");
-		var map = _map != null ? _map : new StringMap();
+		map = map != null ? map : new StringMap();
 		for (var row : all) {
 			if (row.isEmpty() || row.matches("(#|//)[^\n]+")) continue;
 			var arr = row.split("\\s+=\\s+");
@@ -267,9 +273,9 @@ public class DataHandle {
 
 	public static MyObject toIntObject(JsonValue value) {
 		if (value == null) return new MyObject<>();
-		MyObject output = value.isArray() ? new MyArray() : new MyObject<>();
-		MyObject obj2 = output;
-		ArrayList<JsonValue> valArr = new ArrayList<>();
+		MyObject                  output = value.isArray() ? new MyArray() : new MyObject<>();
+		MyObject                  obj2   = output;
+		ArrayList<JsonValue>      valArr = new ArrayList<>();
 		ArrayList<MyObject<?, ?>> objArr = new ArrayList<>();
 
 		while (true) {
@@ -307,11 +313,10 @@ public class DataHandle {
 	}
 
 	public static String formatPrint(String cx) {
-		return formatPrint(cx, Format.valueOf(settings.get("format")));
+		return formatPrint(cx, Format.valueOf(dsettings.get("format")));
 	}
 
 	public static String formatPrint(String cx, Format format) {
-		//		Log.info(cx);
 		switch (format) {
 			case hjsonMin:
 				return Jval.read(cx).toString(Jformat.hjson);

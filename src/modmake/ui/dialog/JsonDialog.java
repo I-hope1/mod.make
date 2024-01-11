@@ -4,26 +4,29 @@ import arc.Core;
 import arc.files.Fi;
 import arc.graphics.Color;
 import arc.scene.event.VisibilityListener;
-import arc.scene.ui.Dialog;
 import arc.scene.ui.Label;
 import arc.scene.ui.layout.Table;
 import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.ui.Styles;
-import modmake.components.MyMod;
+import modmake.components.*;
 import modmake.ui.MyStyles;
+import modmake.util.tools.FilterTable;
 
-import static modmake.IntUI.editor;
-
-public class JsonDialog extends Dialog {
+public class JsonDialog extends Window {
 	Label label;
 	Table p;
-	Fi file;
+	Fi    file;
 	MyMod mod;
 	float w = Core.graphics.getWidth(),
-			h = Core.graphics.getHeight(),
-			bw = w > h ? 550 : 450,
-			bh = w > h ? 200 : Vars.mobile ? 300 : 350;
+	 h      = Core.graphics.getHeight(),
+	 bw     = w > h ? 550 : 450,
+	 bh     = w > h ? 200 : Vars.mobile ? 300 : 350;
+
+	public JsonDialog() {
+		super("json", 120, 80, true, false);
+	}
+
 
 	public void load() {
 		label = new Label("");
@@ -37,48 +40,67 @@ public class JsonDialog extends Dialog {
 		p.table(t -> {
 			t.right();
 			t.button(Icon.paste, MyStyles.clearPartiali, () -> Vars.ui
-					.showConfirm("@paste", "@confirm.paste", () -> {
-						file.writeString(Core.app.getClipboardText());
-						label.setText(getText());
-					})
+			 .showConfirm("@paste", "@confirm.paste", () -> {
+				 file.writeString(Core.app.getClipboardText());
+				 label.setText(getText());
+			 })
 			).padRight(2);
 			t.button(Icon.copy, MyStyles.clearPartiali, () -> {
 				Core.app.setClipboardText(this.file.readString());
 			});
 		}).growX().right().row();
-		p.pane(p -> p.left().add(label)).width(bw).height(bh);
+		p.pane(p -> p.left().add(label).grow()).minSize(bw, bh).grow();
 		cont.add(p).grow().row();
 
-		buttons.button("@back", Icon.left, Styles.defaultt, () -> {
-			hide();
-		}).size(bw / 2, 55);
+		// buttons.button("@back", Icon.left, Styles.defaultt, () -> {
+		// 	hide();
+		// }).size(bw / 2, 55);
 
+		Editor[] editor = {null};
+		hidden(() -> {
+			if (editor[0] != null) editor[0].find(t -> {
+				if (t instanceof FilterTable) {
+					Core.app.post(t::clear);
+				}
+				return true;
+			});
+		});
 		var listener = new VisibilityListener() {
-			@Override
 			public boolean hidden() {
-				file = editor.file;
+				file = editor[0].file;
 				title.setText(file.nameWithoutExtension());
+				editor[0].file = null;
 				label.setText(getText());
-				editor.removeListener(this);
+				editor[0].removeListener(this);
 				return false;
 			}
 		};
 		buttons.button("@edit", Icon.edit, Styles.defaultt, () -> {
-			editor.edit(file, mod);
-			editor.addListener(listener);
-		}).size(bw / 2f, 55).row();
+			 checkset(editor);
+			 editor[0].edit(file, mod);
+			 editor[0].addListener(listener);
+		 }).size(bw / 2f, 55)
+		 .disabled(b -> editor[0] != null && editor[0].isShown());
+		// buttons.row();
 		buttons.button("文本编辑", Icon.edit, Styles.defaultt, () -> {
-			editor.edit(file, mod, "txt");
-			editor.addListener(listener);
-		}).size(bw / 2f, 55);
-		closeOnBack();
-	}
+			 checkset(editor);
+			 editor[0].edit(file, mod, true);
+			 editor[0].addListener(listener);
+		 }).size(bw / 2f, 55)
+		 .disabled(b -> editor[0] != null && editor[0].isShown());
 
+		// closeOnBack();
+	}
+	private static void checkset(Editor[] editor) {
+		if (editor[0] == null) {
+			editor[0] = new Editor();
+			editor[0].load();
+		}
+	}
 	public String getText() {
 		return file.readString().replaceAll("\\r", "\n").replaceAll("\\t", "  ")
-				.replaceAll("\\[(#?\\w+)]", "[\u0001$1]");
+		 .replaceAll("\\[(#?\\w*)]", "[\u0001$1]");
 	}
-
 
 	public JsonDialog show(Fi file, MyMod mod) {
 		if (!file.extEquals("hjson") && !file.extEquals("json")) return null;

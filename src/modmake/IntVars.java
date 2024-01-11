@@ -1,10 +1,11 @@
 package modmake;
 
+import arc.*;
 import arc.files.Fi;
-import arc.graphics.Pixmap;
-import arc.graphics.Texture;
+import arc.graphics.*;
 import arc.graphics.g2d.TextureRegion;
-import arc.util.*;
+import arc.struct.Seq;
+import arc.util.Log;
 import mindustry.Vars;
 import mindustry.mod.Mods.LoadedMod;
 import modmake.components.MyMod;
@@ -13,12 +14,11 @@ import java.util.concurrent.CompletableFuture;
 
 import static arc.Core.atlas;
 import static mindustry.Vars.ui;
-import static modmake.IntUI.modDialog;
 
 public class IntVars {
-	public static String modName = "mod-make";
-	public static LoadedMod mod = Vars.mods.getMod(modName);
-	public static Fi data = mod.root.child("data");
+	public static String    modName = "mod-make";
+	public static LoadedMod mod     = Vars.mods.getMod(modName);
+	public static Fi        data    = mod.root.child("data");
 
 	public static void load() {}
 
@@ -68,9 +68,9 @@ public class IntVars {
 
 	public static TextureRegion error = null;
 
-	public static TextureRegion find(String name) {
-		return find(modDialog.currentMod, name);
-	}
+	/*public static TextureRegion find(String name) {
+		return find(.currentMod, name);
+	}*/
 
 	public static TextureRegion wrap(Pixmap pixmap) {
 		return new TextureRegion(new Texture(pixmap));
@@ -83,6 +83,22 @@ public class IntVars {
 		Pixmap pix = mod.sprites1.containsKey(name) ? mod.sprites1.get(name) : mod.sprites2.get(name);
 		if (pix == null) return error;
 		return wrap(pix);
+	}
+
+	public static final Seq<Runnable> resizeListenrs = new Seq<>();
+
+	public static void addResizeListener(Runnable runnable) {
+		resizeListenrs.add(runnable);
+	}
+
+	static {
+		Core.app.addListener(new ApplicationListener() {
+			@Override
+			public void resize(int width, int height) {
+				for (var r : resizeListenrs) r.run();
+			}
+		});
+
 	}
 
 }

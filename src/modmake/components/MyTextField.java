@@ -19,8 +19,8 @@ public class MyTextField extends TextField {
 
 	@Override
 	public float getPrefWidth() {
-		int cursor = text.length();
-		float val = textOffset;
+		int   cursor = text.length();
+		float val    = textOffset;
 		try {
 			val = glyphPositions.get(cursor) - glyphPositions.get(0) + fontOffset + style.font.getData().cursorX;
 			Drawable background = getBack();
@@ -29,18 +29,18 @@ public class MyTextField extends TextField {
 		return Math.min(Core.graphics.getWidth() * 0.8f, val + 26);
 	}
 	Drawable getBack() {
-		Scene stage = getScene();
-        boolean focused = stage != null && stage.getKeyboardFocus() == this;
-        return (disabled && style.disabledBackground != null) ? style.disabledBackground
-        : (!isValid() && style.invalidBackground != null) ? style.invalidBackground
-        : ((focused && style.focusedBackground != null) ? style.focusedBackground : style.background);
+		Scene   stage   = getScene();
+		boolean focused = stage != null && stage.getKeyboardFocus() == this;
+		return (disabled && style.disabledBackground != null) ? style.disabledBackground
+		 : (!isValid() && style.invalidBackground != null) ? style.invalidBackground
+		 : ((focused && style.focusedBackground != null) ? style.focusedBackground : style.background);
 	}
 
 	@Override
 	protected void drawCursor(Drawable cursorPatch, Font font, float x, float y) {
-		cursorPatch.draw(
-        x + textOffset + glyphPositions.get(cursor) - glyphPositions.get(visibleTextStart) + fontOffset + font.getData().cursorX,
-        y - textHeight - font.getDescent(), cursorPatch.getMinWidth(), textHeight);
+		cursorPatch.draw
+		 (x + textOffset + glyphPositions.get(cursor) - glyphPositions.get(visibleTextStart) + fontOffset + font.getData().cursorX,
+			y - textHeight - font.getDescent(), cursorPatch.getMinWidth(), textHeight);
 	}
 	/*public static class MyTextFieldStyle extends TextFieldStyle {
 		public MyTextFieldStyle() {

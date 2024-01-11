@@ -14,16 +14,16 @@ import java.nio.ByteBuffer;
 
 import static mindustry.Vars.ui;
 import static modmake.IntUI.*;
-import static modmake.components.DataHandle.settings;
+import static modmake.components.DataHandle.dsettings;
 import static modmake.ui.img.ImgEditorDialog.Img;
 
 public class ImgEditor {
 	public static final float[] brushSizes = {1f, 1.5f, 2f, 3f, 4f, 5f, 9f, 15f, 20f, 30f};
-	public final Stack stack = new Stack(this);
-	public float brushSize = 1.0f;
-	public Color drawColor;
-	public Fi currentFi = null;
-	private Tiles tiles;
+	public final        Stack   stack      = new Stack(this);
+	public              float   brushSize  = 1.0f;
+	public              Color   drawColor;
+	public              Fi      currentFi  = null;
+	private             Tiles   tiles;
 
 	public ImgEditor() {
 		tiles = new Tiles(32, 32);
@@ -90,7 +90,7 @@ public class ImgEditor {
 	{
 		// 关闭游戏时自动保存
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			if (settings.getBool("auto_save_image") && stack.tmp != null) save();
+			if (dsettings.getBool("auto_save_image") && stack.tmp != null) save();
 		}));
 	}
 
@@ -120,7 +120,7 @@ public class ImgEditor {
 
 	public void drawCircle(int x, int y, int color, Boolf<Integer> tester) {
 		int clamped = (int) brushSize;
-		int h = height() - 1;
+		int h       = height() - 1;
 		for (int rx = -clamped; rx <= clamped; rx++) {
 			for (int ry = -clamped; ry <= clamped; ry++) {
 				if (Mathf.within(rx, ry, brushSize - 0.5f + 0.0001f)) {
@@ -137,10 +137,10 @@ public class ImgEditor {
 	}
 
 	public void drawSquare(int x, int y, int color, Boolf<Integer> tester) {
-		int h = imgEditor.height() - 1;
+		int h       = imgEditor.height() - 1;
 		int clamped = (int) Math.ceil(imgEditor.brushSize);
-		int rx1 = x - clamped, rx2 = x + clamped;
-		int ry1 = h - y - clamped, ry2 = h - y + clamped;
+		int rx1     = x - clamped, rx2 = x + clamped;
+		int ry1     = h - y - clamped, ry2 = h - y + clamped;
 		rx1 = imgEditor.clampX(rx1);
 		rx2 = imgEditor.clampX(rx2);
 		ry1 = imgEditor.clampY(ry1);
@@ -229,7 +229,7 @@ public class ImgEditor {
 			/*currentOp.each(t -> {
 			});*/
 			//			view.rebuildCont();
-			if (settings.getBool("auto_save_image")) save();
+			if (dsettings.getBool("auto_save_image")) save();
 		}
 	}
 
@@ -248,7 +248,7 @@ public class ImgEditor {
 	public static class Tiles {
 		public Tile[][] tiles;
 		public MyPixmap pixmap;
-		public int w, h;
+		public int      w, h;
 
 		public Tiles(MyPixmap pixmap) {
 			this(pixmap, pixmap.width, pixmap.height);
@@ -310,7 +310,7 @@ public class ImgEditor {
 
 	public static class Tile {
 		public MyPixmap pixmap;
-		public int x, y;
+		public int      x, y;
 
 		public Tile(MyPixmap pixmap, int x, int y) {
 			this.x = x;

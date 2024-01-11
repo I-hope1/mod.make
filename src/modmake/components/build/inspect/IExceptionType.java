@@ -10,7 +10,7 @@ public enum IExceptionType {
 	WEAK_WARNING(Color.yellow.cpy().a(0.7f)),
 	NONE(Color.white);
 
-	IExceptionType(Color color){
+	IExceptionType(Color color) {
 		this.color = color;
 	}
 	public Color color;

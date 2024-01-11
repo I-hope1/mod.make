@@ -29,12 +29,12 @@ public class MyReflect {
 
 	public static <T> T getValue(Object o, String name/*, Class<?> clazz*/) throws Throwable {
 		Field f = getField(o.getClass(), name);
-//		if (f.getType() != clazz) return null;
+		//		if (f.getType() != clazz) return null;
 		return (T) f.get(o);
 	}
 	public static <T> T getValue(Object o, Field field) {
 		long offset = Modifier.isStatic(field.getModifiers()) ? unsafe.staticFieldOffset(field) : unsafe.objectFieldOffset(field);
-		return (T)unsafe.getObject(o, offset);
+		return (T) unsafe.getObject(o, offset);
 	}
 
 	public static Unsafe unsafe;

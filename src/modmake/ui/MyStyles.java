@@ -16,8 +16,8 @@ import static mindustry.ui.Styles.*;
 
 public class MyStyles {
 	public static TextureRegionDrawable whiteui;
-	public static ScrollPaneStyle nonePane;
-	public static ButtonStyle clearb, clearpb;
+	public static ScrollPaneStyle       nonePane;
+	public static ButtonStyle           clearb, clearpb;
 	public static TextButtonStyle cleart, clearPartialt, clearTogglet;
 	public static ImageButtonStyle clearFulli, clearPartiali, clearToggleTransi, clearTransi;
 
@@ -62,14 +62,14 @@ public class MyStyles {
 			imageDisabledColor = Color.gray;
 			imageUpColor = Color.white;
 		}};
-		clearTransi = new ImageButtonStyle(){{
-            down = flatDown;
-            up = black6;
-            over = flatOver;
-            disabled = black8;
-            imageDisabledColor = Color.lightGray;
-            imageUpColor = Color.white;
-        }};
+		clearTransi = new ImageButtonStyle() {{
+			down = flatDown;
+			up = black6;
+			over = flatOver;
+			disabled = black8;
+			imageDisabledColor = Color.lightGray;
+			imageUpColor = Color.white;
+		}};
 
 		clearb = new ButtonStyle(Styles.defaultb);
 		clearb.up = Styles.none;

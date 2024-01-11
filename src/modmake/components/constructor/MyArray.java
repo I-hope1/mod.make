@@ -1,16 +1,13 @@
 package modmake.components.constructor;
 
-import arc.func.Cons;
-import arc.func.Prov;
+import arc.func.*;
 import arc.struct.Seq;
-import arc.util.Log;
 
-import java.util.ArrayList;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class MyArray<E> extends MyObject<Integer, E> {
 	// 存储数据
-//	ArrayList<Integer> list = new ArrayList<>();
+	//	ArrayList<Integer> list = new ArrayList<>();
 	int j = -1;
 
 	public MyArray() {
@@ -29,15 +26,15 @@ public class MyArray<E> extends MyObject<Integer, E> {
 		seq.each(this::put);
 	}
 
-//	public E put(Integer i, E v) {
-//		j = Math.max(i, j) + 1;
-//		return super.put(i, v);
-//	}
+	//	public E put(Integer i, E v) {
+	//		j = Math.max(i, j) + 1;
+	//		return super.put(i, v);
+	//	}
 
 	public void put(E v) {
 		super.put(nextId(), v);
-//		Log.err(new Exception("" + (v instanceof Prov ? ((Prov<?>) v).get() : v)));
-//		Log.info("put" + v);
+		//		Log.err(new Exception("" + (v instanceof Prov ? ((Prov<?>) v).get() : v)));
+		//		Log.info("put" + v);
 	}
 
 	public void each(Cons<E> cons) {

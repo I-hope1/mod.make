@@ -3,8 +3,7 @@ package modmake.ui.img;
 import arc.Core;
 import arc.files.Fi;
 import arc.func.Cons;
-import arc.graphics.Color;
-import arc.graphics.Pixmap;
+import arc.graphics.*;
 import arc.input.KeyCode;
 import arc.math.geom.Vec2;
 import arc.scene.actions.Actions;
@@ -15,33 +14,31 @@ import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.util.*;
 import mindustry.editor.MapEditor;
-import mindustry.gen.Icon;
-import mindustry.gen.Tex;
+import mindustry.gen.*;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
 import modmake.components.MyMod;
-import modmake.ui.img.ImgEditor.MyPixmap;
 import modmake.ui.MyStyles;
+import modmake.ui.img.ImgEditor.MyPixmap;
 import modmake.util.img.MyPixmapIO;
 
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
 
 import static mindustry.Vars.*;
 import static modmake.IntUI.*;
 
 public class ImgEditorDialog extends Dialog {
-	public ImgView view;
-	private ImgResizeDialog resizeDialog;
-	private ScrollPane pane;
-	private final BaseDialog menu;
-	private Table colorSelection;
-	public Runnable hiddenRun = null;
+	public              ImgView         view;
+	private             ImgResizeDialog resizeDialog;
+	private             ScrollPane      pane;
+	private final       BaseDialog      menu;
+	private             Table           colorSelection;
+	public              Runnable        hiddenRun    = null;
 	//currently never read
-	private boolean shownWithImg = false;
-	public static final float ToolSize = 58f;
+	private             boolean         shownWithImg = false;
+	public static final float           ToolSize     = 58f;
 
 	public ImgEditorDialog() {
 		super("");
@@ -68,13 +65,13 @@ public class ImgEditorDialog extends Dialog {
 			t.row();
 
 			t.button("@editor.import", Icon.download, () ->
-					platform.showFileChooser(true, "png", file -> ui.loadAnd(() -> {
-						try {
-							imgEditor.beginEdit(new Img(file));
-						} catch (Exception e) {
-							ui.showException(e);
-						}
-					}))
+			 platform.showFileChooser(true, "png", file -> ui.loadAnd(() -> {
+				 try {
+					 imgEditor.beginEdit(new Img(file));
+				 } catch (Exception e) {
+					 ui.showException(e);
+				 }
+			 }))
 			);
 
 			t.button("@editor.export", Icon.upload, () -> platform.export(imgEditor.currentFi.nameWithoutExtension(), "png", file -> {
@@ -165,34 +162,39 @@ public class ImgEditorDialog extends Dialog {
 		state.rules.editor = isEditor;
 	}
 
-	@Override
-	public Dialog show() {
+	public Dialog show(MyMod mod) {
+		this.mod = mod;
 		return super.show(Core.scene, Actions.sequence(Actions.alpha(1f)));
 	}
 
 	@Override
+	public Dialog show() {
+		throw new RuntimeException();
+	}
+
+	MyMod mod;
+	@Override
 	public void hide() {
 
 		ifl:
-		if (modDialog.currentMod != null && imgEditor.currentFi != null) {
-			MyMod mod = modDialog.currentMod;
+		if (imgEditor.currentFi != null) {
 			Fi fi = imgEditor.currentFi;
 			if (!fi.exists()) break ifl;
-			if (spriteDialog.root.name().equals("sprites")) {
+			if (fi.parent().name().equals("sprites")) {
 				mod.sprites1.put(fi.nameWithoutExtension(), new Pixmap(fi));
-			} else if (spriteDialog.root.name().equals("sprites-override")) {
+			} else if (fi.parent().name().equals("sprites-override")) {
 				mod.sprites2.put(fi.nameWithoutExtension(), new Pixmap(fi));
 			}
 		}
 		super.hide(Actions.sequence(Actions.alpha(0f)));
 	}
 
-	public void beginEditImg(Fi file) {
+	public void beginEditImg(MyMod mod, Fi file) {
 		ui.loadAnd(() -> {
 			try {
 				shownWithImg = true;
 				imgEditor.beginEdit(file);
-				show();
+				show(mod);
 			} catch (Exception e) {
 				Log.err(e);
 				ui.showException("@editor.errorload", e);
@@ -210,174 +212,174 @@ public class ImgEditorDialog extends Dialog {
 			cont.left();
 
 			cont.pane(MyStyles.nonePane, mid -> {
-						mid.top();
+				 mid.top();
 
-						Table tools = new Table().top();
+				 Table tools = new Table().top();
 
-						ButtonGroup<ImageButton> group = new ButtonGroup<>();
-						Table[] lastTable = {null};
+				 ButtonGroup<ImageButton> group     = new ButtonGroup<>();
+				 Table[]                  lastTable = {null};
 
-						Cons<ImgEditorTool> addTool = tool -> {
+				 Cons<ImgEditorTool> addTool = tool -> {
 
-							ImageButton button = new ImageButton(
-									(Icon.icons.containsKey(tool.name()) ? Icon.icons : icons).get(tool.name()), Styles.clearTogglei);
-							button.clicked(() -> {
-								view.setTool(tool);
-								if (lastTable[0] != null) {
-									lastTable[0].remove();
-								}
-							});
-							button.update(() -> button.setChecked(view.getTool() == tool));
-							group.add(button);
+					 ImageButton button = new ImageButton(
+						(Icon.icons.containsKey(tool.name()) ? Icon.icons : icons).get(tool.name()), Styles.clearTogglei);
+					 button.clicked(() -> {
+						 view.setTool(tool);
+						 if (lastTable[0] != null) {
+							 lastTable[0].remove();
+						 }
+					 });
+					 button.update(() -> button.setChecked(view.getTool() == tool));
+					 group.add(button);
 
-							if (tool.altModes.length > 0) {
-								button.clicked(l -> {
-									if (!mobile) {
-										//desktop: rightclick
-										l.setButton(KeyCode.mouseRight);
-									}
-								}, e -> {
-									//need to double tap
-									if (mobile && e.getTapCount() < 2) {
-										return;
-									}
+					 if (tool.altModes.length > 0) {
+						 button.clicked(l -> {
+							 if (!mobile) {
+								 //desktop: rightclick
+								 l.setButton(KeyCode.mouseRight);
+							 }
+						 }, e -> {
+							 //need to double tap
+							 if (mobile && e.getTapCount() < 2) {
+								 return;
+							 }
 
-									if (lastTable[0] != null) {
-										lastTable[0].remove();
-									}
+							 if (lastTable[0] != null) {
+								 lastTable[0].remove();
+							 }
 
-									Table table = new Table(Styles.black9);
-									table.defaults().size(300f, 70f);
+							 Table table = new Table(Styles.black9);
+							 table.defaults().size(300f, 70f);
 
-									for (int i = 0; i < tool.altModes.length; i++) {
-										int mode = i;
-										String name = tool.altModes[i];
+							 for (int i = 0; i < tool.altModes.length; i++) {
+								 int    mode = i;
+								 String name = tool.altModes[i];
 
-										table.button(b -> {
-											b.left();
-											b.marginLeft(6);
-											b.setStyle(MyStyles.clearTogglet);
-											b.add(Core.bundle.get("toolmode." + name)).left();
-											b.row();
-											b.add(Core.bundle.get("toolmode." + name + ".description")).color(Color.lightGray).left();
-										}, () -> {
-											tool.mode = tool.mode == mode ? -1 : mode;
-											table.remove();
-										}).update(b -> b.setChecked(tool.mode == mode));
-										table.row();
-									}
+								 table.button(b -> {
+									 b.left();
+									 b.marginLeft(6);
+									 b.setStyle(MyStyles.clearTogglet);
+									 b.add(Core.bundle.get("toolmode." + name)).left();
+									 b.row();
+									 b.add(Core.bundle.get("toolmode." + name + ".description")).color(Color.lightGray).left();
+								 }, () -> {
+									 tool.mode = tool.mode == mode ? -1 : mode;
+									 table.remove();
+								 }).update(b -> b.setChecked(tool.mode == mode));
+								 table.row();
+							 }
 
-									table.update(() -> {
-										Vec2 v = button.localToStageCoordinates(Tmp.v1.setZero());
-										table.setPosition(v.x, v.y, Align.topLeft);
-										if (!isShown()) {
-											table.remove();
-											lastTable[0] = null;
-										}
-									});
+							 table.update(() -> {
+								 Vec2 v = button.localToStageCoordinates(Tmp.v1.setZero());
+								 table.setPosition(v.x, v.y, Align.topLeft);
+								 if (!isShown()) {
+									 table.remove();
+									 lastTable[0] = null;
+								 }
+							 });
 
-									table.pack();
-									table.act(Core.graphics.getDeltaTime());
+							 table.pack();
+							 table.act(Core.graphics.getDeltaTime());
 
-									addChild(table);
-									lastTable[0] = table;
-								});
-							}
+							 addChild(table);
+							 lastTable[0] = table;
+						 });
+					 }
 
 
-							Label mode = new Label("");
-							mode.setColor(Pal.remove);
-							mode.update(() -> mode.setText(tool.mode == -1 ? "" : "M" + (tool.mode + 1) + " "));
-							mode.setAlignment(Align.bottomRight, Align.bottomRight);
-							mode.touchable = Touchable.disabled;
+					 Label mode = new Label("");
+					 mode.setColor(Pal.remove);
+					 mode.update(() -> mode.setText(tool.mode == -1 ? "" : "M" + (tool.mode + 1) + " "));
+					 mode.setAlignment(Align.bottomRight, Align.bottomRight);
+					 mode.touchable = Touchable.disabled;
 
-							tools.stack(button, mode);
-						};
+					 tools.stack(button, mode);
+				 };
 
-						tools.defaults().size(ToolSize);
+				 tools.defaults().size(ToolSize);
 
-						tools.button(Icon.menu, Styles.cleari, menu::show);
+				 tools.button(Icon.menu, Styles.cleari, menu::show);
 
-						ImageButton grid = tools.button(Icon.grid, Styles.clearTogglei, () -> view.setGrid(!view.isGrid())).get();
+				 ImageButton grid = tools.button(Icon.grid, Styles.clearTogglei, () -> view.setGrid(!view.isGrid())).get();
 
-						addTool.get(ImgEditorTool.zoom);
+				 addTool.get(ImgEditorTool.zoom);
 
-						tools.row();
+				 tools.row();
 
-						ImageButton undo = tools.button(Icon.undo, Styles.cleari, imgEditor::undo).get();
-						ImageButton redo = tools.button(Icon.redo, Styles.cleari, imgEditor::redo).get();
+				 ImageButton undo = tools.button(Icon.undo, Styles.cleari, imgEditor::undo).get();
+				 ImageButton redo = tools.button(Icon.redo, Styles.cleari, imgEditor::redo).get();
 
-						addTool.get(ImgEditorTool.pick);
+				 addTool.get(ImgEditorTool.pick);
 
-						tools.row();
+				 tools.row();
 
-						undo.setDisabled(() -> !imgEditor.canUndo());
-						redo.setDisabled(() -> !imgEditor.canRedo());
+				 undo.setDisabled(() -> !imgEditor.canUndo());
+				 redo.setDisabled(() -> !imgEditor.canRedo());
 
-						undo.update(() -> undo.getImage().setColor(undo.isDisabled() ? Color.gray : Color.white));
-						redo.update(() -> redo.getImage().setColor(redo.isDisabled() ? Color.gray : Color.white));
-						grid.update(() -> grid.setChecked(view.isGrid()));
+				 undo.update(() -> undo.getImage().setColor(undo.isDisabled() ? Color.gray : Color.white));
+				 redo.update(() -> redo.getImage().setColor(redo.isDisabled() ? Color.gray : Color.white));
+				 grid.update(() -> grid.setChecked(view.isGrid()));
 
-						addTool.get(ImgEditorTool.line);
-						addTool.get(ImgEditorTool.pencil);
-						addTool.get(ImgEditorTool.eraser);
+				 addTool.get(ImgEditorTool.line);
+				 addTool.get(ImgEditorTool.pencil);
+				 addTool.get(ImgEditorTool.eraser);
 
-						tools.row();
+				 tools.row();
 
-						addTool.get(ImgEditorTool.fill);
-						addTool.get(ImgEditorTool.spray);
-						addTool.get(ImgEditorTool.select);
+				 addTool.get(ImgEditorTool.fill);
+				 addTool.get(ImgEditorTool.spray);
+				 addTool.get(ImgEditorTool.select);
 
-						//				ImageButton rotate = tools.button(Icon.right, Styles.cleari, () -> imgEditor.rotation = (imgEditor.rotation + 1) % 4).get();
-						//				rotate.getImage().update(() -> {
-						//					rotate.getImage().setRotation(90);
-						//					rotate.getImage().setOrigin(Align.center);
-						//				});
+				 //				ImageButton rotate = tools.button(Icon.right, Styles.cleari, () -> imgEditor.rotation = (imgEditor.rotation + 1) % 4).get();
+				 //				rotate.getImage().update(() -> {
+				 //					rotate.getImage().setRotation(90);
+				 //					rotate.getImage().setOrigin(Align.center);
+				 //				});
 
-						tools.row();
+				 tools.row();
 
-						mid.add(tools).top().padBottom(-6);
+				 mid.add(tools).top().padBottom(-6);
 
-						mid.row();
+				 mid.row();
 
-						mid.table(Tex.underline, t -> {
-							Slider slider = new Slider(0, MapEditor.brushSizes.length - 1, 1, false);
-							slider.moved(f -> imgEditor.brushSize = MapEditor.brushSizes[(int) f]);
-							for (int j = 0; j < MapEditor.brushSizes.length; j++) {
-								if (MapEditor.brushSizes[j] == imgEditor.brushSize) {
-									slider.setValue(j);
-								}
-							}
+				 mid.table(Tex.underline, t -> {
+					 Slider slider = new Slider(0, MapEditor.brushSizes.length - 1, 1, false);
+					 slider.moved(f -> imgEditor.brushSize = MapEditor.brushSizes[(int) f]);
+					 for (int j = 0; j < MapEditor.brushSizes.length; j++) {
+						 if (MapEditor.brushSizes[j] == imgEditor.brushSize) {
+							 slider.setValue(j);
+						 }
+					 }
 
-							String prefix = Core.bundle.get("editor.brush") + ": ";
-							var label = new Label(() -> prefix + imgEditor.brushSize);
-							label.setAlignment(Align.center);
-							label.touchable = Touchable.disabled;
+					 String prefix = Core.bundle.get("editor.brush") + ": ";
+					 var    label  = new Label(() -> prefix + imgEditor.brushSize);
+					 label.setAlignment(Align.center);
+					 label.touchable = Touchable.disabled;
 
-							t.top().stack(slider, label).width(ToolSize * 3f - 20).padTop(4f);
-							t.row();
-						}).padTop(5).growX().top();
+					 t.top().stack(slider, label).width(ToolSize * 3f - 20).padTop(4f);
+					 t.row();
+				 }).padTop(5).growX().top();
 
-						mid.row();
+				 mid.row();
 
-						mid.table(t -> {
-							t.defaults().growX();
-							t.button("@editor.center", Icon.move, Styles.cleart, view::center).margin(6).row();
-							t.check("显示透明画布", ImgView.showTransparentCanvas, b -> {
-								ImgView.showTransparentCanvas = b;
-							});
-						}).growX().top();
+				 mid.table(t -> {
+					 t.defaults().growX();
+					 t.button("@editor.center", Icon.move, Styles.cleart, view::center).margin(6).row();
+					 t.check("显示透明画布", ImgView.showTransparentCanvas, b -> {
+						 ImgView.showTransparentCanvas = b;
+					 });
+				 }).growX().top();
 
-						mid.row();
+				 mid.row();
 
-						mid.table(Tex.underline, t -> {
-							t.table(Tex.underlineWhite, t1 -> t1.add("选择")).growX().row();
-							t.table(Tex.pane, this::buildSelectTable).growX();
-						}).growX().top();
+				 mid.table(Tex.underline, t -> {
+					 t.table(Tex.underlineWhite, t1 -> t1.add("选择")).growX().row();
+					 t.table(Tex.pane, this::buildSelectTable).growX();
+				 }).growX().top();
 
-						mid.row();
-					}).margin(0).left().growY()
-					.get().setScrollingDisabled(false, true);
+				 mid.row();
+			 }).margin(0).left().growY()
+			 .get().setScrollingDisabled(false, true);
 
 
 			cont.table(t -> t.add(view).grow()).grow();
@@ -474,7 +476,7 @@ public class ImgEditorDialog extends Dialog {
 		cont.table(search -> {
 			search.image(Icon.zoom).padRight(8);
 			search.field("", this::rebuildColorSelection)
-					.name("imgEditor/search").maxTextLength(maxNameLength).get().setMessageText("@players.search");
+			 .name("imgEditor/search").maxTextLength(maxNameLength).get().setMessageText("@players.search");
 		}).pad(-2);
 		cont.row();
 		cont.table(Tex.underline, extra -> {
@@ -484,7 +486,7 @@ public class ImgEditorDialog extends Dialog {
 			img.update(() -> img.setColor(imgEditor.drawColor));
 			extra.label(() -> imgEditor.drawColor + "").grow();
 		}).growX().left().get().clicked(() -> ui.picker.show(imgEditor.drawColor,
-				c -> imgEditor.drawColor = c.cpy()));
+		 c -> imgEditor.drawColor = c.cpy()));
 		cont.row();
 		cont.add(pane).expandY().growX().top().left();
 
@@ -493,14 +495,14 @@ public class ImgEditorDialog extends Dialog {
 
 
 	public static ObjectMap<String, Color> Colors = new ObjectMap<>(),
-			Pals = new ObjectMap<>();
+	 Pals                                         = new ObjectMap<>();
 
 	private void rebuildColorSelection(String searchText) {
 		colorSelection.clear();
 
 		if (Colors.isEmpty()) getColors();
-		final int[] i = {0};
-		Table colorTable = new Table();
+		final int[] i          = {0};
+		Table       colorTable = new Table();
 		colorSelection.add(colorTable).row();
 
 		Colors.each((k, c) -> {
@@ -521,8 +523,8 @@ public class ImgEditorDialog extends Dialog {
 		colorSelection.image().color(Color.lightGray).growX().row();
 
 		if (Pals.isEmpty()) getPals();
-		final int[] j = {0};
-		Table palTable = new Table();
+		final int[] j        = {0};
+		Table       palTable = new Table();
 		colorSelection.add(palTable).row();
 
 		Pals.each((k, c) -> {
@@ -573,7 +575,7 @@ public class ImgEditorDialog extends Dialog {
 	}
 
 	public static class Img {
-		public Fi file;
+		public Fi       file;
 		public MyPixmap pixmap;
 
 		public Img(Fi fi) {

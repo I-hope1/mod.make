@@ -4,29 +4,27 @@ import arc.Core;
 import arc.files.Fi;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
+import arc.struct.*;
 import arc.util.serialization.JsonValue;
 import mindustry.Vars;
 import mindustry.core.Version;
 import mindustry.gen.Icon;
-import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
+import modmake.components.Window;
 import modmake.util.Tools;
 
 import java.util.StringJoiner;
 
 import static modmake.IntUI.modsDialog;
 import static modmake.components.DataHandle.*;
-import static modmake.util.BuildContent.packString;
-import static modmake.util.BuildContent.unpackString;
+import static modmake.util.BuildContent.*;
 import static rhino.ScriptRuntime.toNumber;
 
-public class ModMetaDialog extends BaseDialog {
-	int __MinGameVersion__ = 136;
-	Fi modsDirectory = dataDirectory.child("mods");
-	String[] arr = {"name", "displayName", "description", "author", "version", "main", "repo"};
-	String lastFiName;
+public class ModMetaDialog extends Window {
+	int      __MinGameVersion__ = 136;
+	Fi       modsDirectory      = dataDirectory.child("mods");
+	String[] arr                = {"name", "displayName", "description", "author", "version", "main", "repo"};
+	String   lastFiName;
 
 	public boolean isNaN(String str) {
 		try {
@@ -39,6 +37,7 @@ public class ModMetaDialog extends BaseDialog {
 
 	public ModMetaDialog() {
 		super("");
+		noButtons(false);
 	}
 
 	public void write(Fi modRoot) {
@@ -50,7 +49,8 @@ public class ModMetaDialog extends BaseDialog {
 
 		for (String item : arr) {
 			String text = Tools.trope(unpackString(Fields.get(item).getText()));
-			if (!text.isEmpty()) str.add(item + ": \"" + text + "\"");
+			if (!text.isEmpty()) str.add(item + ": "
+																	 + (Tools.isNum(text) ? text : "\"" + text + "\""));
 		}
 		modRoot.child(isNull ? "mod.json" : "mod." + file.extension()).writeString("" + str);
 		modsDialog.setup();
@@ -66,18 +66,18 @@ public class ModMetaDialog extends BaseDialog {
 		return field;
 	}
 
-	boolean isNull;
+	boolean   isNull;
 	JsonValue jsonValue;
-	Fi file;
-	Table container;
+	Fi        file;
+	Table     container;
 
+	String errorText = "";
 	public void load() {
 		cont.pane(p -> container = p).growY();
 		Seq<TextField> FieldArray = new Seq<>();
 
-		String[] errorText = {""};
 		buttons.table(err -> {
-			err.label(() -> "[red]" + errorText[0]).get();
+			err.label(() -> "[red]" + errorText).get();
 		}).row();
 		buttons.table(b -> {
 			b.button("@back", Icon.left, this::hide).size(210, 64);
@@ -95,7 +95,7 @@ public class ModMetaDialog extends BaseDialog {
 				for (TextField f : FieldArray) {
 					if (!f.isValid()) return true;
 				}
-				errorText[0] = "";
+				errorText = "";
 				return false;
 			});
 		});
@@ -106,9 +106,9 @@ public class ModMetaDialog extends BaseDialog {
 		container.add(fileName).valid(text -> {
 			boolean valid = true;
 			if (text.replaceAll("\\s", "").equals("")) {
-				errorText[0] = "文件名不能为空";
+				errorText = "文件名不能为空";
 			} else if (text.equals("tmp")) {
-				errorText[0] = "文件名不能为\"tmp\"";
+				errorText = "文件名不能为\"tmp\"";
 			} else valid = false;
 			return !valid;
 		}).row();
@@ -120,14 +120,14 @@ public class ModMetaDialog extends BaseDialog {
 		container.add(minGameVersion).valid(text -> {
 			boolean valid = true;
 			if (isNaN(text)) {
-				errorText[0] = "\"最小游戏版本\"必须为数字";
+				errorText = "\"最小游戏版本\"必须为数字";
 				return true;
 			}
 			double num = toNumber(text);
 			if (num < 105) {
-				errorText[0] = "\"最小游戏版本\"不能小于105";
+				errorText = "\"最小游戏版本\"不能小于105";
 			} else if (num > Version.build) {
-				errorText[0] = "\"最小游戏版本\"不能大于 " + Version.build;
+				errorText = "\"最小游戏版本\"不能大于 " + Version.build;
 			} else {
 				valid = false;
 			}
@@ -151,7 +151,7 @@ public class ModMetaDialog extends BaseDialog {
 			modsDialog.show();
 			modsDirectory.child("tmp").deleteDirectory();
 		});
-		closeOnBack();
+		// closeOnBack();
 	}
 
 

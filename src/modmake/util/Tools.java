@@ -6,21 +6,38 @@ import arc.graphics.g2d.TextureRegion;
 import arc.struct.*;
 import arc.util.Reflect;
 import arc.util.serialization.Jval;
-import jdk.jfr.Category;
 import mindustry.ctype.UnlockableContent;
 import mindustry.mod.ClassMap;
+import mindustry.type.Category;
 import modmake.components.AddFieldBtn;
 
 import java.lang.reflect.*;
 import java.util.Objects;
 
 import static modmake.util.MyReflect.unsafe;
-import static modmake.util.load.ContentSeq.otherTypes;
+import static modmake.util.load.ContentVars.otherTypes;
 
 public class Tools {
 	// 通过Jval转义
 	public static String trope(String s) {
 		return Jval.read('"' + s.replaceAll("\\\\\"", "\\\"") + '"').asString().replaceAll("[\\n\\r]", "\n").replaceAll("\"", "\\\"");
+	}
+
+	public static boolean isNum(String text) {
+		try {
+			Jval.read(text).asNumber();
+			return true;
+		} catch (Throwable ignored) {
+			return false;
+		}
+	}
+	public static boolean isStr(String text) {
+		try {
+			Jval.read(text).asString();
+			return true;
+		} catch (Throwable ignored) {
+			return false;
+		}
 	}
 
 	public static <T, R> R nullCheck(T obj, Func<T, R> func) {
@@ -40,7 +57,7 @@ public class Tools {
 		try {
 			return (T) obj;
 		} catch (Throwable thr) {
-			return null;
+			throw new RuntimeException(thr);
 		}
 	}
 
@@ -62,9 +79,9 @@ public class Tools {
 	 * @param o2 原本的
 	 **/
 	public static <T> Jval copyJval(T o1, T o2) throws Exception {
-		Class<?> cls = o1.getClass();
-		Jval jval = Jval.newObject();
-		Object val1, val2;
+		Class<?> cls  = o1.getClass();
+		Jval     jval = Jval.newObject();
+		Object   val1, val2;
 		objectCaches.clear();
 		while (cls != null && Object.class.isAssignableFrom(cls)) {
 			if (!cls.isAnonymousClass() && !jval.has("type")) jval.put("type", cls.getSimpleName());
@@ -100,7 +117,7 @@ public class Tools {
 		if (o.getClass().isArray()) {
 			if (objectCaches.containsKey(o)) break label;
 			objectCaches.put(o, o);
-			int len = Array.getLength(o);
+			int  len    = Array.getLength(o);
 			Jval newArr = Jval.newArray();
 			for (int i = 0; i < len; i++) {
 				newArr.add(handleJval(Array.get(o, i)));
@@ -141,7 +158,7 @@ public class Tools {
 	public static Jval copyValue(Object o) throws Exception {
 		if (o == null) return Jval.NULL;
 		Class<?> type = o.getClass();
-		Class<?> cls = type;
+		Class<?> cls  = type;
 		/*if (cls.isPrimitive()) return Jval.read(String.valueOf(o));
 		if (cls == String.class || TextureRegion.class.isAssignableFrom(cls)
 				|| UnlockableContent.class.isAssignableFrom(cls) || Color.class.isAssignableFrom(cls))
@@ -185,8 +202,8 @@ public class Tools {
 	}
 
 	public static <T> void setValue(Field f, T from, T to) {
-		Class<?> type = f.getType();
-		long offset = unsafe.objectFieldOffset(f);
+		Class<?> type   = f.getType();
+		long     offset = unsafe.objectFieldOffset(f);
 		if (int.class.equals(type)) {
 			unsafe.putInt(to, offset, unsafe.getInt(from, offset));
 		} else if (float.class.equals(type)) {
@@ -219,4 +236,6 @@ public class Tools {
 		}
 		return String.valueOf(obj);
 	}
+
+	public static void __(boolean ignored) {}
 }

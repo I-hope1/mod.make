@@ -9,11 +9,11 @@ import java.util.ArrayDeque;
 import static modmake.IntUI.view;
 
 public class Stack {
-	private final ImgEditor imgEditor;
-	public static int maxSize = DataHandle.settings.getInt("max_stack_buffer_size", 15);
-	public ByteBuffer tmp = null;
-	public ArrayDeque<ByteBuffer> undoes = new ArrayDeque<>();
-	public ArrayDeque<ByteBuffer> redoes = new ArrayDeque<>();
+	private final ImgEditor              imgEditor;
+	public static int                    maxSize = DataHandle.dsettings.getInt("max_stack_buffer_size", 15);
+	public        ByteBuffer             tmp     = null;
+	public        ArrayDeque<ByteBuffer> undoes  = new ArrayDeque<>();
+	public        ArrayDeque<ByteBuffer> redoes  = new ArrayDeque<>();
 
 	public Stack(ImgEditor imgEditor) {
 		this.imgEditor = imgEditor;

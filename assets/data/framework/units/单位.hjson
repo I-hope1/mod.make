@@ -7,3 +7,4 @@ targetAir: true
 targetGround: true
 weapons: []
 controller: FlyingAI
+type: flying

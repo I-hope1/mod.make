@@ -3,7 +3,6 @@ package modmake.ui;
 import arc.Core;
 import arc.graphics.Color;
 import arc.scene.ui.layout.Table;
-import arc.util.Log;
 import mindustry.gen.Tex;
 import mindustry.ui.Styles;
 import modmake.Contents;
@@ -13,7 +12,7 @@ public class Frag extends Table {
 	public void load() {
 
 		new MoveListener(image().color(Color.sky).margin(0f).pad(0f).padBottom(-4f).fillX().height(40f)
-				.get(), this);
+		 .get(), this);
 		row();
 		table(Tex.whiteui, t -> Contents.all.each(cont -> {
 			if (cont == null || !cont.loadable())
@@ -38,6 +37,6 @@ public class Frag extends Table {
 		});*/
 
 		Core.scene.add(this);
-		Log.info(this);
+		// Log.info(this);
 	}
 }

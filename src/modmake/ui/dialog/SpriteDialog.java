@@ -2,88 +2,80 @@ package modmake.ui.dialog;
 
 import arc.files.Fi;
 import arc.func.Cons;
-import arc.graphics.Pixmap;
-import arc.graphics.Texture;
+import arc.graphics.*;
 import arc.graphics.g2d.TextureRegion;
-import arc.scene.ui.Button;
-import arc.scene.ui.Tooltip;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.util.Log;
 import mindustry.Vars;
-import mindustry.gen.Icon;
-import mindustry.gen.Tex;
+import mindustry.gen.*;
 import mindustry.ui.Styles;
-import mindustry.ui.dialogs.BaseDialog;
 import modmake.IntUI;
-import modmake.components.MyMod;
+import modmake.components.*;
 
 import java.util.regex.Pattern;
 
 import static modmake.IntUI.*;
 
-public class SpriteDialog extends BaseDialog {
+public class SpriteDialog extends Window {
 	Table p;
 	public Runnable hiddenRun = null;
-	public Fi root;
+	public Fi       root;
 
 	public ObjectMap<String, Pixmap> spriteMap;
+	public MyMod                     mod;
 
-	public SpriteDialog() {
-		super("图片库");
+	public SpriteDialog(MyMod mod) {
+		super("图片库", 120, 80, true, false);
+		this.mod = mod;
 
-		addCloseButton();
-		imgDialog.hiddenRun = () -> {
+		// addCloseButton();
+		/*imgDialog.hiddenRun = () -> {
 			hide();
 			setup(root);
-		};
+		};*/
 		buttons.button("@add", Icon.add, () -> IntUI.createDialog("添加图片",
-				"新建图片", "默认32*32", Icon.add, (Runnable) () -> {
-					nameDialog.show(text -> {
-						Fi file = root.child(text + ".png");
-						imgDialog.beginEditImg(file);
-					}, text -> !root.child(text + ".png").exists());
+		 "新建图片", "默认32*32", Icon.add, (Runnable) () -> {
+			 nameDialog.show(text -> {
+				 Fi file = root.child(text + ".png");
+				 imgDialog.beginEditImg(mod, file);
+			 }, text -> !root.child(text + ".png").exists());
 					/*Fi fi1;
 					int i = 0;
 					do {
 						fi1 = root.child("new(" + i + ").png");
 					} while (fi1.exists());
 					imgDialog.beginEditImg(fi1);*/
-				},
-				"导入图片", "仅限png", Icon.download, (Runnable) () -> Vars.platform.showFileChooser(true, "import file to add sprite", "png", f -> {
-					Fi toFile = root.child(f.name());
-					Runnable go = () -> {
-						f.copyTo(toFile);
-						try {
-							buildImage(p, toFile);
-							spriteMap.put(toFile.nameWithoutExtension(), new Pixmap(toFile));
-						} catch (Exception err) {
-							Vars.ui.showException("文件可能损坏", err);
-						}
-					};
-					if (toFile.exists()) {
-						Vars.ui.showConfirm("@confirm", "是否要覆盖", go);
-					} else {
-						go.run();
-					}
-				})
+		 },
+		 "导入图片", "仅限png", Icon.download, (Runnable) () -> Vars.platform.showFileChooser(true, "import file to add sprite", "png", f -> {
+			 Fi toFile = root.child(f.name());
+			 Runnable go = () -> {
+				 f.copyTo(toFile);
+				 try {
+					 buildImage(p, toFile);
+					 spriteMap.put(toFile.nameWithoutExtension(), new Pixmap(toFile));
+				 } catch (Exception err) {
+					 Vars.ui.showException("文件可能损坏", err);
+				 }
+			 };
+			 if (toFile.exists()) {
+				 Vars.ui.showConfirm("@confirm", "是否要覆盖", go);
+			 } else {
+				 go.run();
+			 }
+		 })
 		)).size(210, 64);
 
-		hidden(() -> {
+		/*hidden(() -> {
 			if (hiddenRun != null) hiddenRun.run();
-
-			/*InputEvent inputEvent = new InputEvent();
-			inputEvent.keyCode = KeyCode.enter;
-			inputEvent.type = InputEvent.InputEventType.keyUp;
-			Core.scene.getKeyboardFocus().fire(inputEvent);*/
-		});
+		});*/
 	}
 
 	public void setup(Fi all) {
 		cont.clearChildren();
 		root = all;
 		if (all != null) {
-			MyMod mod = modDialog.currentMod;
 			if (root.name().equals("sprites")) {
 				spriteMap = mod.sprites1;
 			} else if (root.name().equals("sprites-override")) {
@@ -174,9 +166,9 @@ public class SpriteDialog extends BaseDialog {
 
 			button.left();
 			Texture texture = new Texture(file[0]);
-			float w = texture.getTextureData().getWidth();
-			float h = texture.getTextureData().getHeight();
-			float srcW, srcH;
+			float   w       = texture.getTextureData().getWidth();
+			float   h       = texture.getTextureData().getHeight();
+			float   srcW, srcH;
 			if (w > h) {
 				srcW = 45;
 				srcH = 45 * h / w;
@@ -189,12 +181,12 @@ public class SpriteDialog extends BaseDialog {
 				b1.image(region).size(srcW, srcH);
 			}).size(45).pad(4).get();
 			image.addListener(new Tooltip(tool -> tool.background(Tex.button)
-					.image(region).pad(4)));
+			 .image(region).pad(4)));
 			button.add(file[0].nameWithoutExtension()).padLeft(4);
 			t.add(button).size(360, 64);
 			IntUI.longPress(button, 600, b -> {
 				if (b) {
-//					if (Core.input.useKeyboard()) return;
+					//					if (Core.input.useKeyboard()) return;
 
 					nameDialog.show(text -> {
 						Fi toFile = file[0].sibling(text + ".png");
@@ -203,8 +195,8 @@ public class SpriteDialog extends BaseDialog {
 						ref.setup.get(t);
 					}, text -> !file[0].sibling(text + ".png").exists(), file[0].nameWithoutExtension());
 				} else {
-					hide();
-					imgDialog.beginEditImg(file[0]);
+					// hide();
+					imgDialog.beginEditImg(mod, file[0]);
 				}
 			});
 			t.button(b -> {

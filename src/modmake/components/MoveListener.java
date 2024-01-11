@@ -1,3 +1,4 @@
+
 package modmake.components;
 
 import arc.Core;
@@ -5,32 +6,53 @@ import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.scene.Element;
-import arc.scene.event.InputEvent;
-import arc.scene.event.InputListener;
+import arc.scene.event.*;
 import arc.scene.ui.layout.Table;
-import arc.util.Tmp;
 
 public class MoveListener extends InputListener {
-	float bx, by;
-	private final Table main;
+	// public float bx, by;
+	public Table   main;
+	public Element touch;
+	public boolean disabled = false, isFiring = false;
+	public Runnable fire;
 
 	public MoveListener(Element touch, Table main) {
 		this.main = main;
+		this.touch = touch;
 		touch.addListener(this);
 	}
+	public void remove() {
+		touch.removeListener(this);
+	}
 
+
+	public Vec2 lastMouse = new Vec2(), lastMain = new Vec2();
 	public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
-		bx = x;
-		by = y;
+		if (disabled) return false;
+		lastMouse.set(Core.input.mouse());
+		lastMain.set(main.x, main.y);
+		isFiring = true;
 		return true;
 	}
 
 	public void touchDragged(InputEvent event, float x, float y, int pointer) {
-		Vec2 v = main.localToStageCoordinates(Tmp.v1.set(x, y));
+		if (disabled) return;
+		if (fire != null) fire.run();
 
-		main.setPosition(
-				Mathf.clamp(-bx + v.x, 0f, Core.graphics.getWidth() - main.getPrefWidth()),
-				Mathf.clamp(-by + v.y, 0f, Core.graphics.getHeight() - main.getPrefHeight()));
-		// Log.info(-by + v.y + ", 0, " + (Core.graphics.getHeight() - main.getPrefHeight()));
+		Vec2 mouse = Core.input.mouse();
+		display(lastMain.x + mouse.x - lastMouse.x, lastMain.y + mouse.y - lastMouse.y);
+	}
+
+	public void display(float x, float y) {
+		float mainWidth  = main.getWidth(), mainHeight = main.getHeight();
+		float touchWidth = touch.getWidth(), touchHeight = touch.getHeight();
+		main.x = Mathf.clamp(x, -touchWidth / 3f, Core.graphics.getWidth() - mainWidth / 2f);
+		main.y = Mathf.clamp(y, -mainHeight + touchHeight, Core.graphics.getHeight() - mainHeight);
+	}
+
+	@Override
+	public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button) {
+		// super.touchUp(event, x, y, pointer, button);
+		isFiring = false;
 	}
 }

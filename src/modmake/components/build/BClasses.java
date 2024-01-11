@@ -32,23 +32,29 @@ import static modmake.util.Tools.*;
 
 public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
-	Seq<String> effects = genericSeqByClass(Fx.class, Field::getName);
-	Seq<String> bullets = genericSeqByClass(Bullets.class, Field::getName);
-	Seq<Attribute> attributes = new Seq<>(Attribute.all);
+	static Seq<String>    effects    = genericSeqByClass(Fx.class, Field::getName);
+	static Seq<String>    bullets    = genericSeqByClass(Bullets.class, Field::getName);
+	static Seq<Attribute> attributes = new Seq<>(Attribute.all);
+
+	static {
+		registerDefTypeName(effects, "ParticleEffect");
+		registerDefTypeName(bullets, "BasicBulletType");
+		// registerDefTypes(attributes, "ParticleEffect");
+	}
 
 	public BClasses() {
 		put(Attribute.class, (table, value, __, ___) -> tableWithListSelection(
-				table, "" + value, attributes.as(), "" + defaultClass.get(Attribute.class).get(), false));
+		 table, "" + value, attributes.as(), "" + defaultClassIns.get(Attribute.class).get(), false));
 		put(Attributes.class, (table, value, __, ___) -> {
 			checkMyObject(value);
-			MyObject<Object, Object> map = new MyObject<>();
-			var cont = new Table(Tex.button);
-			var children = new Table();
+			MyObject<Object, Object> map      = new MyObject<>();
+			var                      cont     = new Table(Tex.button);
+			var                      children = new Table();
 			cont.add(children).fillX().row();
 			table.add(cont).fillX();
 			final int[] i = {0};
 			Cons2<Object, Object> add = (k, v) -> children.add(Fields.build(i[0]++, t -> {
-				var key = get(Attribute.class).get(t, or(k, defaultClass.get(Attribute.class)), null, null);
+				var key = get(Attribute.class).get(t, or(k, defaultClassIns.get(Attribute.class)), null, null);
 				map.put(key, field(t, v, Double.TYPE));
 				t.table(right -> {
 					right.button("", Icon.trash, MyStyles.cleart, () -> {
@@ -87,24 +93,29 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 		});
 		put(Sector.class, (table, value, __, ___) -> field(table, parseInt(value), Double.TYPE));
 		put(BulletType.class, (table, value, __, ___) -> listWithType(
-				table, value, BulletType.class, "BasicBulletType", bullets, b -> "" + b));
+		 table, value, BulletType.class, "BasicBulletType", bullets, b -> "" + b));
 		put(StatusEffect.class, (table, value, __, ___) -> listWithType(
-				table, value, StatusEffect.class, "StatusEffect",
-				Vars.content.statusEffects(), s -> s.name, new Seq<>(StatusEffect.class)));
+		 table, value, StatusEffect.class, "StatusEffect",
+		 Vars.content.statusEffects(), s -> s.name, new Seq<>(StatusEffect.class)));
 		put(Weather.class, (table, value, __, ___) -> listWithType(
-				table, value, Weather.class, "ParticleWeather",
-				Vars.content.<Weather>getBy(ContentType.weather), w -> w.name));
+		 table, value, Weather.class, "ParticleWeather",
+		 Vars.content.<Weather>getBy(ContentType.weather), w -> w.name));
 		// AmmoType, (table, value) -> {},
 		put(DrawBlock.class, (table, value, vType, __) -> {
-			if (value instanceof String) {
+			if (value instanceof MyArray) {
+				value = MyObject.of(
+				 "type", "DrawMulti",
+				 "drawers", value
+				);
+			} else if (value instanceof String) {
 				return tableWithTypeSelection(table, as(MyObject.of("type", value)), vType, "DrawBlock");
 			}
 			return tableWithTypeSelection(table, as(value), vType, "DrawBlock");
 		});
 		put(Ability.class, (table, value, vType, __) -> tableWithTypeSelection(table,
-				as(value), vType, "Ability"));
+		 as(value), vType, "Ability"));
 		put(Weapon.class, (table, value, vType, __) -> tableWithTypeSelection(table,
-				as(value), vType, "Weapon"));
+		 as(value), vType, "Weapon"));
 
 		put(ItemStack.class, (table, value, __, ___) -> {
 			String[][] stack = {{}};
@@ -128,7 +139,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 				stack[0] = (value + "").split("/");
 			} else if (value instanceof MyObject) {
 				var obj = (MyObject) value;
-				stack[0] = new String[]{"" + or(obj.get("liquid"), defaultClass.get(Liquid.class).get()), Tools.toString(or(obj.get("amount"), 0))};
+				stack[0] = new String[]{"" + or(obj.get("liquid"), defaultClassIns.get(Liquid.class).get()), Tools.toString(or(obj.get("amount"), 0))};
 			} else {
 				stack[0] = new String[]{"liquid", "0"};
 			}
@@ -137,31 +148,37 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			//		if (isNaN(stack[0][1])) throw new IllegalArgumentException("'" + stack[0][1] + "' isn't a number");
 			return buildOneStack(table, "liquid", Vars.content.liquids(), stack[0][0], stack[0][1]);
 		});
-		put(Effect.class, (table, value, __, ___) -> listWithType(table, value, Effect.class,
-				"ParticleEffect", effects, e -> "" + e));
+		put(Effect.class, (table, value, __, ___) -> {
+			if (value instanceof MyArray) value = MyObject.of(
+			 "type", "MultiEffect",
+			 "effects", value
+			);
+			return listWithType(table, value, Effect.class,
+			 effects, e -> "" + e);
+		});
 		put(UnitType.class, (table, value, vType, __) -> tableWithFieldImage(table,
-				"" + value, vType, Vars.content.units()));
+		 "" + value, vType, Vars.content.units()));
 		put(Item.class, (table, value, vType, __) -> tableWithFieldImage(table,
-				"" + value, vType, Vars.content.items()));
+		 "" + value, vType, Vars.content.items()));
 		put(Liquid.class, (table, value, vType, __) -> tableWithFieldImage(table,
-				"" + value, vType, Vars.content.liquids()));
+		 "" + value, vType, Vars.content.liquids()));
 		put(Planet.class, (table, value, vType, __) -> tableWithFieldImage(table,
-				"" + value, vType, Vars.content.planets()));
+		 "" + value, vType, Vars.content.planets()));
 		put(ObjectMap.class, (table, value, vType, classes) -> {
-			MyObject map = new MyObject<>();
-			Table cont = new Table(Tex.button);
-			Table group = new Table();
+			MyObject map   = new MyObject<>();
+			Table    cont  = new Table(Tex.button);
+			Table    group = new Table();
 			cont.add(group).fillX().row();
 			table.add(cont).fillX();
-			final int[] i = {0};
+			final int[]             i   = {0};
 			Cons2<String, Object>[] add = new Cons2[]{null};
 			add[0] = (k, v) -> {
 				var tab = Fields.build(i[0]++, t -> {
-					Prov<?> key = get(classes.get(0)).get(t, or(k, () -> defaultClass.get(classes.get(0)).get()), null, null);
+					Prov<?> key   = get(classes.get(0)).get(t, or(k, () -> defaultClassIns.get(classes.get(0)).get()), null, null);
 					Table[] foldT = foldTable();
 					t.add(foldT[0]);
 					map.put(
-							key, get(classes.get(1)).get(foldT[1], v, null, null)
+					 key, get(classes.get(1)).get(foldT[1], v, null, null)
 					);
 					Runnable remove = () -> {
 						map.remove(key);
@@ -192,11 +209,11 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 		});
 
 		put(UnitFactory.UnitPlan.class, (table, value, __, ___) -> {
-			MyObject<Object, Object> map = or(as(value), MyObject::new);
-			Table cont = new Table(Tex.button);
+			MyObject<Object, Object> map  = or(as(value), MyObject::new);
+			Table                    cont = new Table(Tex.button);
 			table.add(cont).fillX();
 			cont.add(Core.bundle.get("unit", "unit"));
-			map.put("unit", get(UnitType.class).get(cont, map.get("unit", defaultClass.get(UnitType.class).get()), null, null));
+			map.put("unit", get(UnitType.class).get(cont, map.get("unit", defaultClassIns.get(UnitType.class).get()), null, null));
 			cont.row();
 			cont.add(Core.bundle.get("time", "time"));
 			map.put("time", field(cont, map.get("time", 0), Double.TYPE));
@@ -205,7 +222,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			Table[] foldT = foldTable();
 			cont.add(foldT[0]).row();
 			map.put(
-					"requirements", fArray(foldT[1], ItemStack.class, as(map.get("requirements", new MyArray<>())))
+			 "requirements", fArray(foldT[1], ItemStack.class, as(map.get("requirements", new MyArray<>())))
 			);
 
 			return () -> map;
@@ -219,34 +236,26 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
 		// 以下是consumes
 		Seq<Class<?>> consumeFilter = Seq.with(
-				ConsumeItemCharged.class,
-				ConsumeItemFlammable.class,
-				ConsumeItemRadioactive.class,
-				ConsumeItemExplosive.class,
-				ConsumeItemExplode.class,
-				ConsumeItems.class,
-				ConsumeLiquidFlammable.class,
-				ConsumeLiquid.class,
-				ConsumeLiquids.class,
-				ConsumeCoolant.class,
-				ConsumePower.class
+		 ConsumeItemCharged.class,
+		 ConsumeItemFlammable.class,
+		 ConsumeItemRadioactive.class,
+		 ConsumeItemExplosive.class,
+		 ConsumeItemExplode.class,
+		 ConsumeItems.class,
+		 ConsumeLiquidFlammable.class,
+		 ConsumeLiquid.class,
+		 ConsumeLiquids.class,
+		 ConsumeCoolant.class,
+		 ConsumePower.class
 		);
 		ClassInterface def = (table, value, clazz, ___) -> {
 			checkMyObject(value);
 			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
 			return () -> prov.get().toString();
 		};
-		put(ConsumeItemCharged.class, def);
-		put(ConsumeItemFlammable.class, def);
-		put(ConsumeItemRadioactive.class, def);
-		put(ConsumeItemExplosive.class, def);
-		put(ConsumeItemExplode.class, def);
-		put(ConsumeItems.class, def);
-		put(ConsumeLiquidFlammable.class, def);
-		put(ConsumeLiquid.class, def);
-		put(ConsumeLiquids.class, def);
-		put(ConsumeCoolant.class, def);
-		put(ConsumePower.class, def);
+		for (Class<?> cls : consumeFilter) {
+			put(cls, def);
+		}
 
 
 		/*put(TextureRegion.class, (table, value, __, ___) -> {
@@ -280,7 +289,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
 	public static void checkMyObject(Object value) {
 		if (!(value instanceof MyObject))
-			throw new IllegalArgumentException("value(" + value + ") must be MyObject.");
+			throw new IllegalArgumentException("Cannot cast '" + value + "' to MyObject.");
 	}
 
 	public interface ClassInterface {

@@ -12,7 +12,7 @@ public class IKeys extends ObjectMap<String, Inspect> {
 	{
 		put("size", o -> {
 			Double d = toNumber(o);
-			int i = d.intValue();
+			int    i = d.intValue();
 			if (i > 0 && i <= Vars.maxBlockSize) return null;
 			return new IKeyException("", IExceptionType.ERROR);
 		});

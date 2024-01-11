@@ -2,58 +2,45 @@ package modmake.util.load;
 
 import arc.Core;
 import arc.files.Fi;
-import arc.func.Boolf;
-import arc.func.Cons2;
-import arc.graphics.Pixmap;
-import arc.graphics.Pixmaps;
-import arc.graphics.Texture;
-import arc.graphics.g2d.PixmapRegion;
-import arc.graphics.g2d.TextureAtlas;
+import arc.func.*;
+import arc.graphics.*;
+import arc.graphics.g2d.*;
 import arc.graphics.g2d.TextureAtlas.AtlasRegion;
-import arc.graphics.g2d.TextureRegion;
-import arc.struct.Seq;
-import arc.struct.StringMap;
-import arc.util.Log;
-import arc.util.Time;
+import arc.struct.*;
+import arc.util.*;
 import mindustry.Vars;
-import mindustry.ctype.Content;
-import mindustry.ctype.ContentType;
-import mindustry.ctype.UnlockableContent;
+import mindustry.ctype.*;
 import mindustry.graphics.MultiPacker;
 import mindustry.graphics.MultiPacker.PageType;
 import mindustry.mod.Mods;
 import mindustry.mod.Mods.LoadedMod;
 import mindustry.type.ErrorContent;
 import mindustry.world.Block;
-import modmake.IntVars;
-import modmake.components.DataHandle;
-import modmake.components.MyMod;
+import modmake.components.*;
 import modmake.util.MyReflect;
 
 import java.lang.reflect.*;
-import java.util.HashMap;
-import java.util.Locale;
+import java.util.*;
 
-import static mindustry.Vars.content;
-import static mindustry.Vars.ui;
+import static mindustry.Vars.*;
 import static modmake.components.DataHandle.dataDirectory;
-import static modmake.util.load.ContentSeq.parser;
+import static modmake.util.load.ContentVars.parser;
 
 public class LoadMod {
 
 	public static Method loadMod, checkWarnings;
-	public static Seq<LoadedMod> mods;
-	public static MyMod currentMod;
-	public static LoadedMod lastMod;
-	public static TextureAtlas lastAtlas;
+	public static Seq<LoadedMod>       mods;
+	public static MyMod                currentMod;
+	public static LoadedMod            lastMod;
+	public static TextureAtlas         lastAtlas;
 	// 用main.js加载
-//	public static Cons<MyMod> imgLoad;
-	public static StringMap settings = DataHandle.settings;
-	public static MultiPacker packer;
-	public static Boolf<MyMod> boolf;
+	//	public static Cons<MyMod> imgLoad;
+	public static StringMap            settings = DataHandle.dsettings;
+	public static MultiPacker          packer;
+	public static Boolf2<MyMod, Boolc> boolf;
 
 	public static void init() throws Exception {
-		loadMod = Mods.class.getDeclaredMethod("loadMod", Fi.class, java.lang.Boolean.TYPE);
+		loadMod = Mods.class.getDeclaredMethod("loadMod", Fi.class);
 		loadMod.setAccessible(true);
 
 		checkWarnings = Mods.class.getDeclaredMethod("checkWarnings");
@@ -138,50 +125,39 @@ public class LoadMod {
 	}
 
 
-	public static void loadContent() throws InvocationTargetException, IllegalAccessException {
-		content.setCurrentMod(null);
+	public static class LoadRun implements Comparable<LoadRun> {
+		final ContentType type;
+		final Fi          file;
 
-		class LoadRun implements Comparable<LoadRun> {
-			final ContentType type;
-			final Fi file;
-
-			public LoadRun(ContentType type, Fi file) {
-				this.type = type;
-				this.file = file;
-			}
-
-			@Override
-			public int compareTo(LoadRun l) {
-				int mod = ordered.get(l.type) - ordered.get(type);
-				if (mod != 0) return mod;
-				return file.name().compareTo(l.file.name());
-			}
-
-			@Override
-			public String toString() {
-				return type + "-" + file.name();
-			}
+		public LoadRun(ContentType type, Fi file) {
+			this.type = type;
+			this.file = file;
 		}
+
+		@Override
+		public int compareTo(LoadRun l) {
+			int mod = ordered.get(l.type) - ordered.get(type);
+			if (mod != 0) return mod;
+			return file.name().compareTo(l.file.name());
+		}
+
+		@Override
+		public String toString() {
+			return type + "-" + file.name();
+		}
+	}
+	public static void loadContent() {
+		content.setCurrentMod(null);
 
 		Seq<LoadRun> runs = new Seq<>();
 
+
 		LoadedMod mod = lastMod;
-		if (mod.root.child("content").exists()) {
-			Fi contentRoot = mod.root.child("content");
-			for (ContentType type : ContentType.all) {
-				String lower = type.name().toLowerCase(Locale.ROOT);
-				Fi folder = contentRoot.child(lower + (lower.endsWith("s") ? "" : "s"));
-				if (folder.exists()) {
-					for (Fi file : folder.findAll(f -> f.extension().equals("json") || f.extension().equals("hjson"))) {
-						runs.add(new LoadRun(type, file));
-					}
-				}
-			}
-		}
+		getAllContent(runs, mod);
 
 		//make sure mod content is in proper order
 		runs.sort();
-//		Log.info(runs);
+		//		Log.info(runs);
 		for (LoadRun l : runs) {
 			Content current = content.getLastAdded();
 			try {
@@ -201,22 +177,36 @@ public class LoadMod {
 		//this finishes parsing content fields
 		parser.finishParsing();
 	}
+	private static void getAllContent(Seq<LoadRun> runs, LoadedMod mod) {
+		if (mod.root.child("content").exists()) {
+			Fi contentRoot = mod.root.child("content");
+			for (ContentType type : ContentType.all) {
+				String lower  = type.name().toLowerCase(Locale.ROOT);
+				Fi     folder = contentRoot.child(lower + (lower.endsWith("s") ? "" : "s"));
+				if (folder.exists()) {
+					for (Fi file : folder.findAll(f -> f.extension().equals("json") || f.extension().equals("hjson"))) {
+						runs.add(new LoadRun(type, file));
+					}
+				}
+			}
+		}
+	}
 
 	static PageType getPage(AtlasRegion region) {
 		return region.texture == Core.atlas.find("white").texture ? PageType.main
-				: region.texture == Core.atlas.find("stone1").texture ? PageType.environment
-				: region.texture == Core.atlas.find("clear-editor").texture ? PageType.editor
-				: region.texture == Core.atlas.find("whiteui").texture ? PageType.ui
-				: region.texture == Core.atlas.find("rubble-1-0").texture ? PageType.rubble
-				: PageType.main;
+		 : region.texture == Core.atlas.find("stone1").texture ? PageType.environment
+		 : region.texture == Core.atlas.find("clear-editor").texture ? PageType.editor
+		 : region.texture == Core.atlas.find("whiteui").texture ? PageType.ui
+		 : region.texture == Core.atlas.find("rubble-1-0").texture ? PageType.rubble
+		 : PageType.main;
 	}
 
 	static PageType getPage(String path) {
 		return path.contains("sprites/blocks/environment") ? PageType.environment
-				: path.contains("sprites/editor") ? PageType.editor
-				: path.contains("sprites/rubble") ? PageType.editor
-				: path.contains("sprites/ui") ? PageType.ui
-				: PageType.main;
+		 : path.contains("sprites/editor") ? PageType.editor
+		 : path.contains("sprites/rubble") ? PageType.editor
+		 : path.contains("sprites/ui") ? PageType.ui
+		 : PageType.main;
 	}
 
 	public static void packSprite() {
@@ -225,22 +215,22 @@ public class LoadMod {
 		boolean[] prefix = {false};
 		Cons2<String, Pixmap> cons = (key, pix) -> {
 			//read and bleed pixmaps in parallel
-//            async.submit(() -> {
+			//            async.submit(() -> {
 			try {
 				//only bleeds when linear filtering is on at startup
 				if (linear) {
 					Pixmaps.bleed(pix, 2);
 				}
 				//this returns a *runnable* which actually packs the resulting pixmap; this has to be done synchronously outside the method
-//                    return (Runnable)() -> {
+				//                    return (Runnable)() -> {
 				packer.add(PageType.main, prefix[0] ? lastMod.name + "-" + key : key, new PixmapRegion(pix));
 				pix.dispose();
-//                    };
+				//                    };
 			} catch (Exception e) {
 				//rethrow exception with details about the cause of failure
 				Log.err(new Exception("Failed to load image " + key + " for mod " + currentMod.name(), e));
 			}
-//            });
+			//            });
 		};
 		currentMod.sprites1.each(cons);
 		prefix[0] = true;
@@ -377,21 +367,21 @@ public class LoadMod {
 				}
 			});
 		}
-//		Log.info("loadIcons");
+		//		Log.info("loadIcons");
 	}
 
-	static boolean loaded() throws Exception {
+	static boolean loaded(Boolc boolc) throws Exception {
 		var mod = currentMod;
 
 		Fi to = dataDirectory.child("tmp").child(mod.name());
 		mod.root.copyTo(to);
-		var _mod = (LoadedMod) loadMod.invoke(Vars.mods, to, true);
+		var _mod = (LoadedMod) loadMod.invoke(Vars.mods, to);
 		mods.add(_mod);
 		_mod.state = Mods.ModState.enabled;
 		lastMod = _mod;
-//		if (mod.sprites1.isEmpty() && mod.sprites2.isEmpty()) loadSprites();
+		//		if (mod.sprites1.isEmpty() && mod.sprites2.isEmpty()) loadSprites();
 
-		return boolf.get(currentMod);
+		return boolf.get(currentMod, boolc);
 		/*content.clear();
 		content.createBaseContent();
 		loadContent();
@@ -428,26 +418,23 @@ public class LoadMod {
 			else tmpDir.delete();
 		}
 		if (settings.getBool("load_sprites")) mod.loadSprites();
-		IntVars.async("< 加载mod >", () -> {
-			try {
-				if (loaded()) Vars.ui.showInfo("加载成功");
-			} catch (Exception e) {
-				ui.showException("加载失败", e);
-			}
-		}, () -> {
-			if (lastMod.hasContentErrors() && settings.getBool("display_exception")) {
-				try {
-					checkWarnings.invoke(Vars.mods);
-				} catch (Exception e) {
-					ui.showException(e);
+		try {
+			loaded(b -> {
+				if (b) Vars.ui.showInfo("加载成功");
+				else if (lastMod.hasContentErrors() && settings.getBool("display_exception")) {
+					try {
+						checkWarnings.invoke(Vars.mods);
+					} catch (Exception e) {
+						ui.showException(e);
+					}
 				}
-			}
-
-			if (lastMod != null) {
-				mods.remove(lastMod);
-			}
-
-		});
+				if (lastMod != null) {
+					mods.remove(lastMod);
+				}
+			});
+		} catch (Exception e) {
+			ui.showException("加载失败", e);
+		}
 		// Vars.ui.loadfrag.table
 		return true;
 	}

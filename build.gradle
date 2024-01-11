@@ -1,95 +1,106 @@
-apply plugin: "java"
-
-version '1.0'
-
-//compile java 16 code, targeting java 8
-targetCompatibility = 8
-sourceCompatibility = JavaVersion.VERSION_11
-
-sourceSets.main.java.srcDirs = ["src"]
-
-repositories{
-    mavenCentral()
-    maven{ url 'https://www.jitpack.io' }
-}
-
-ext{
-    //the build number that this mod is made for
-    mindustryVersion = 'v137'
-    jabelVersion = "0.7.0"
-    sdkRoot = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
-}
-
-//java 8 backwards compatibility flag
-tasks.withType(JavaCompile){
-    options.compilerArgs.addAll(['--release', '11'])
-}
-
-
-dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-    annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
+plugins {
+	id 'java'
+	id "io.github.liplum.mgpp" version "1.2.0"
 }
 
 tasks.withType(JavaCompile) {
-    options.encoding = "UTF-8"
+	options.encoding = 'UTF-8'
+//	options.compilerArgs.addAll("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED")
+//	options.compilerArgs.addAll("--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED")
+//	options.compilerArgs.addAll("--add-opens", "java.base/jdk.internal.misc=ALL-UNNAMED")
 }
 
-task jarAndroid{
-    dependsOn "jar"
-
-    doLast{
-        if(!sdkRoot || !new File(sdkRoot).exists()) throw new GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.")
-
-        def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists()}
-
-        if(!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
-
-        //collect dependencies needed for desugaring
-        def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
-
-        //dex and desugar files - this requires d8 in your PATH
-        "d8 $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
-            .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
-    }
+group 'org.example'
+version '1.0'
+sourceSets {
+	main {
+		java.srcDirs = ["src"]
+	}
+}
+targetCompatibility = 9
+sourceCompatibility = 9
+repositories {
+	mavenCentral()
+	mindustryRepo()
 }
 
-jar{
-    archiveFileName = "${project.archivesBaseName}Desktop.jar"
+def MdtDataDir = "E:/Users/ASUS/Desktop/Mindustry136"
+def VERSION = "1.4.1"
 
-    from{
-        configurations.runtimeClasspath.collect{ it.isDirectory() ? it : zipTree(it) }
-    }
+dependencies {
+	def uncVersion = "1.8.9"
+	annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
+	def mindustryVersion = 'v146'
+	compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+	compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+}
+mindustry {
+	client {
+		official version: 'v139'
+		fromLocal "E:/Users/ASUS/Desktop/Mindustry136/Mindustry.jar"
+		args += ['-debug']
+	}
+	meta << ModMeta(
+			version: VERSION
+	)
+	meta.displayName = "mod-make"
+	def name = project.archivesBaseName
+	deploy {
+		baseName = name
+	}
+	dexJar {
+//		options.minApi = '26'
+	}
 
-    from(rootDir){
-        include "mod.hjson"
-    }
-
-    from("assets/"){
-        include "**"
-    }
+	run {
+		keepOtherMods
+//		setDataDefault()
+		dataDir = "E:/Users/ASUS/Desktop/Mindustry136"
+	}
+}
+mindustryAssets {
+	// Set the assets root
+	rootAt "$projectDir/assets"
+}
+test {
+	useJUnitPlatform()
 }
 
-task deploy(type: Jar){
-    dependsOn jarAndroid
-    dependsOn jar
-    archiveFileName = "${project.archivesBaseName}.jar"
+import arc.files.Fi;
 
-    from{ [zipTree("$buildDir/libs/${project.archivesBaseName}Desktop.jar"), zipTree("$buildDir/libs/${project.archivesBaseName}Android.jar")] }
-
-    doLast{
-        delete{
-            delete "$buildDir/libs/${project.archivesBaseName}Desktop.jar"
-            delete "$buildDir/libs/${project.archivesBaseName}Android.jar"
-        }
-    }
+task playGame(dependsOn: classes, type: JavaExec) {
+	dependsOn jar
+	doFirst {
+		def modFi = project.archivesBaseName + "-" + VERSION + ".jar"
+		def buildDir = new Fi("" + buildDir).child("libs")
+		def from = buildDir.child(project.archivesBaseName + "-1.0.jar");
+		if (from.exists()) from.moveTo(buildDir.child(modFi))
+		buildDir.child(modFi).copyTo(new Fi(MdtDataDir).child("mods").child(modFi))
+	}
+	//运行游戏目录
+	def gameFile = new File(MdtDataDir + "/Mindustry.jar")
+	main = "-jar"
+	args = [
+			gameFile.path
+			/*,"-debug"*/
+	]
+}
+task ZComplieAll {
+	dependsOn deploy
 }
 
+task mergeLibs(type: Jar) {
+	archiveFileName = "$rootDir/assets/libs/lib.jar"
 
-task unzip(type: Copy) {
-    // 从jar的目录树中输出到目标目录
-    from zipTree("$buildDir/libs/${project.archivesBaseName}.jar")
-    into file("$buildDir/libs/tmp")
+	def libBuild = new File("$rootDir/libs/build")
+
+	from(zipTree("$libBuild/tmp/deploy/libs-1.1.jar")) {
+		exclude "classes.dex"
+		exclude "mod.hjson"
+		exclude "META-INF/META-INF.MF"
+	}
+	from(zipTree("$libBuild/tmp/dexJar/dexed.bak.jar")) {
+		include "**"
+	}
 }
-
+//build.dependsOn(mergeLibs)

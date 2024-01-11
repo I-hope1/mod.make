@@ -25,12 +25,12 @@ import static modmake.util.ContentSeq.parser;
 
 public class LoadMod {
 	public static Method loadMod, checkWarnings;
-	public static AsyncExecutor async = new AsyncExecutor();
+	public static AsyncExecutor  async = new AsyncExecutor();
 	public static Seq<LoadedMod> mods;
-	public static MyMod currentMod;
-	public static LoadedMod lastMod;
+	public static MyMod          currentMod;
+	public static LoadedMod      lastMod;
 	// 用main.js加载
-	public static Boolf<MyMod> imgLoad;
+	public static Boolf<MyMod>   imgLoad;
 
 
 	public static void init() throws Exception {
@@ -48,7 +48,7 @@ public class LoadMod {
 
 		class LoadRun implements Comparable<LoadRun> {
 			final ContentType type;
-			final Fi file;
+			final Fi          file;
 
 			public LoadRun(ContentType type, Fi file) {
 				this.type = type;
@@ -67,8 +67,8 @@ public class LoadMod {
 		if (mod.root.child("content").exists()) {
 			Fi contentRoot = mod.root.child("content");
 			for (ContentType type : ContentType.all) {
-				String lower = type.name().toLowerCase(Locale.ROOT);
-				Fi folder = contentRoot.child(lower + (lower.endsWith("s") ? "" : "s"));
+				String lower  = type.name().toLowerCase(Locale.ROOT);
+				Fi     folder = contentRoot.child(lower + (lower.endsWith("s") ? "" : "s"));
 				if (folder.exists()) {
 					for (Fi file : folder.findAll(f -> f.extension().equals("json") || f.extension().equals("hjson"))) {
 						runs.add(new LoadRun(type, file));
@@ -104,14 +104,14 @@ public class LoadMod {
 	static boolean loaded() {
 		var mod = currentMod;
 
-//		var _mod = (LoadedMod) loadMod.invoke(Vars.mods, fi, true);
-//		mods.add(_mod);
-//		_mod.state = Mods.ModState.enabled;
+		//		var _mod = (LoadedMod) loadMod.invoke(Vars.mods, fi, true);
+		//		mods.add(_mod);
+		//		_mod.state = Mods.ModState.enabled;
 
 		content.clear();
 		content.createBaseContent();
 		var _mod = loadContent();
-//		content.createModContent();
+		//		content.createModContent();
 		var wrong = _mod.hasContentErrors();
 		lastMod = _mod;
 		mods.add(_mod);

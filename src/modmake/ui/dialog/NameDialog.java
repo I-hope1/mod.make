@@ -2,20 +2,18 @@ package modmake.ui.dialog;
 
 import arc.func.Cons;
 import arc.input.KeyCode;
-import arc.scene.event.InputEvent;
-import arc.scene.event.InputListener;
-import arc.scene.ui.Dialog;
+import arc.scene.event.*;
 import arc.scene.ui.TextField;
-import arc.scene.ui.layout.Cell;
+import modmake.components.Window;
 
-public class NameDialog extends Dialog {
-	TextField namef = new TextField();
+public class NameDialog extends Window {
+	TextField    namef = new TextField();
 	Cons<String> okCons;
 
 	{
 		cont.table(t -> {
 			t.add("@name");
-			Cell<TextField> c = t.add(namef).growX();
+			t.add(namef).growX();
 		}).growX().row();
 
 		buttons.button("@back", this::hide).size(150, 64);
@@ -23,7 +21,11 @@ public class NameDialog extends Dialog {
 			okCons.get(namef.getText());
 			hide();
 		}).size(150, 64).disabled(__ -> !namef.isValid());
-		closeOnBack();
+		// closeOnBack();
+	}
+
+	public NameDialog() {
+		super("", 120, 80, true, false);
 	}
 
 	public void show(Cons<String> okCons, TextField.TextFieldValidator valid, String text) {
@@ -31,7 +33,7 @@ public class NameDialog extends Dialog {
 		if (valid != null) namef.setValidator(valid);
 		namef.setText(text);
 		namef.setMessageText("请输入");
-		namef.addListener(new InputListener(){
+		namef.addListener(new InputListener() {
 			@Override
 			public boolean keyUp(InputEvent event, KeyCode keycode) {
 				if (keycode == KeyCode.enter) {

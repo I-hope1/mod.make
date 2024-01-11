@@ -12,32 +12,32 @@ import mindustry.gen.*;
 import mindustry.graphics.Pal;
 import mindustry.ui.*;
 import mindustry.ui.dialogs.BaseDialog;
-import modmake.components.MyMod;
+import modmake.components.*;
 import modmake.ui.MyStyles;
 import modmake.util.load.LoadMod;
 
 import java.util.Objects;
 
 import static mindustry.Vars.ui;
-import static modmake.IntUI.*;
 import static modmake.components.DataHandle.*;
 
-public class ModsDialog extends BaseDialog {
+public class ModsDialog extends Window {
 
-	Table pane;
+	Table   pane;
 	Seq<Fi> mods = new Seq<>();
-	float h = 110, w = Vars.mobile ? (Core.graphics.getWidth() > Core.graphics.getHeight() ? 50 : 0) + 440 : 524;
+	float   h    = 110, w = Vars.mobile ? (Core.graphics.getWidth() > Core.graphics.getHeight() ? 50 : 0) + 440 : 524;
 
 	public ModsDialog() {
-		super("mods");
+		super("mods", 120, 80, true, false);
 	}
 
 	public void load() {
-		modDialog.load();
-		modMetaDialog.load();
+		// modDialog.load();
+		// modMetaDialog.load();
+		// jsonDialog.load();
 		// modMetaDialog.hidden(this::setup);
 
-		addCloseListener();
+		// addCloseListener();
 
 		style = Styles.defaultt;
 		margin = 12;
@@ -49,7 +49,7 @@ public class ModsDialog extends BaseDialog {
 
 		buttons.button("@back", Icon.left, style, this::hide).margin(margin).size(210, 60);
 		buttons.button("@mod.add", Icon.add, style, () -> {
-			BaseDialog dialog = new BaseDialog("@mod.add");
+			BaseDialog                 dialog = new BaseDialog("@mod.add");
 			TextButton.TextButtonStyle bstyle = Styles.cleart;
 
 			dialog.cont.table(Tex.button, t -> {
@@ -57,15 +57,15 @@ public class ModsDialog extends BaseDialog {
 				t.margin(12);
 
 				t.button("@mod.import.file", Icon.file, bstyle, () -> {
-					hide();
-
 					Vars.platform.showMultiFileChooser(file -> {
 						importMod(file);
 						setup();
 					}, "zip", "jar");
 				}).margin(12).row();
 				t.button("@mod.add", Icon.add, bstyle, () -> {
-					modMetaDialog.show(modsDirectory.child("tmp").child("mod.hjson"));
+					var d = new ModMetaDialog();
+					d.load();
+					d.show(modsDirectory.child("tmp").child("mod.hjson"));
 				}).margin(12);
 			});
 			dialog.addCloseButton();
@@ -97,28 +97,32 @@ public class ModsDialog extends BaseDialog {
 
 			root = new ZipFi(file);
 			Fi[] list = root.list();
-			if (list.length == 1) {
-				if (list[0].isDirectory()) {
-					currentFile = list[0];
-				} else {
-					throw new IllegalArgumentException(Core.bundle.get("file.content.illegal"));
-				}
-			} else {
-				currentFile = root;
-			}
-			if (!currentFile.child("mod.json").exists() && !currentFile.child("mod.hjson").exists()) {
-				throw new IllegalArgumentException("没有mod.(h)json");
-			}
-			currentFile.copyTo(toFile.parent());
+			resolveMod(root, toFile, list);
 		} catch (Exception err) {
 			ui.showException(err);
 		} finally {
 			if (root != null) root.delete();
 		}
 	}
+	private static void resolveMod(Fi root, Fi toFile, Fi[] list) {
+		Fi currentFile;
+		if (list.length == 1) {
+			if (list[0].isDirectory()) {
+				currentFile = list[0];
+			} else {
+				throw new IllegalArgumentException(Core.bundle.get("file.content.illegal"));
+			}
+		} else {
+			currentFile = root;
+		}
+		if (!currentFile.child("mod.json").exists() && !currentFile.child("mod.hjson").exists()) {
+			throw new IllegalArgumentException("没有mod.(h)json");
+		}
+		currentFile.copyTo(toFile.parent());
+	}
 	public static final Fi modsDirectory = dataDirectory.child("mods");
 	TextButton.TextButtonStyle style;
-	float margin;
+	float                      margin;
 
 	public void setup() {
 		Table p = pane;
@@ -134,74 +138,89 @@ public class ModsDialog extends BaseDialog {
 			MyMod mod = MyMod.set(file);
 			if (mod == null) return;
 
-			p.button(b -> {
-				b.top().left();
-				b.margin(12);
-				b.defaults().left().top();
-
-				b.table(title -> {
-					title.left();
-
-					var image = new BorderImage();
-					if (mod.root.child("icon.png").exists()) {
-						try {
-							image.setDrawable(new TextureRegion(new Texture(mod.root.child("icon.png"))));
-						} catch (Exception e) {
-							image.setDrawable(Tex.nomap);
-						}
-					} else {
-						image.setDrawable(Tex.nomap);
-					}
-					image.border(Pal.accent);
-					title.add(image).size(h - 8).padTop(-8).padLeft(-8).padRight(8);
-
-					title.table(text -> {
-						text.add("[accent]" + mod.displayName() + "\n[lightgray]v" +
-								mod.meta.getString("version", "???")).wrap().width(300).growX().left();
-
-					}).top().growX();
-
-					title.add().growX().left();
-				});
-				b.table(right -> {
-//					right.fillParent = true;
-					right.right();
-					right.button(Icon.edit, MyStyles.clearPartiali, () -> {
-						modMetaDialog.show(mod.root.child("mod.json").exists()
-								? mod.root.child("mod.json") : mod.root.child("mod.hjson"));
-					}).size(50);
-					right.button(Icon.trash, MyStyles.clearPartiali, () ->
-							ui.showConfirm("@confirm", "@mod.remove.confirm", () -> {
-								file.deleteDirectory();
-								setup();
-							})
-					).size(50).row();
-					right.button(Icon.upload, MyStyles.clearPartiali, () -> {
-						Fi dir = Vars.modDirectory;
-						boolean enable = settings.getBool("auto_load_mod");
-						Runnable upload = () -> {
-							if (enable) {
-								if (!LoadMod.load(mod)) {
-									ui.showInfo("导出失败！");
-									return;
-								}
-							} else {
-								dir.child(mod.root.name()).deleteDirectory();
-								mod.root.copyTo(dir);
-							}
-							ui.showInfo("导出成功！");
-						};
-
-						if (dir.child(mod.root.name()).exists() && !enable) {
-							ui.showConfirm("替换", "同名文件已存在\n是否要替换", upload);
-						} else upload.run();
-					}).size(50).disabled(__ -> Vars.state.isGame() && settings.getBool("auto_load_mod"));
-					right.button(Icon.link, MyStyles.clearPartiali, () -> Core.app.openFolder(mod.root.absolutePath())).size(50);
-				}).growX().right().padRight(-8).padTop(-8).fill();
-			}, MyStyles.clearpb, () -> {
-				hide();
-				modDialog.show(mod);
-			}).size(w, h).growX().pad(4).row();
+			buildMod(p, file, mod);
 		});
+	}
+	private void buildMod(Table p, Fi file, MyMod mod) {
+		p.button(b -> {
+			b.top().left();
+			b.margin(12);
+			b.defaults().left().top();
+
+			b.table(title -> {
+				buildTitle(mod, title);
+			});
+			b.table(right -> {
+				buildRight(file, mod, right);
+			}).growX().right().padRight(-8).padTop(-8).fill();
+		}, MyStyles.clearpb, () -> {
+			// hide();
+			var d = new ModDialog();
+			d.load();
+			d.show(mod);
+		}).size(w, h).growX().pad(4).row();
+	}
+	private void buildRight(Fi file, MyMod mod, Table right) {
+		//					right.fillParent = true;
+		right.right();
+		right.button(Icon.edit, MyStyles.clearPartiali, () -> {
+			var d = new ModMetaDialog();
+			d.load();
+			d.show(mod.root.child("mod.json").exists()
+			 ? mod.root.child("mod.json") : mod.root.child("mod.hjson"));
+		}).size(50);
+		right.button(Icon.trash, MyStyles.clearPartiali, () ->
+		 ui.showConfirm("@confirm", "@mod.remove.confirm", () -> {
+			 file.deleteDirectory();
+			 setup();
+		 })
+		).size(50).row();
+		right.button(Icon.upload, MyStyles.clearPartiali, () -> {
+			exportMod(mod);
+		}).size(50).disabled(__ -> Vars.state.isGame() && dsettings.getBool("auto_load_mod"));
+		right.button(Icon.link, MyStyles.clearPartiali, () -> Core.app.openFolder(mod.root.absolutePath())).size(50);
+	}
+	private static void exportMod(MyMod mod) {
+		Fi      dir    = Vars.modDirectory;
+		boolean enable = dsettings.getBool("auto_load_mod");
+		Runnable upload = () -> {
+			if (enable) {
+				if (!LoadMod.load(mod)) {
+					ui.showInfo("导出失败！");
+					return;
+				}
+			} else {
+				dir.child(mod.root.name()).deleteDirectory();
+				mod.root.copyTo(dir);
+			}
+			ui.showInfo("导出成功！");
+		};
+
+		if (dir.child(mod.root.name()).exists() && !enable) {
+			ui.showConfirm("替换", "同名文件已存在\n是否要替换", upload);
+		} else upload.run();
+	}
+	private void buildTitle(MyMod mod, Table title) {
+		title.left();
+
+		var image = new BorderImage();
+		if (mod.root.child("icon.png").exists()) {
+			try {
+				image.setDrawable(new TextureRegion(new Texture(mod.root.child("icon.png"))));
+			} catch (Exception e) {
+				image.setDrawable(Tex.nomap);
+			}
+		} else {
+			image.setDrawable(Tex.nomap);
+		}
+		image.border(Pal.accent);
+		title.add(image).size(h - 8).padTop(-8).padLeft(-8).padRight(8);
+
+		title.table(text -> {
+			text.add("[accent]" + mod.displayName() + "\n[lightgray]v" +
+							 mod.meta.getString("version", "???")).wrap().width(300).growX().left();
+		}).top().growX();
+
+		title.add().growX().left();
 	}
 }

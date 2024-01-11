@@ -16,10 +16,10 @@ public class IntTab {
 
 	public Table main, title;
 	public Seq<String> names;
-	public Seq<Color> colors;
-	public Seq<Table> tables;
-	public float totalWidth;
-	public ScrollPane pane;
+	public Seq<Color>  colors;
+	public Seq<Table>  tables;
+	public float       totalWidth;
+	public ScrollPane  pane;
 
 	protected void init() {
 		if (main != null)
@@ -29,8 +29,8 @@ public class IntTab {
 			t.defaults().growX();
 			t.add(title).growX().row();
 			pane = new ScrollPane(null);
-			var c = t.add(pane);
-			if (totalWidth == -1){
+			var c = t.add(pane).grow();
+			if (totalWidth == -1) {
 				c.growX();
 			} else {
 				c.width(totalWidth);
@@ -44,6 +44,7 @@ public class IntTab {
 	 * @param colors     颜色
 	 * @param tables     Tables
 	 * @param cols       一行的个数
+	 *
 	 * @throws IllegalArgumentException size must be the same.
 	 */
 	public static IntTab set(float totalWidth, Seq<String> names, Seq<Color> colors, Seq<Table> tables, int cols) {
@@ -65,11 +66,11 @@ public class IntTab {
 	}
 
 	public Table build() {
-		byte[] selected = { -1 };
-		boolean[] transitional = { false };
+		byte[]    selected     = {-1};
+		boolean[] transitional = {false};
 		for (byte i = 0; i < tables.size; i++) {
 			final byte j = i;
-			Table t = tables.get(j);
+			Table      t = tables.get(j);
 			var cell = title.button(b -> {
 				b.add(names.get(j), colors.get(j)).padRight(10f + 5f).growY().row();
 
@@ -84,8 +85,8 @@ public class IntTab {
 					transitional[0] = true;
 					title.update(() -> {
 						if (selectedTab.hasActions()) return;
-						if (pane.getWidget() != t) pane.setWidget(t);
 						if (t.hasActions()) return;
+						if (pane.getWidget() != t) pane.setWidget(t);
 						transitional[0] = false;
 						title.update(null);
 						selected[0] = j;
