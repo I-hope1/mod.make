@@ -71,7 +71,7 @@ task playGame(dependsOn: classes, type: JavaExec) {
 		def modFi = project.archivesBaseName + "-" + VERSION + ".jar"
 		def buildDir = new Fi("" + buildDir).child("libs")
 		def from = buildDir.child(project.archivesBaseName + ".jar");
-		if (from.exists()) from.moveTo(buildDir.child(modFi))
+		if (from.exists()) from.copyTo(buildDir.child(modFi))
 		buildDir.child(modFi).copyTo(new Fi(MdtDataDir).child("mods").child(modFi))
 	}
 	//运行游戏目录
