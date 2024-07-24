@@ -4,7 +4,7 @@ import arc.func.*;
 import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
 import arc.struct.*;
-import arc.util.Reflect;
+import arc.util.*;
 import arc.util.serialization.Jval;
 import mindustry.ctype.UnlockableContent;
 import mindustry.mod.ClassMap;
@@ -238,4 +238,11 @@ public class Tools {
 	}
 
 	public static void __(boolean ignored) {}
+	public static void runLoggedException(Runnable r) {
+		try {
+      r.run();
+    } catch (Exception e) {
+			Log.err(e);
+		}
+	}
 }

@@ -158,7 +158,10 @@ public class AddFieldBtn extends TextButton {
 	public Button bind = this;
 
 	public static ObjectMap<String, ?> map = Seq.with(
-	 "id", "minfo", "iconId", "uiIcon", "fullIcon", "unlocked", "stats", "bars", "timers", "singleTarget", "mapColor", "buildCost", "flags", "timerDump", "dumpTime", "generator", "capacities", "region", "legRegion", "jointRegion", "baseJointRegion", "footRegion", "legBaseRegion", "baseRegion", "cellRegion", "softShadowRegion", "outlineRegion", "shadowRegion", "heatRegion", "edgeRegion", "overlayRegion", "canHeal",
+	 "id", "minfo", "iconId", "uiIcon", "fullIcon", "unlocked", "stats", "bars", "timers",
+	 "singleTarget", "mapColor", "buildCost", "flags", "timerDump", "dumpTime", "generator", "capacities",
+	 "region", "legRegion", "jointRegion", "baseJointRegion", "footRegion", "legBaseRegion", "baseRegion", "cellRegion", "softShadowRegion",
+	 "outlineRegion", "shadowRegion", "heatRegion", "edgeRegion", "overlayRegion", "canHeal",
 	 "itemFilter", "liquidFilter", "solarSystem", "children", "autoFindTarget"
 	).asMap(k -> k, k -> null);
 	// public static Pattern pattern = Pattern.compile("^$");

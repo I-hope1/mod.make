@@ -1,0 +1,10 @@
+name: "liquid"
+description: ""
+color: "000000"
+flammability: 0
+viscosity: 0.5
+explosiveness: 0.1
+lightColor: "00000000"
+heatCapacity: 0.5
+temperature: 0.5
+effect: none

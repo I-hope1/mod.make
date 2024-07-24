@@ -277,7 +277,7 @@ public class IntUI {
 
 	public static <T extends Button, E> Table
 	showSelectListTable(T button, Seq<E> list, Prov<String> holder,
-											Cons<E> cons, int width, int height, Boolean searchable) {
+	                    Cons<E> cons, int width, int height, Boolean searchable) {
 		if (list == null) throw new IllegalArgumentException("list cannot be null");
 		return showSelectTable(button, (p, hide, text) -> {
 			p.clearChildren();
@@ -285,7 +285,7 @@ public class IntUI {
 			Pattern pattern = compileRegExp(text);
 			if (pattern == null) return;
 			list.each(item -> text.isEmpty() || testP(pattern, "" + item)
-												|| testP(pattern, DataHandle.types.get("" + item, () -> "" + item)),
+			                  || testP(pattern, DataHandle.types.get("" + item, () -> "" + item)),
 			 item -> {
 				 p.button(DataHandle.types.get("" + item, () -> "" + item), Styles.cleart, () -> {
 					 cons.get(item);
@@ -310,8 +310,8 @@ public class IntUI {
 	 */
 	public static <T extends Button, T1> Table
 	showSelectImageTableWithIcons(T button, Seq<T1> items, Seq<? extends Drawable> icons,
-																Prov<T1> holder, Cons<T1> cons,
-																float size, float imageSize, int cols, boolean searchable) {
+	                              Prov<T1> holder, Cons<T1> cons,
+	                              float size, float imageSize, int cols, boolean searchable) {
 		return showSelectTable(button, (Table p, Runnable hide, String text) -> {
 			p.clearChildren();
 			p.left();
@@ -328,9 +328,9 @@ public class IntUI {
 				T1 item = items.get(i);
 				// 过滤不满足条件的
 				if (!Objects.equals(text, "") && !(item instanceof String && pattern.matcher("" + item).find())
-						&& !Tools.<UnlockableContent, Boolean>as(item,
+				    && !Tools.<UnlockableContent, Boolean>as(item,
 				 unlock -> pattern.matcher(unlock.name).find() ||
-									 pattern.matcher(unlock.localizedName).find(), false)) {
+				           pattern.matcher(unlock.localizedName).find(), false)) {
 					continue;
 				}
 
@@ -359,7 +359,7 @@ public class IntUI {
 	 */
 	public static <T extends Button, T1 extends UnlockableContent> Table
 	showSelectImageTable(T button, Seq<T1> items, Prov<T1> holder, Cons<T1> cons,
-											 float size, int imageSize, int cols, boolean searchable) {
+	                     float size, int imageSize, int cols, boolean searchable) {
 		Seq<Drawable> icons = new Seq<>();
 		items.each(item -> icons.add(new TextureRegionDrawable(item.uiIcon)));
 		return showSelectImageTableWithIcons(button, items, icons, holder, cons, size, imageSize, cols,
@@ -371,7 +371,7 @@ public class IntUI {
 	 */
 	public static <T extends Button, T1> Table
 	showSelectImageTableWithFunc(T button, Seq<T1> items, Prov<T1> holder, Cons<T1> cons,
-															 float size, int imageSize, int cols, Func<T1, Drawable> func, boolean searchable) {
+	                             float size, int imageSize, int cols, Func<T1, Drawable> func, boolean searchable) {
 		Seq<Drawable> icons = new Seq<>();
 		items.each(item -> {
 			icons.add(func.get(item));
@@ -380,11 +380,11 @@ public class IntUI {
 	}
 
 	public static <T extends Button> void allContentSelection(T btn, Seq<UnlockableContent> all,
-																														Prov<UnlockableContent> holder,
-																														Cons<UnlockableContent> cons,
-																														float size, int imageSize, boolean searchable) {
+	                                                          Prov<UnlockableContent> holder,
+	                                                          Cons<UnlockableContent> cons,
+	                                                          float size, int imageSize, boolean searchable) {
 		Table[] tableArr = {new Table(), new Table(), new Table(),
-												new Table(), new Table(), new Table()};
+		                    new Table(), new Table(), new Table()};
 		int length = tableArr.length;
 		showSelectTable(btn, (p, hide, v) -> {
 			p.clearChildren();
@@ -441,11 +441,11 @@ public class IntUI {
 	}
 
 	public static <T extends UnlockableContent> Prov<String> selectionWithField(Table table, Seq<T> items,
-																																							String current, int size, int imageSize,
-																																							int cols, boolean searchable) {
+	                                                                            String current, int size, int imageSize,
+	                                                                            int cols, boolean searchable) {
 		var field = new TextField(current);
 		table.add(field).fillX();
-		var btn = table.button(Icon.pencilSmall, MyStyles.clearFulli, () -> {}).size(40).padLeft(-1).get();
+		var btn = table.button(Icon.pencilSmall, MyStyles.clearFulli, () -> { }).size(40).padLeft(-1).get();
 		btn.clicked(() -> showSelectImageTable(btn, items,
 		 () -> content.getByName(ContentType.item, field.getText()),
 		 item -> field.setText(item.name), size, imageSize,
@@ -464,40 +464,36 @@ public class IntUI {
 	}
 
 
-	/* 长按事件 */
+	/**
+	 * 长按事件
+	 * @param <T>      the type parameter
+	 * @param elem     被添加侦听器的元素
+	 * @param duration 需要长按的事件（单位毫秒[ms]，600ms=0.6s）
+	 * @param boolc0   {@link Boolc#get(boolean b)}形参{@code b}为是否长按
+	 * @return the t
+	 */
 	public static <T extends Element> T
-	longPress(T elem, final long duration, final Boolc boolc) {
-		elem.addListener(new ClickListener() {
-			final Task task = new Task() {
-				public void run() {
-					if (pressed) {
-						boolc.get(true);
-					}
-				}
-			};
-			public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
-				if (super.touchDown(event, x, y, pointer, button)) {
-					Timer.schedule(task, duration / 1000f);
-					return true;
-				}
-				return false;
-			}
-			public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button) {
-				if (task.isScheduled()) {
-					task.cancel();
-					if (pressed) boolc.get(false);
-				}
-				super.touchUp(event, x, y, pointer, button);
-			}
-		});
+	longPress(T elem, final long duration, final Boolc boolc0) {
+		Boolc boolc = b -> Tools.runLoggedException(() -> boolc0.get(b));
+		elem.addCaptureListener(new LongPressListener(boolc, duration));
 		return elem;
 	}
-	public static <T extends Element> void
-	longPress(T elem, final long duration, Runnable run) {
-		longPress(elem, duration, b -> {
-			if (b) {
-				run.run();
-			}
+	public static <T extends Element> T
+	longPress(T elem, final Boolc boolc) {
+		return longPress(elem, 600, boolc);
+	}
+	/**
+	 * 长按事件
+	 * @param <T>      the type parameter
+	 * @param elem     被添加侦听器的元素
+	 * @param duration 需要长按的事件（单位毫秒[ms]，600ms=0.6s）
+	 * @param run      长按时调用
+	 * @return the t
+	 */
+	public static <T extends Element> T
+	longPress0(T elem, long duration, Runnable run) {
+		return longPress(elem, duration, b -> {
+			if (b) run.run();
 		});
 	}
 
@@ -555,7 +551,7 @@ public class IntUI {
 	 */
 	public static Table
 	showSelectTableRB(Vec2 vec2, Cons3<Table, Runnable, String> f,
-										boolean searchable) {
+	                  boolean searchable) {
 		Table t = new Table(Tex.pane) {
 			public float getPrefHeight() {
 				return Math.min(super.getPrefHeight(), (float) Core.graphics.getHeight());
@@ -671,6 +667,43 @@ public class IntUI {
 			super(icon, name, () -> {
 				showConfirm(text, run).setPosition(Core.input.mouse());
 			});
+		}
+	}
+
+	static final Vec2 last = new Vec2();
+	public static class LongPressListener extends ClickListener {
+		final long  duration;
+		final Boolc boolc;
+		public LongPressListener(Boolc boolc0, long duration0) {
+			boolc = boolc0;
+			duration = duration0;
+			task = new Task() {
+				public void run() {
+					if (pressed && Core.input.mouse().dst(last) < 10) {
+						longPress = true;
+						boolc.get(true);
+					}
+				}
+			};
+		}
+		boolean longPress;
+		final Task task;
+		public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
+			if (event.stopped) return false;
+			longPress = false;
+			if (super.touchDown(event, x, y, pointer, button)) {
+				last.set(Core.input.mouse());
+				task.cancel();
+				Timer.schedule(task, duration / 1000f);
+				return true;
+			}
+			return false;
+		}
+		public void clicked(InputEvent event, float x, float y) {
+			// super.clicked(event, x, y);
+			if (longPress) return;
+			if (task.isScheduled() && pressed) boolc.get(false);
+			task.cancel();
 		}
 	}
 }

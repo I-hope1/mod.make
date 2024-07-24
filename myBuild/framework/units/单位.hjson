@@ -1,0 +1,9 @@
+name: "unit"
+description: ""
+flying: true
+speed: 1.1
+health: 200
+targetAir: true
+targetGround: true
+weapons: []
+controller: FlyingAI

@@ -1,0 +1,4 @@
+// extend 方块
+type: PowerGenerator
+powerProduction: 1
+category: power

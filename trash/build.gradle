@@ -1,0 +1,147 @@
+/*buildscript {
+	repositories {
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	dependencies {
+		classpath "io.github.liplum.mgpp:MindustryGradlePluginPlumy:1.0.1"
+	}
+}
+
+plugins {
+	id "java"
+	id "io.github.liplum.mgpp" version "1.0.1"
+}
+
+apply plugin: "io.github.liplum.mgpp"*/
+apply plugin: "java"
+
+version '1.0'
+
+//compile java 16 code, targeting java 8
+targetCompatibility = 8
+sourceCompatibility = JavaVersion.VERSION_11
+
+sourceSets.main.java.srcDirs = ["src"]
+
+repositories {
+	mavenCentral()
+	maven { url 'https://www.jitpack.io' }
+}
+
+ext {
+	//the build number that this mod is made for
+	mindustryVersion = 'v135'
+	jabelVersion = "0.6.0"
+	sdkRoot =
+			"E:\\Program Files\\AndroidStudio\\sdk"
+//    System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+//    System.out.println(sdkRoot)
+}
+
+//java 8 backwards compatibility flag
+tasks.withType(JavaCompile) {
+	options.compilerArgs.addAll(['--release', '11'])
+}
+
+
+dependencies {
+	compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+	compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+//	implementation files("F:/files/java/jdks/java-8/lib/rt.jar")
+	annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
+}
+
+tasks.withType(JavaCompile) {
+	options.encoding = "UTF-8"
+}
+
+task jarAndroid {
+	dependsOn "jar"
+
+//	"E:\\Users\\ASUS\\Desktop\\Mods\\mod.make_new\\dex.bat".execute()
+	doLast {
+		if (!sdkRoot || !new File(sdkRoot).exists()) throw new GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.")
+
+		def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find { f -> new File(f, "android.jar").exists() }
+
+		if (!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
+
+		//collect dependencies needed for desugaring
+		def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect { "--classpath \"$it.path\"" }.join(" ")
+
+		def buildRoot = new File("$sdkRoot/build-tools/")
+		//dex and desugar files - this requires d8 in your PATH
+		"\"E:\\Program Files\\AndroidStudio\\sdk\\build-tools\\32.0.0\\d8.bat\" $dependencies --min-api 14 --output ${project.buildDir.path + "\\libs\\" + project.archivesBaseName}Android.jar ${project.buildDir.path + "\\libs\\" + project.archivesBaseName}Desktop.jar"
+				.execute(null, buildRoot).waitForProcessOutput(System.out, System.err)
+	}
+}
+
+jar {
+	archiveFileName = "${project.archivesBaseName}Desktop.jar"
+
+	from {
+		configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+	}
+
+	from(rootDir) {
+		include "mod.hjson"
+	}
+
+	from("assets/") {
+		include "**"
+	}
+
+	/*doLast {
+		archiveFile.zip()
+	}*/
+}
+
+//Process[] proc = [null]
+task playGame {
+	// exit
+	// def exit = new File("C:/Users/ASUS/AppData/Roaming/Mindustry/mods(I hope...)/exit-mzolamkakqna")
+	// exit.mkdir()
+//	if (proc[0] != null) proc[0].interrupt()
+
+	dependsOn jar
+
+	doLast {
+		// 移动文件
+		def fi = new File("C:\\Users\\ASUS\\AppData\\Roaming\\Mindustry\\mods\\mod.make_new.jar")
+		if (fi.exists()) fi.delete()
+		def input = null;
+		def output = null;
+		try {
+			input = new FileInputStream("$buildDir/libs/${project.archivesBaseName}Desktop.jar")
+			output = new FileOutputStream(fi)
+			byte[] buf = new byte[1024]
+			int bytesRead
+			while ((bytesRead = input.read(buf)) > 0) {
+				output.write(buf, 0, bytesRead)
+			}
+		} finally {
+			input.close();
+			output.close();
+		}
+
+		"E:\\应用\\Mindustry\\Mindustry.exe".execute().waitForProcessOutput(System.out, System.err)
+	}
+}
+
+task deploy(type: Jar) {
+	dependsOn jar
+	dependsOn jarAndroid
+	archiveFileName = "${project.archivesBaseName}.jar"
+
+	from { [zipTree("$buildDir/libs/${project.archivesBaseName}Desktop.jar"), zipTree("$buildDir/libs/${project.archivesBaseName}Android.jar")] }
+
+	/*doLast {
+		delete {
+			delete "$buildDir/libs/${project.archivesBaseName}Desktop.jar"
+			delete "$buildDir/libs/${project.archivesBaseName}Android.jar"
+		}
+	}*/
+}
+

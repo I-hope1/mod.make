@@ -7,6 +7,7 @@ import arc.struct.*;
 import arc.util.*;
 import arc.util.serialization.*;
 import mindustry.Vars;
+import modmake.FileUtils;
 import modmake.components.constructor.*;
 import modmake.ui.dialog.MySettingsDialog;
 import modmake.util.load.ContentVars;
@@ -32,7 +33,7 @@ public class DataHandle {
 	/**
 	 * 数据目录
 	 */
-	public static final Fi dataDirectory = Vars.dataDirectory.child("b0kkihope");
+	public static final Fi dataDirectory = FileUtils.child(Vars.dataDirectory, "mod_tools", "b0kkihope");
 
 	public static class _Class {
 		public Jval    value;

@@ -1,0 +1,10 @@
+// extend 方块
+name: 基础工厂
+type: GenericCrafter
+health: 100
+category: crafting
+consumes: {}
+outputItem: {
+	item: copper
+	amount: 1
+}

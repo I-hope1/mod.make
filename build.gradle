@@ -1,45 +1,42 @@
 plugins {
 	id 'java'
-	id "io.github.liplum.mgpp" version "1.2.0"
+	id "io.github.liplum.mgpp" version "1.3.2"
 }
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
+	targetCompatibility = 9
+	sourceCompatibility = 9
 //	options.compilerArgs.addAll("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED")
 //	options.compilerArgs.addAll("--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED")
 //	options.compilerArgs.addAll("--add-opens", "java.base/jdk.internal.misc=ALL-UNNAMED")
 }
 
-group 'org.example'
-version '1.0'
-sourceSets {
-	main {
-		java.srcDirs = ["src"]
+sourceSets.main.java.srcDirs = ["src"]
+repositories {
+	mavenLocal()
+	maven { url 'https://www.jitpack.io' }
+	mavenCentral()
+	maven { url 'https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository' }
+}
+//force arc version
+configurations.configureEach {
+	resolutionStrategy.eachDependency { details ->
+		if (details.requested.group == 'com.github.Anuken.Arc') details.useVersion "$mindustryVersion"
 	}
 }
-targetCompatibility = 9
-sourceCompatibility = 9
-repositories {
-	mavenCentral()
-	mindustryRepo()
-}
-
-def MdtDataDir = "E:/Users/ASUS/Desktop/Mindustry136"
-def VERSION = "1.4.1"
 
 dependencies {
-	def uncVersion = "1.8.9"
 	annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
-	def mindustryVersion = 'v146'
-	compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-	compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-}
-mindustry {
-	client {
-		official version: 'v139'
-		fromLocal "E:/Users/ASUS/Desktop/Mindustry136/Mindustry.jar"
-		args += ['-debug']
+	compileOnly("com.github.anuken.arc:arc-core:$mindustryVersion") {
+		exclude module: "flabel"
 	}
+	compileOnly "com.github.Tinylake:MindustryX:v146.004"
+//	compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+}
+
+
+mindustry {
 	meta << ModMeta(
 			version: VERSION
 	)
@@ -55,7 +52,7 @@ mindustry {
 	run {
 		keepOtherMods
 //		setDataDefault()
-		dataDir = "E:/Users/ASUS/Desktop/Mindustry136"
+		dataDir = MdtDataDir
 	}
 }
 mindustryAssets {
@@ -66,26 +63,25 @@ test {
 	useJUnitPlatform()
 }
 
-import arc.files.Fi;
+import arc.files.Fi
 
 task playGame(dependsOn: classes, type: JavaExec) {
 	dependsOn jar
 	doFirst {
 		def modFi = project.archivesBaseName + "-" + VERSION + ".jar"
 		def buildDir = new Fi("" + buildDir).child("libs")
-		def from = buildDir.child(project.archivesBaseName + "-1.0.jar");
+		def from = buildDir.child(project.archivesBaseName + ".jar");
 		if (from.exists()) from.moveTo(buildDir.child(modFi))
 		buildDir.child(modFi).copyTo(new Fi(MdtDataDir).child("mods").child(modFi))
 	}
 	//运行游戏目录
 	def gameFile = new File(MdtDataDir + "/Mindustry.jar")
-	main = "-jar"
+	classpath(gameFile)
 	args = [
-			gameFile.path
 			/*,"-debug"*/
 	]
 }
-task ZComplieAll {
+task ZCompileAll {
 	dependsOn deploy
 }
 
@@ -103,4 +99,25 @@ task mergeLibs(type: Jar) {
 		include "**"
 	}
 }
-//build.dependsOn(mergeLibs)
+
+task playAndroid {
+	dependsOn deploy
+
+	def adb = "F:/files/java/sdk/platform-tools/adb"
+	def MDT_ANDROID_DIR = "/storage/emulated/0/Android/data/io.anuke.mindustry/files"
+
+	def buildDir = buildDir
+	def fileName = "${archivesBaseName}.jar"
+	doLast {
+		("$adb push $buildDir/libs/$fileName $MDT_ANDROID_DIR/mods/")
+				.execute().waitForProcessOutput(System.out, System.err)
+
+		"$adb push $project.rootDir/appendLog.sh $MDT_ANDROID_DIR/appendLog.sh"
+				.execute().waitForProcessOutput(System.out, System.err)
+		"$adb shell am start -n io.anuke.mindustry/mindustry.android.AndroidLauncher -W -S"
+				.execute().waitForProcessOutput(System.out, System.err)
+		Thread.sleep(100)
+		"$adb shell sh ${MDT_ANDROID_DIR}/appendLog.sh"
+				.execute().waitForProcessOutput(System.out, System.err)
+	}
+}

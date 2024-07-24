@@ -1,0 +1,9 @@
+// extend 炮塔
+name: 激光
+powerUse: 30
+heatColor: ff686bff
+research: meltdown
+health: 4000
+cooldown: 7
+shootType: {}
+type: LaserTurret

@@ -1,0 +1,9 @@
+type: Block
+name: 方块
+description: ""
+health: 40
+size: 1
+itemCapacity: 10
+research: core-shard
+requirements: []
+category: distribution
