@@ -5,8 +5,8 @@ plugins {
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
-	targetCompatibility = 9
-	sourceCompatibility = 9
+	targetCompatibility = 17
+	sourceCompatibility = 17
 //	options.compilerArgs.addAll("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED")
 //	options.compilerArgs.addAll("--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED")
 //	options.compilerArgs.addAll("--add-opens", "java.base/jdk.internal.misc=ALL-UNNAMED")
@@ -27,7 +27,7 @@ configurations.configureEach {
 }
 
 dependencies {
-	annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
+//	annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 	compileOnly("com.github.anuken.arc:arc-core:$mindustryVersion") {
 		exclude module: "flabel"
 	}

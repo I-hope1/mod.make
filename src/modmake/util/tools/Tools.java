@@ -270,9 +270,6 @@ public class Tools {
 	public static <T> T or(T t1, Prov<T> t2) {
 		return t1 == null ? t2.get() : t1;
 	}
-	public static <T> SR<T> sr(T value) {
-		return new SR<>(value);
-	}
 
 	/** 对value处理并返回 */
 	public static <T> T srr(T value, Consumer<T> cons) {
@@ -288,41 +285,6 @@ public class Tools {
 	}
 	public static <T> void checknull(T t, Runnable run) {
 		if (t != null) run.run();
-	}
-
-	public static class SR<T> implements SRI<T> {
-		private T value;
-
-		public SR(T value) {
-			this.value = value;
-		}
-
-		public SR<T> reset(Function<T, T> func) {
-			value = func.apply(value);
-			return this;
-		}
-
-		/**
-		 * @param consumer 如果满足就执行
-		 *
-		 * @throws RuntimeException 当执行后抛出
-		 */
-		public <R> SRI<T> isInstance(Class<R> cls, Consumer<R> consumer) {
-			if (cls.isInstance(value)) {
-				consumer.accept(cls.cast(value));
-				throw new RuntimeException();
-			}
-			return this;
-		}
-
-		public SRI<T> cons(Consumer<T> consumer) {
-			consumer.accept(value);
-			return this;
-		}
-
-		public T get() {
-			return value;
-		}
 	}
 
 	public interface SRI<T> {
