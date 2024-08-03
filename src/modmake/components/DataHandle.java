@@ -5,6 +5,7 @@ import arc.files.Fi;
 import arc.func.*;
 import arc.struct.*;
 import arc.util.*;
+import arc.util.io.PropertiesUtils;
 import arc.util.serialization.*;
 import mindustry.Vars;
 import modmake.FileUtils;
@@ -115,18 +116,7 @@ public class DataHandle {
 	}
 
 	static void parseType(Fi fi) {
-		// [\u4e00-\u9fa5]为中文
-		Matcher     m   = Pattern.compile("\\w+?\\s*=\\s*[^\n]+").matcher(fi.readString());
-		Seq<String> seq = new Seq<>();
-		// 将所有符合正则表达式的子串（电话号码）全部输出
-		while (m.find()) {
-			seq.add(m.group());
-		}
-		seq.each(type -> {
-			var a = type.split("\\s*=\\s*");
-			types.put(a[0], a[1]);
-		});
-
+		PropertiesUtils.load(types, fi.reader());
 	}
 
 	// content
@@ -163,7 +153,7 @@ public class DataHandle {
 		};*/
 		Fi file = data.child("content").child(getLocate() + ".ini");
 		if (!file.exists()) file = data.child("types").child("default.ini");
-		iniParse(dcontent, file.readString());
+		iniParse(dcontent, file);
 	}
 
 	// settings
@@ -223,18 +213,8 @@ public class DataHandle {
 		return "";
 	}
 
-	public static StringMap iniParse(StringMap map, String str) {
-		// [\u4e00-\u9fa5]为中文
-		var all = str.split("\n");
-		map = map != null ? map : new StringMap();
-		for (var row : all) {
-			if (row.isEmpty() || row.matches("(#|//)[^\n]+")) continue;
-			var arr = row.split("\\s+=\\s+");
-			if (arr.length <= 1) continue;
-			map.put(arr[0], arr[1].replaceAll("\\\\n", "\n"));
-		}
-
-		return map;
+	public static void iniParse(StringMap map, Fi fi) {
+		PropertiesUtils.load(map, fi.reader());
 	}
 
 	public static JsonValue toJsonValue(Jval jval) {

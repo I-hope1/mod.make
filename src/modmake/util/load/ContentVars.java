@@ -117,6 +117,7 @@ public class ContentVars {
 	}
 
 
+	/** @see arc.util.serialization.Json#getElementType(Field, int)   */
 	public static Seq<Class<?>> getGenericType(Field field) {
 		Seq<Class<?>> classes     = new Seq<>();
 		Type          genericType = field.getGenericType();

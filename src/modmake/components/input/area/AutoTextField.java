@@ -1,6 +1,5 @@
 package modmake.components.input.area;
 
-import arc.Core;
 import arc.graphics.g2d.Font;
 import arc.math.Mathf;
 import arc.scene.Scene;
@@ -26,14 +25,7 @@ public class AutoTextField extends TextField {
 
 	@Override
 	public float getPrefWidth() {
-		int   cursor = text.length();
-		float val    = textOffset;
-		try {
-			val = glyphPositions.get(cursor) - glyphPositions.get(0) + fontOffset + style.font.getData().cursorX;
-			Drawable background = getBack();
-			if (background != null) val += background.getLeftWidth();
-		} catch (Exception ignored) {}
-		return Mathf.clamp(val + 26, 100, Core.graphics.getWidth() * 0.8f);
+		return Mathf.clamp(layout.width + 30, 100, 440);
 	}
 
 	Drawable getBack() {

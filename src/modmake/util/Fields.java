@@ -2,7 +2,8 @@ package modmake.util;
 
 import arc.func.*;
 import arc.input.KeyCode;
-import arc.scene.*;
+import arc.math.geom.Vec2;
+import arc.scene.Element;
 import arc.scene.event.*;
 import arc.scene.style.Drawable;
 import arc.scene.ui.*;
@@ -147,8 +148,9 @@ public class Fields {
 		}
 
 		Task task = TaskManager.newTask(() -> { });
-
+		Vec2 last = new Vec2();
 		public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
+			if (!super.touchDown(event, x, y, pointer, button)) return false;
 			Element actor = event.targetActor;
 			while (true) {
 				if (actor == null || actor instanceof Button || actor instanceof TextField) return false;
@@ -160,35 +162,38 @@ public class Fields {
 				}
 				actor = actor.parent;
 			}
-			TaskManager.reSchedule(0.6f, task);
+			TaskManager.reSchedule(0.3f, task);
+			last.set(x, y);
 			return fromKey != null;
 		}
 
 		boolean hasDragged;
-
 		public void touchDragged(InputEvent event, float x, float y, int pointer) {
-			if (task.isScheduled()) return;
+			if (!hasDragged && (task.isScheduled() || last.dst(x, y) > 6f)) return;
+
 			ScrollPane pane = findPane(children);
 			if (pane != null) pane.cancel();
 			if (!hasDragged) {
-				Element     t    = fireElem;
+				Table t = fireElem;
+				lastMain.set(t.x, t.y);
 				Cell<Table> cell = children.getCell(t);
 				cell.size(t.getWidth() / Scl.scl(), t.getHeight() / Scl.scl());
 				cell.setElement(placeholder);
 				placeholderCell = cell;
+				placeholder.toBack();
 				children.addChild(t);
-				lastMain.set(t.x, t.y);
 				hasDragged = true;
+				main = fireElem;
+				touch = children;
+				fireElem.touchable = Touchable.disabled;
 			}
-
-			main = fireElem;
-			touch = children;
-			fireElem.touchable = Touchable.disabled;
 			fireElem.toFront();
-			hasDragged = true;
+			super.touchDragged(event, x, y, pointer);
 		}
 
 		public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button) {
+			super.touchUp(event, x, y, pointer, button);
+
 			if (!hasDragged || placeholderCell == null) return;
 			placeholderCell.size(Float.NEGATIVE_INFINITY);
 			placeholderCell.setElement(fireElem);
@@ -206,6 +211,7 @@ public class Fields {
 		}
 
 		public void display(float x, float y) {
+			Log.info("@, @", x, y);
 			main.x = x;
 			main.y = y;
 		}

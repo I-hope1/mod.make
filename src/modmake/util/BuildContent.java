@@ -461,9 +461,11 @@ public class BuildContent {
 									Seq<Class<?>> typeBlackList,
 									boolean all) {
 		Table  table  = new Table(Tex.pane), children = new Table();
+		table.left().defaults().left();
+
 		Fields fields = new Fields(value, type, children);
 		children.center().defaults().center().minWidth(100);
-		Cell<?>         cell   = parent.add(table);
+		Cell<?>         cell   = parent.add(table).left();
 		final boolean[] resize = {false};
 
 		var      pane   = new ScrollPane(null);

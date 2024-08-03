@@ -584,14 +584,8 @@ public class ImgView extends Element implements GestureDetector.GestureListener 
 		public void rotate() {
 			if (pixmap == null) return;
 
-			int    width = pixmap.width, height = pixmap.height;
-			Pixmap cpy   = new Pixmap(height, width);
-			int    w     = width - 1, h = height - 1;
-			pixmap.each((x1, y1) -> {
-				cpy.setRaw(y1, w - x1, pixmap.getRaw(x1, y1));
-			});
-			pixmap = cpy;
-			textureRegion.set(new Texture(cpy));
+			pixmap = Pixmaps.rotate(pixmap, 90);
+			textureRegion.set(new Texture(pixmap));
 			textureRegion.flip(false, true);
 			//			cpy = null;
 		}

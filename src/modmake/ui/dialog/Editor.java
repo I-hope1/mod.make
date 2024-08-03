@@ -280,7 +280,7 @@ public class Editor extends Window {
 		}
 		return cTypeMap.get(f.name());
 	}
-	public void buildPro(Fi file) {
+	public void buildProperties(Fi file) {
 		var content = file.readString();
 		var str     = content.split("\n");
 		var cont    = pane.table(Styles.none).padLeft(3).get();
@@ -319,25 +319,25 @@ public class Editor extends Window {
 				arr.add(bundle);
 			}).get();
 			var index = arr.size - 1;
-			IntUI.doubleClick(table, () -> {
+			IntUI.doubleClick(table, () -> {}, () -> {
 				ui.showConfirm("@confirm", Core.bundle.format("confirm.remove",
 					arr.get(index).name), () -> {
 					 table.remove();
 					 arr.remove(index);
 				 }
 				);
-			}, () -> {});
+			});
 			cont.row();
 		};
 		for (String s : str) {
 			if (s.isBlank()) continue;
 			// 解析注释
-			if (Pattern.compile("^\\s*#").matcher(s).find()) {
-				var res = s.replaceAll("^\\s*#\\s*", "");
+			if (Pattern.compile("^\\s*?#").matcher(s).find()) {
+				var res = s.replaceAll("^\\s*?#\\s*", "");
 				fun.get("#", res);
 				continue;
 			}
-			var array = s.split("\\s*=\\s*");
+			var array = s.split("\\s*?=\\s*");
 			if (array.length == 2) {
 				fun.get(array[0], array[1]);
 			}
@@ -376,7 +376,7 @@ public class Editor extends Window {
 			else buildJson(file);
 		} else if (extension.equalsIgnoreCase("properties")) {
 			if (textEdit) textEditCons.get(Syntax::new);
-			else buildPro(file);
+			else buildProperties(file);
 		} else if (extension.equalsIgnoreCase("js")) {
 			textEditCons.get(JSSyntax::new);
 		} else {

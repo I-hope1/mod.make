@@ -381,15 +381,15 @@ public class ModDialog extends Window {
 
 		if (meta.has("author")) {
 			desc.add("@editor.author", Color.gray).padRight(10).row();
-			desc.add("" + meta.getString("author", "???")).growX().wrap().padTop(2).row();
+			desc.add(meta.getString("author", "???")).growX().wrap().padTop(2).row();
 		}
 		if (meta.has("version")) {
 			desc.add("@editor.version", Color.gray).padRight(10).row();
-			desc.add("" + meta.getString("version", "???")).growX().wrap().padTop(2).row();
+			desc.add(meta.getString("version", "???")).growX().wrap().padTop(2).row();
 		}
 		if (meta.has("description")) {
 			desc.add("@editor.description").padRight(10).color(Color.gray).top().row();
-			desc.add("" + meta.getString("description", "???")).growX().wrap().padTop(2).row();
+			desc.add(meta.getString("description", "???")).growX().wrap().padTop(2).row();
 		}
 
 		Seq<Color>  colors = Seq.with(Color.gold, Color.pink, Color.sky);
@@ -400,7 +400,7 @@ public class ModDialog extends Window {
 		 /* content */
 		 getContentTable(mod),
 		 /* bundles */
-		 new LimitTable(MyStyles.whiteui.tint(1, .8f, 1, .8f), t -> {
+		 new LimitTable(MyStyles.whiteui.tint(1, .8f, .7f, .8f), t -> {
 			 t.add("@default").padLeft(4).growX().left();
 			 t.button(Icon.pencil, MyStyles.clearTransi, () -> {
 				 disabledHidden = true;

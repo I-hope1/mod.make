@@ -201,7 +201,6 @@ public class IntUI {
 
 	/**
 	 * 弹出一个小窗，自己设置内容
-	 *
 	 * @param button     用于定位弹窗的位置
 	 * @param f          (p, hide, text)
 	 *                   p 是Table，你可以添加元素
@@ -299,7 +298,6 @@ public class IntUI {
 	/**
 	 * 弹出一个可以选择内容的窗口（类似物品液体源的选择）
 	 * （需要提供图标）
-	 *
 	 * @param items     用于展示可选的内容
 	 * @param icons     可选内容的图标
 	 * @param holder    选中的内容，null就没有选中任何
@@ -541,7 +539,6 @@ public class IntUI {
 	public static final float DEF_DURATION = 0.2f;
 	/**
 	 * 在鼠标右下弹出一个小窗，自己设置内容
-	 *
 	 * @param vec2       用于定位弹窗的位置
 	 * @param f          (p, hide, text)
 	 *                   p 是Table，你可以添加元素
@@ -677,19 +674,18 @@ public class IntUI {
 		public LongPressListener(Boolc boolc0, long duration0) {
 			boolc = boolc0;
 			duration = duration0;
-			task = new Task() {
-				public void run() {
-					if (pressed && Core.input.mouse().dst(last) < 10) {
-						longPress = true;
-						boolc.get(true);
-					}
-				}
-			};
 		}
 		boolean longPress;
-		final Task task;
+		final Task task = new Task() {
+			public void run() {
+				if (pressed && Core.input.mouse().dst(last) < 10) {
+					longPress = true;
+					boolc.get(true);
+				}
+			}
+		};
+
 		public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
-			if (event.stopped) return false;
 			longPress = false;
 			if (super.touchDown(event, x, y, pointer, button)) {
 				last.set(Core.input.mouse());
@@ -701,7 +697,6 @@ public class IntUI {
 		}
 		public void clicked(InputEvent event, float x, float y) {
 			// super.clicked(event, x, y);
-			if (longPress) return;
 			if (task.isScheduled() && pressed) boolc.get(false);
 			task.cancel();
 		}

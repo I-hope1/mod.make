@@ -27,7 +27,7 @@ public class SpriteDialog extends Window {
 	public MyMod                     mod;
 
 	public SpriteDialog(MyMod mod) {
-		super("图片库", 120, 80, true, false);
+		super("@modmake.ui.sprite", 120, 80, true, false);
 		this.mod = mod;
 
 		// addCloseButton();
@@ -35,8 +35,8 @@ public class SpriteDialog extends Window {
 			hide();
 			setup(root);
 		};*/
-		buttons.button("@add", Icon.add, () -> IntUI.createDialog("添加图片",
-		 "新建图片", "默认32*32", Icon.add, (Runnable) () -> {
+		buttons.button("@add", Icon.add, () -> IntUI.createDialog("@modmake.img.add",
+		 "@modmake.img.new", "@modmake.img.new.desc", Icon.add, (Runnable) () -> {
 			 nameDialog.show(text -> {
 				 Fi file = root.child(text + ".png");
 				 imgDialog.beginEditImg(mod, file);
@@ -48,7 +48,7 @@ public class SpriteDialog extends Window {
 					} while (fi1.exists());
 					imgDialog.beginEditImg(fi1);*/
 		 },
-		 "导入图片", "仅限png", Icon.download, (Runnable) () -> Vars.platform.showFileChooser(true, "import file to add sprite", "png", f -> {
+		 "@modmake.img.import", "@modmake.img.import.desc", Icon.download, (Runnable) () -> Vars.platform.showFileChooser(true, "import file to add sprite", "png", f -> {
 			 Fi toFile = root.child(f.name());
 			 Runnable go = () -> {
 				 f.copyTo(toFile);

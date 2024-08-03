@@ -120,7 +120,7 @@ public class ModMetaDialog extends Window {
 		container.add(minGameVersion).valid(text -> {
 			boolean valid = true;
 			if (isNaN(text)) {
-				errorText = "\"最小游戏版本\"必须为数字";
+				errorText = Core.bundle.format("error.number.unvalid", "minGameVersion");
 				return true;
 			}
 			double num = toNumber(text);

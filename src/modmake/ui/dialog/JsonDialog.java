@@ -82,7 +82,7 @@ public class JsonDialog extends Window {
 		 }).size(bw / 2f, 55)
 		 .disabled(b -> editor[0] != null && editor[0].isShown());
 		// buttons.row();
-		buttons.button("文本编辑", Icon.edit, Styles.defaultt, () -> {
+		buttons.button("@edit.text", Icon.edit, Styles.defaultt, () -> {
 			 checkset(editor);
 			 editor[0].edit(file, mod, true);
 			 editor[0].addListener(listener);

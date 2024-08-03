@@ -81,12 +81,20 @@ public class ImgEditorDialog extends Dialog {
 			t.row();
 
 			t.button("@settings", Icon.settings, () -> IntUI.settingsDialog.show());
+
+			t.row();
+
+			t.button("@quit", Icon.exit, () -> {
+				tryExit();
+				menu.hide();
+			});
+			t.button("@save.quit", Icon.exit, () -> {
+				save();
+				hide();
+				menu.hide();
+			});
 		}).row();
 
-		menu.cont.button("@quit", Icon.exit, () -> {
-			tryExit();
-			menu.hide();
-		}).size(swidth * 2f + 10, 60f);
 
 		resizeDialog = new ImgResizeDialog((width, height) -> {
 			if (!(imgEditor.width() == width && imgEditor.height() == height)) {
@@ -390,8 +398,8 @@ public class ImgEditorDialog extends Dialog {
 	}
 
 	public void buildSelectTable(Table table) {
-		table.defaults().growX();
-		table.button("放置", view.select::cover).disabled(__ -> !view.select.any()).row();
+		table.left().defaults().left();
+		table.button("放置", view.select::cover).disabled(__ -> !view.select.any()).growX().row();
 		table.check("剪切", view.select.cut, b -> view.select.cut = b).row();
 		table.check("覆盖透明", view.select.coverTransparent, b -> {
 			view.select.coverTransparent = b;
