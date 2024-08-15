@@ -92,7 +92,7 @@ public class AddFieldBtn extends TextButton {
 					String name        = key + "";
 					String displayName = dcontent.get(name, () -> name);
 					if (!(testP(pattern.get(), name) ||
-								testP(pattern.get(), displayName)))
+					      testP(pattern.get(), displayName)))
 						return;
 
 					Field finalField = field;
@@ -124,8 +124,8 @@ public class AddFieldBtn extends TextButton {
 		});
 	}
 	private void showSelection(Fields Fields, Class<?> cont, Table table, AtomicReference<Pattern> pattern,
-														 Runnable[] hide,
-														 Runnable eachFields) {
+	                           Runnable[] hide,
+	                           Runnable eachFields) {
 		IntUI.showSelectTable(bind, (p, _hide, v) -> {
 			p.clearChildren();
 			hide[0] = _hide;
@@ -175,8 +175,8 @@ public class AddFieldBtn extends TextButton {
 			type = arrayClass.contains(type) ? ContentVars.getGenericType(field).get(0) : type.getComponentType();
 		}
 		if (map.containsKey(name)
-				|| (type == TextureRegion.class && field.getType().isArray())
-				|| (Consume.class.isAssignableFrom(vType) && "^(update|optional|booster)$".matches(name))) return false;
+		    || (type == TextureRegion.class && field.getType().isArray())
+		    || (Consume.class.isAssignableFrom(vType) && "^(update|optional|booster)$".matches(name))) return false;
 		if (type.isPrimitive() || type == String.class) return true;
 		// if (type == TextureRegion.class && type.isAnnotationPresent()) ;
 		for (var entry : BuildContent.filterClass) {
@@ -196,6 +196,13 @@ public class AddFieldBtn extends TextButton {
 		 : type.getSimpleName().equals("String") ? ""
 		 : /* buildContent.make(type) */
 		 BuildContent.defaultClassIns.get(type, () -> MyObject::new).get();
+	}
+	public static Class<?> getDefaultType(Class<?> type) {
+		while (true) {
+			type = type.getSuperclass();
+			if (type.getSuperclass() == Object.class) return type;
+			if (type.getSuperclass() == null) return type;
+		}
 	}
 
 	public static ObjectMap<Class<?>, Prov<MyObject>> defValue = new ObjectMap<>();

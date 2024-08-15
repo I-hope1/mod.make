@@ -473,19 +473,19 @@ public class Window extends Table {
 		setPosition(pos.getX(), pos.getY());
 		display();
 	}
-	/* public static  boolean onlyOne = false;
+	public static  boolean ENABLE_ONLY_ONE = true;
 	public void draw() {
-		if (onlyOne) {
+		if (ENABLE_ONLY_ONE && isForce_max_window()) {
 			if (all.max(Element::getZIndex) != this) return;
 		}
 		super.draw();
 	}
 	public Element hit(float x, float y, boolean touchable) {
-		if (onlyOne) {
+		if (ENABLE_ONLY_ONE && isForce_max_window()) {
 			if (all.max(Element::getZIndex) != this) return null;
 		}
 		return super.hit(x, y, touchable);
-	} */
+	}
 
 	public interface MinimizedListener {
 		void fire();

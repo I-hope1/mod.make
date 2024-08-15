@@ -3,6 +3,7 @@ package modmake.components.build;
 import arc.Core;
 import arc.func.*;
 import arc.graphics.Color;
+import arc.math.Interp;
 import arc.scene.ui.Button;
 import arc.scene.ui.layout.Table;
 import arc.struct.*;
@@ -12,6 +13,7 @@ import mindustry.ctype.ContentType;
 import mindustry.entities.Effect;
 import mindustry.entities.abilities.Ability;
 import mindustry.entities.bullet.BulletType;
+import mindustry.entities.part.DrawPart.PartProgress;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.gen.*;
 import mindustry.graphics.g3d.GenericMesh;
@@ -21,6 +23,7 @@ import mindustry.world.blocks.units.UnitFactory;
 import mindustry.world.consumers.*;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.meta.Attribute;
+import modmake.components.AddFieldBtn;
 import modmake.components.constructor.*;
 import modmake.ui.MyStyles;
 import modmake.util.*;
@@ -118,36 +121,21 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 		 as(value), vType, "Weapon"));
 
 		put(ItemStack.class, (table, value, __, ___) -> {
-			String[][] stack = {{}};
-			if (value instanceof String) {
-				stack[0] = (value + "").split("/");
-			} else if (value instanceof MyObject) {
-				var obj = (MyObject<Object, Object>) value;
-				stack[0] = new String[]{"" + obj.get("item"), Tools.toString(obj.get("amount"))};
-			} else {
-				stack[0] = new String[]{"copper", "0"};
-			}
+			String[][] stack = parseStack(value, "item", Item.class, "copper");
 
 			// to do...
 			//		if (isNaN(stack[0][1])) throw new IllegalArgumentException("'" + stack[0][1] + "' isn't a number");
 			return buildOneStack(table, "item", Vars.content.items(), stack[0][0], stack[0][1]);
 		});
 		// like ItemStack
-		put(LiquidStack.class, (table, value, __, ___) -> {
-			String[][] stack = {{}};
-			if (value instanceof String) {
-				stack[0] = (value + "").split("/");
-			} else if (value instanceof MyObject) {
-				var obj = (MyObject) value;
-				stack[0] = new String[]{"" + or(obj.get("liquid"), defaultClassIns.get(Liquid.class).get()), Tools.toString(or(obj.get("amount"), 0))};
-			} else {
-				stack[0] = new String[]{"liquid", "0"};
-			}
+		ClassInterface liquidStack = (table, value, __, ___) -> {
+			String[][] stack = parseStack(value, "liquid", Liquid.class, "water");
 
 			// to do...
 			//		if (isNaN(stack[0][1])) throw new IllegalArgumentException("'" + stack[0][1] + "' isn't a number");
 			return buildOneStack(table, "liquid", Vars.content.liquids(), stack[0][0], stack[0][1]);
-		});
+		};
+		put(LiquidStack.class, liquidStack);
 		put(Effect.class, (table, value, __, ___) -> {
 			if (value instanceof MyArray) value = MyObject.of(
 			 "type", "MultiEffect",
@@ -156,6 +144,15 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 			return listWithType(table, value, Effect.class,
 			 effects, e -> "" + e);
 		});
+
+		/** @see mindustry.mod.ContentParser  */
+		put(PartProgress.class, (table, value, vType, __) -> {
+			return fieldConstantList(table, value, vType);
+		});
+		put(Interp.class, (table, value, vType, __) -> {
+			return fieldConstantList(table, value, vType);
+		});
+
 		put(UnitType.class, (table, value, vType, __) -> tableWithFieldImage(table,
 		 "" + value, vType, Vars.content.units()));
 		put(Item.class, (table, value, vType, __) -> tableWithFieldImage(table,
@@ -188,7 +185,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 						copyAndPaste(right, k, v, newV -> {
 							remove.run();
 							add[0].get(k, newV);
-						}, () -> {});
+						}, () -> { });
 						right.button("", Icon.trash, MyStyles.cleart, remove);
 					}).padLeft(4).growX().right();
 				});
@@ -202,6 +199,7 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
 			return () -> map;
 		});
+
 		put(ShootPattern.class, (table, value, vType, __) -> {
 			checkMyObject(value);
 			var prov = tableWithTypeSelection(table, as(value), ShootPattern.class, "ShootPattern");
@@ -249,6 +247,12 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 		 ConsumePower.class
 		);
 		ClassInterface def = (table, value, clazz, ___) -> {
+			if (clazz == ConsumeLiquid.class && value instanceof String) {
+				value = liquidStack.get(table, value, clazz, ___);
+			}
+			if (clazz == ConsumePower.class && value instanceof Number n) {
+				value = MyObject.of("usage", n);
+			}
 			checkMyObject(value);
 			var prov = fObject(table, () -> clazz, as(value), consumeFilter, true);
 			return () -> prov.get().toString();
@@ -286,12 +290,39 @@ public class BClasses extends ObjectMap<Class<?>, BClasses.ClassInterface> {
 
 		});*/
 	}
+	private static Prov<String> fieldConstantList(Table table, Object value, Class<?> vType) {
+		return listWithType(table, value, vType, "PartProgress",
+		 new Seq<>(PartProgress.class.getFields()),
+		 Field::getName);
+	}
+	private static String[][] parseStack(Object value, String type, Class<?> classType, String def) {
+		String[][] stack = {{}};
+		if (value instanceof String) {
+			stack[0] = (value + "").split("/");
+		} else if (value instanceof MyObject) {
+			var obj = (MyObject) value;
+			stack[0] = new String[]{"" + or(obj.get(type), defaultClassIns.get(classType).get()), Tools.toString(or(obj.get("amount"), 0))};
+		} else {
+			stack[0] = new String[]{def, "0"};
+		}
+		return stack;
+	}
 
 	public static void checkMyObject(Object value) {
 		if (!(value instanceof MyObject))
 			throw new IllegalArgumentException("Cannot cast '" + value + "' to MyObject.");
 	}
 
+	public ClassInterface get(Class<?> key) {
+		ClassInterface res = super.get(key);
+		if (res == null) return (table, value, vType, __) -> {
+			return tableWithTypeSelection(table, as(value), vType, AddFieldBtn.getDefaultType(vType).getSimpleName());
+		};
+		return res;
+	}
+	public boolean containsKey(Class<?> key) {
+		return true;
+	}
 	public interface ClassInterface {
 		Prov<?> get(Table t, Object o, Class<?> clazz, Seq<Class<?>> classes);
 	}

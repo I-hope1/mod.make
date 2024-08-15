@@ -17,6 +17,7 @@ import mindustry.ctype.UnlockableContent;
 import mindustry.entities.Effect;
 import mindustry.entities.bullet.BulletType;
 import mindustry.gen.*;
+import mindustry.graphics.Pal;
 import mindustry.type.*;
 import mindustry.ui.Styles;
 import mindustry.world.meta.Attribute;
@@ -70,6 +71,7 @@ public class BuildContent {
 		defaultClassIns.put(Planet.class, () -> "serpulo");
 	}
 
+	/** @see mindustry.mod.ContentParser  */
 	public static ObjectMap<String, Prov<?>> defaultKey = ObjectMap.of(
 	 "consumes", (Prov<?>) MyObject::new,
 	 "controller", (Prov<?>) MyObject::new,
@@ -243,7 +245,7 @@ public class BuildContent {
 		tmpList.add(selfDefined);
 		value = Tools.or(value, () -> defaultClassIns.get(vType).get());
 		boolean                  isObject = value instanceof MyObject;
-		MyObject<Object, Object> val1     = isObject ? as(value) : new MyObject<Object, Object>();
+		MyObject<Object, Object> val1     = isObject ? as(value) : new MyObject<>();
 		assert val1 != null;
 		var    table1   = new Table();
 		String typeName = "" + Tools.or(val1.remove("type"), defaultType);
@@ -623,7 +625,7 @@ public class BuildContent {
 				.update(label -> {
 					unknown[0] = (type != UnitType.class || !UnitTypeExFields.contains(strK))
 											 && dsettings.getBool("point_out_unknown_field") && !caches.get(type).containsKey(strK);
-					label.setColor(unknown[0] ? Color.yellow : Color.white);
+					label.setColor(unknown[0] ? Pal.remove : Color.white);
 				})
 				.get(), new ConfirmList(Icon.trash, "delete", "are you sure?", removeR),
 			 new MenuList(null, "rename", addF.runnable),
