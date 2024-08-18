@@ -38,7 +38,7 @@ dependencies {
 
 mindustry {
 	meta << ModMeta(
-			version: VERSION
+			version: version
 	)
 	meta.displayName = "mod-make"
 	def name = project.archivesBaseName
@@ -68,7 +68,7 @@ import arc.files.Fi
 task playGame(dependsOn: classes, type: JavaExec) {
 	dependsOn jar
 	doFirst {
-		def modFi = project.archivesBaseName + "-" + VERSION + ".jar"
+		def modFi = project.archivesBaseName + "-" + version + ".jar"
 		def buildDir = new Fi("" + buildDir).child("libs")
 		def from = buildDir.child(project.archivesBaseName + ".jar");
 		if (from.exists()) from.copyTo(buildDir.child(modFi))
